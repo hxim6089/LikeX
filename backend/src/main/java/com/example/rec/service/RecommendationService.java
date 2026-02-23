@@ -181,9 +181,10 @@ public class RecommendationService {
         
         int inNetworkCount = 0;
         for (Content c : inNetworkCandidates) {
+            if (c.getParentContent() != null) continue; // 跳过回复
             if (!seenIds.contains(c.getId()) && !hiddenContentIds.contains(c.getId())) {
                 if (c.getAuthor() == null || !blockedAuthorIds.contains(c.getAuthor().getId())) {
-                    c.setCategory("IN_NETWORK");
+                    c.setNetworkSource("IN_NETWORK");
                     finalCandidates.add(c);
                     seenIds.add(c.getId());
                     inNetworkCount++;
@@ -201,9 +202,10 @@ public class RecommendationService {
         
         int outNetworkCount = 0;
         for (Content c : outOfNetworkCandidates) {
+            if (c.getParentContent() != null) continue; // 跳过回复
             if (!seenIds.contains(c.getId()) && !hiddenContentIds.contains(c.getId())) {
                 if (c.getAuthor() == null || !blockedAuthorIds.contains(c.getAuthor().getId())) {
-                    c.setCategory("OUT_OF_NETWORK");
+                    c.setNetworkSource("OUT_OF_NETWORK");
                     finalCandidates.add(c);
                     seenIds.add(c.getId());
                     outNetworkCount++;

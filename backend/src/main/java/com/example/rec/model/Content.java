@@ -88,6 +88,9 @@ public class Content {
     @Transient
     private java.util.List<Content> replies = new java.util.ArrayList<>();
 
+    @Transient
+    private String networkSource; // IN_NETWORK / OUT_OF_NETWORK (不覆盖 category)
+
     // Manual Getters & Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -136,6 +139,9 @@ public class Content {
     
     public Content getQuoteOf() { return quoteOf; }
     public void setQuoteOf(Content quoteOf) { this.quoteOf = quoteOf; }
+
+    public String getNetworkSource() { return networkSource; }
+    public void setNetworkSource(String networkSource) { this.networkSource = networkSource; }
 
     @Override
     public boolean equals(Object o) {

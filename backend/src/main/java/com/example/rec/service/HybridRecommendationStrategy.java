@@ -125,7 +125,7 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         engagementScore *= (1.0 + engagementRate * ENGAGEMENT_RATE_WEIGHT);
 
         // === In-Network Boost (Thunder) ===
-        if ("IN_NETWORK".equals(content.getCategory())) {
+        if ("IN_NETWORK".equals(content.getNetworkSource())) {
             engagementScore *= WEIGHT_IN_NETWORK_BOOST;
         }
 
@@ -162,11 +162,12 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         // === Time Decay (Phase 28: 分段指数衰减) ===
         double timeDecay = calculateTimeDecay(content);
 
-        // === Random Jitter ===
-        double jitter = Math.random() * 5.0;
+        // === Random Jitter (每次请求产生不同的推荐结果) ===
+        double baseScore = (engagementScore / timeDecay) + personalizationBoost + contentSimilarityBoost + trendingBoost;
+        double jitter = (Math.random() - 0.3) * baseScore * 0.15; // ±15% 随机抖动
 
         // === Final Score ===
-        return (engagementScore / timeDecay) + personalizationBoost + contentSimilarityBoost + trendingBoost + jitter;
+        return baseScore + jitter;
     }
 
     /**
@@ -327,7 +328,7 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         double engagementScore = baseEngagement * (1.0 + engagementRate * ENGAGEMENT_RATE_WEIGHT);
 
         // In-Network 判断
-        boolean isInNetwork = "IN_NETWORK".equals(content.getCategory());
+        boolean isInNetwork = "IN_NETWORK".equals(content.getNetworkSource());
         breakdown.setInNetwork(isInNetwork);
         if (isInNetwork) {
             engagementScore *= WEIGHT_IN_NETWORK_BOOST;
