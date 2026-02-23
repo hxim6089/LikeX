@@ -91,11 +91,49 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         // 2. Apply Author Diversity Penalty (X-Style)
         applyAuthorDiversityPenalty(scoredList);
 
-        // 3. Sort by final score (descending) and extract Content objects
-        return scoredList.stream()
-                .sorted(Comparator.comparingDouble(ScoredContent::getScore).reversed())
-                .map(ScoredContent::getContent)
-                .collect(Collectors.toList());
+        // 3. Sort by score (descending)
+        scoredList.sort(Comparator.comparingDouble(ScoredContent::getScore).reversed());
+
+        // 4. 加权随机采样 (X-Style Shuffle)
+        // 从 Top 候选中按分数权重随机抽取, 确保每次刷新看到不同内容
+        return weightedShuffle(scoredList);
+    }
+
+    /**
+     * 加权随机采样：分数越高被选中的概率越大，但每次结果不同
+     * 模拟真实推荐系统的 exploration-exploitation 机制
+     */
+    private List<Content> weightedShuffle(List<ScoredContent> sortedList) {
+        if (sortedList.size() <= 5) {
+            Collections.shuffle(sortedList);
+            return sortedList.stream().map(ScoredContent::getContent).collect(Collectors.toList());
+        }
+        
+        List<ScoredContent> pool = new ArrayList<>(sortedList);
+        List<Content> result = new ArrayList<>();
+        Random random = new Random();
+        
+        // 确保第1条是 Top 5 中随机一条 (保证质量)
+        int firstPick = random.nextInt(Math.min(5, pool.size()));
+        result.add(pool.remove(firstPick).getContent());
+        
+        // 剩余的用加权随机：score 转为选中概率
+        while (!pool.isEmpty() && result.size() < 50) {
+            double totalWeight = pool.stream().mapToDouble(s -> Math.max(s.getScore(), 1.0)).sum();
+            double r = random.nextDouble() * totalWeight;
+            double cumulative = 0;
+            int selected = 0;
+            for (int i = 0; i < pool.size(); i++) {
+                cumulative += Math.max(pool.get(i).getScore(), 1.0);
+                if (cumulative >= r) {
+                    selected = i;
+                    break;
+                }
+            }
+            result.add(pool.remove(selected).getContent());
+        }
+        
+        return result;
     }
 
     /**
