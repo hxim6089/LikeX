@@ -63,6 +63,7 @@ public class CompareController {
 
     /**
      * 带自定义权重的推荐 Feed (用于参数调节面板)
+     * 返回完整的对比数据 (personalized + chronological + stats)
      */
     @GetMapping("/tuned")
     public Map<String, Object> tunedFeed(
@@ -82,10 +83,19 @@ public class CompareController {
         weights.put("wTrending", wTrending);
         weights.put("wSimilarity", wSimilarity);
 
-        List<ContentWithScore> result = recommendationService.getRecommendedFeedWithWeights(userId, weights);
+        // 使用自定义权重的推荐
+        List<ContentWithScore> personalized = recommendationService.getRecommendedFeedWithWeights(userId, weights);
+        
+        // 时间倒序对比组 (同样使用自定义权重计算评分，但按时间排序)
+        List<ContentWithScore> chronological = recommendationService.getChronologicalFeedWithScore(userId);
+
+        // 计算统计数据
+        Map<String, Object> stats = calculateCompareStats(personalized, chronological, userId);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("contents", result);
+        response.put("personalized", personalized.stream().limit(20).collect(Collectors.toList()));
+        response.put("chronological", chronological.stream().limit(20).collect(Collectors.toList()));
+        response.put("stats", stats);
         response.put("weights", weights);
         return response;
     }

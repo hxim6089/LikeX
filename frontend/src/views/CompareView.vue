@@ -149,7 +149,11 @@ const handleTunedWeights = async (weights) => {
   loading.value = true
   try {
     const res = await api.get('/compare/tuned', { params: { userId, ...weights } })
-    personalizedFeed.value = res.data.contents || []
+    personalizedFeed.value = res.data.personalized || []
+    chronologicalFeed.value = res.data.chronological || []
+    stats.value = res.data.stats || {}
+    
+    nextTick(() => renderBarChart())
   } catch (e) {
     console.error('Tuned feed failed', e)
   } finally {
