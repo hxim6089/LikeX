@@ -16,14 +16,16 @@ public class ContentService {
     private final com.example.rec.repository.TagRepository tagRepository;
     private final com.example.rec.repository.BehaviorRepository behaviorRepository;
     private final com.example.rec.repository.UserRepository userRepository;
+    private final AiTaggingService aiTaggingService;
 
-    public ContentService(ContentRepository contentRepository, RelationService relationService, NotificationService notificationService, com.example.rec.repository.TagRepository tagRepository, com.example.rec.repository.BehaviorRepository behaviorRepository, com.example.rec.repository.UserRepository userRepository) {
+    public ContentService(ContentRepository contentRepository, RelationService relationService, NotificationService notificationService, com.example.rec.repository.TagRepository tagRepository, com.example.rec.repository.BehaviorRepository behaviorRepository, com.example.rec.repository.UserRepository userRepository, AiTaggingService aiTaggingService) {
         this.contentRepository = contentRepository;
         this.relationService = relationService;
         this.notificationService = notificationService;
         this.tagRepository = tagRepository;
         this.behaviorRepository = behaviorRepository;
         this.userRepository = userRepository;
+        this.aiTaggingService = aiTaggingService;
     }
 
     /**
@@ -85,7 +87,7 @@ public class ContentService {
         content.setTitle("Tweet"); 
         content.setCategory("Life"); 
         
-        // Parse Hashtags
+        // Parse Hashtags (显式 #tag)
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("#([a-zA-Z0-9_\\u4e00-\\u9fa5]+)");
         java.util.regex.Matcher matcher = pattern.matcher(text);
         while (matcher.find()) {
@@ -95,7 +97,23 @@ public class ContentService {
             content.getTags().add(tag);
         }
         
-        return contentRepository.save(content);
+        Content saved = contentRepository.save(content);
+        
+        // AI 自动语义打标 (异步, 不阻塞发帖)
+        try {
+            new Thread(() -> {
+                try {
+                    aiTaggingService.tagContent(saved);
+                } catch (Exception e) {
+                    System.err.println("AI auto-tagging failed for content #" + saved.getId() + ": " + e.getMessage());
+                }
+            }).start();
+        } catch (Exception e) {
+            // AI 打标失败不影响正常发帖
+            System.err.println("Failed to start AI tagging thread: " + e.getMessage());
+        }
+        
+        return saved;
     }
 
     /**
