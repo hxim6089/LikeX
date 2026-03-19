@@ -17,7 +17,6 @@
                 active-text="📊" 
                 inactive-text="" 
                 size="small"
-                @change="fetchFeed"
             />
         </div>
     </div>
@@ -52,10 +51,10 @@
     
     <template v-for="(item, index) in items" :key="item.id || item.content?.id">
         <TweetCard 
-            :tweet="debugMode ? item.content : item" 
-            :scoreBreakdown="debugMode ? item.scoreBreakdown : null"
-            :rank="debugMode ? item.rank : 0"
-            :showScore="debugMode"
+            :tweet="isPersonalized ? (item.content || item) : item" 
+            :scoreBreakdown="isPersonalized ? item.scoreBreakdown : null"
+            :rank="isPersonalized ? item.rank : 0"
+            :showScore="isPersonalized && (debugMode || index < 5) && item.scoreBreakdown"
         />
         <!-- 每5条帖子插入1条广告 -->
         <AdCard 
@@ -160,22 +159,17 @@ const fetchFeed = async () => {
     loading.value = true;
     try {
         if (isPersonalized.value) {
-            // "For You" - 支持 debug 模式
+            // "推荐" - 始终获取带评分详情的数据 (前5条默认显示评分)
             const res = await api.get('/content/feed', { 
                 params: { 
                     personalized: true, 
                     userId,
-                    debug: debugMode.value  // Debug 参数
+                    debug: true  // 始终获取评分数据
                 } 
             });
-            // debug 模式返回结构不同
-            if (debugMode.value && res.data.debug) {
-                items.value = res.data.content;
-            } else {
-                items.value = res.data.content;
-            }
+            items.value = res.data.content;
         } else {
-            // "Following"
+            // "关注"
             const res = await api.get('/content/following', { params: { userId } });
             items.value = res.data.content;
         }
