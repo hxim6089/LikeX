@@ -79,12 +79,14 @@
          <TweetCard v-for="reply in tweet.replies" :key="reply.id" :tweet="reply" :is-reply="true" />
       </div>
       
-      <!-- Score Panel (Debug Mode for Presentation) -->
-      <ScorePanel 
-        :score="scoreBreakdown" 
-        :rank="rank" 
-        :visible="showScore && scoreBreakdown" 
-      />
+      <!-- Score Panel (推荐评分展示) -->
+      <div @click.stop>
+        <ScorePanel 
+          :score="scoreBreakdown" 
+          :rank="rank" 
+          :visible="showScore && scoreBreakdown" 
+        />
+      </div>
     </div>
   </div>
 
