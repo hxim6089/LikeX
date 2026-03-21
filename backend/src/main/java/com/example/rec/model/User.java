@@ -31,6 +31,9 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "custom_weights", columnDefinition = "TEXT")
+    private String customWeights; // JSON: {"wLike":0.8,"wReply":1.5,...}
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -60,6 +63,9 @@ public class User {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getCustomWeights() { return customWeights; }
+    public void setCustomWeights(String customWeights) { this.customWeights = customWeights; }
 
     @Override
     public boolean equals(Object o) {

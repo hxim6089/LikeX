@@ -4,7 +4,15 @@
     <p class="page-desc">左侧为个性化推荐排序，右侧为时间倒序排列，直观验证算法效果</p>
 
     <!-- 参数调节面板 -->
-    <WeightTuner @apply="handleTunedWeights" />
+    <WeightTuner @apply="handleTunedWeights" ref="weightTunerRef" />
+
+    <!-- 应用到主页按钮 -->
+    <div class="apply-to-home">
+      <el-button type="primary" @click="applyToHomepage" :loading="applying">
+        ⚡ 应用到主页推荐
+      </el-button>
+      <span v-if="applySuccess" class="apply-success">✅ 已应用到主页推荐</span>
+    </div>
 
     <!-- 管道漏斗图 -->
     <PipelineFunnel :stats="pipelineStats" v-if="pipelineStats" />
@@ -102,6 +110,7 @@
 <script setup>
 import { ref, onMounted, nextTick, watch } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import api from '../api'
 import * as echarts from 'echarts'
 import PipelineFunnel from '../components/PipelineFunnel.vue'
@@ -113,6 +122,10 @@ const stats = ref(null)
 const pipelineStats = ref(null)
 const loading = ref(false)
 const barChart = ref(null)
+const weightTunerRef = ref(null)
+const applying = ref(false)
+const applySuccess = ref(false)
+const lastTunedWeights = ref(null)
 let chartInstance = null
 
 const getCurrentUserId = () => {
@@ -146,6 +159,8 @@ const handleTunedWeights = async (weights) => {
   const userId = getCurrentUserId()
   if (!userId) return
 
+  lastTunedWeights.value = weights  // 保存当前调参
+  applySuccess.value = false
   loading.value = true
   try {
     const res = await api.get('/compare/tuned', { params: { userId, ...weights } })
@@ -158,6 +173,30 @@ const handleTunedWeights = async (weights) => {
     console.error('Tuned feed failed', e)
   } finally {
     loading.value = false
+  }
+}
+
+const applyToHomepage = async () => {
+  const userId = getCurrentUserId()
+  if (!userId) return
+
+  // 获取当前 WeightTuner 中的权重值
+  const weights = lastTunedWeights.value
+  if (!weights) {
+    ElMessage.warning('请先调整参数并点击“重新计算”后再应用')
+    return
+  }
+
+  applying.value = true
+  try {
+    await api.post('/weights/save', { userId, weights })
+    applySuccess.value = true
+    ElMessage.success('✅ 自定义算法参数已应用到主页推荐')
+  } catch (e) {
+    console.error('Apply weights failed', e)
+    ElMessage.error('应用失败')
+  } finally {
+    applying.value = false
   }
 }
 
@@ -417,5 +456,24 @@ onMounted(() => {
   gap: 12px;
   padding: 60px 0;
   color: #536471;
+}
+
+.apply-to-home {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.apply-success {
+  color: #28a745;
+  font-size: 14px;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 </style>

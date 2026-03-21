@@ -21,6 +21,12 @@
         </div>
     </div>
 
+    <!-- 自定义算法参数状态条 -->
+    <div class="custom-weights-bar" v-if="isPersonalized && hasCustomWeights">
+      <span class="custom-weights-text">⚡ 自定义算法参数生效中</span>
+      <el-button size="small" text type="warning" @click="resetWeights">恢复默认</el-button>
+    </div>
+
     <!-- Twitter Post Box (Simplified) -->
     <div class="compose-box">
         <div class="avatar">
@@ -95,6 +101,7 @@ const fileInput = ref(null)
 const selectedFile = ref(null)
 const previewImage = ref(null)
 const aiTagging = ref(false)
+const hasCustomWeights = ref(false)
 
 const route = useRoute()
 
@@ -206,7 +213,32 @@ const fetchAds = async () => {
 onMounted(() => {
     fetchFeed();
     fetchAds();
+    checkCustomWeights();
 })
+
+// 检查用户是否有自定义权重
+const checkCustomWeights = async () => {
+    if (!userId) return;
+    try {
+        const res = await api.get(`/weights/${userId}`);
+        hasCustomWeights.value = res.data.isCustom || false;
+    } catch (e) {
+        hasCustomWeights.value = false;
+    }
+}
+
+// 恢复默认权重
+const resetWeights = async () => {
+    if (!userId) return;
+    try {
+        await api.delete(`/weights/${userId}`);
+        hasCustomWeights.value = false;
+        ElMessage.success('已恢复默认算法参数');
+        fetchFeed(); // 刷新推荐结果
+    } catch (e) {
+        ElMessage.error('恢复失败');
+    }
+}
 </script>
 
 <style scoped>
@@ -305,6 +337,22 @@ onMounted(() => {
     align-items: center;
     padding: 0 16px;
     border-left: 1px solid #eff3f4;
+}
+
+.custom-weights-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #fff7e6 0%, #fff3cd 100%);
+    border-bottom: 1px solid #ffeeba;
+}
+
+.custom-weights-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #856404;
 }
 
 .ai-tag-hint {

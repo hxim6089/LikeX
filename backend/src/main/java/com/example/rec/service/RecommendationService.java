@@ -18,17 +18,20 @@ public class RecommendationService {
     private final RelationService relationService;
     private final NegativeSignalService negativeSignalService;
     private final BehaviorRepository behaviorRepository;
+    private final com.example.rec.repository.UserRepository userRepository;
 
     public RecommendationService(ContentRepository contentRepository, 
                                   HybridRecommendationStrategy strategy, 
                                   RelationService relationService, 
                                   NegativeSignalService negativeSignalService,
-                                  BehaviorRepository behaviorRepository) {
+                                  BehaviorRepository behaviorRepository,
+                                  com.example.rec.repository.UserRepository userRepository) {
         this.contentRepository = contentRepository;
         this.strategy = strategy;
         this.relationService = relationService;
         this.negativeSignalService = negativeSignalService;
         this.behaviorRepository = behaviorRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -68,11 +71,39 @@ public class RecommendationService {
     }
 
     /**
-     * 带评分详情的推荐 Feed（用于答辩展示 Debug 模式）
+     * 带评分详情的推荐 Feed（用于主页 Debug 模式）
+     * 优先使用用户自定义权重，如果没有则走默认权重
      */
     public List<com.example.rec.dto.ContentWithScore> getRecommendedFeedWithScore(Long userId) {
         List<Content> finalCandidates = buildCandidatePool(userId);
+
+        // 检查用户是否有自定义权重
+        Map<String, Double> customWeights = loadUserCustomWeights(userId);
+        if (customWeights != null) {
+            return strategy.recommendWithScore(userId, finalCandidates, customWeights);
+        }
         return strategy.recommendWithScore(userId, finalCandidates);
+    }
+
+    /**
+     * 读取用户自定义权重（从 User.customWeights JSON 字段）
+     * 返回 null 表示使用默认权重
+     */
+    private Map<String, Double> loadUserCustomWeights(Long userId) {
+        if (userId == null) return null;
+        try {
+            Optional<com.example.rec.model.User> opt = userRepository.findById(userId);
+            if (opt.isPresent() && opt.get().getCustomWeights() != null) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                return mapper.readValue(
+                        opt.get().getCustomWeights(),
+                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Double>>() {}
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to load custom weights for user " + userId + ": " + e.getMessage());
+        }
+        return null;
     }
 
     /**
