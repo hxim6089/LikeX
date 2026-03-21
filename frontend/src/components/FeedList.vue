@@ -42,6 +42,12 @@
           </div>
           <button class="post-btn" @click="publishTweet" :disabled="!tweetContent && !selectedFile">发布</button>
         </div>
+        <div class="ai-tag-hint">
+          <transition name="fade">
+            <span v-if="aiTagging" class="ai-analyzing">✨ AI 正在分析标签...</span>
+            <span v-else>🤖 AI 将自动分析内容并添加智能标签</span>
+          </transition>
+        </div>
       </div>
     </div>
     
@@ -88,6 +94,7 @@ const tweetContent = ref('')
 const fileInput = ref(null)
 const selectedFile = ref(null)
 const previewImage = ref(null)
+const aiTagging = ref(false)
 
 const route = useRoute()
 
@@ -143,7 +150,13 @@ const publishTweet = async () => {
         ElMessage.success('发布成功!');
         tweetContent.value = '';
         removeImage();
-        fetchFeed();
+        
+        // AI 打标签动态提示
+        aiTagging.value = true;
+        setTimeout(() => {
+            aiTagging.value = false;
+            fetchFeed(); // AI 打标完成后刷新
+        }, 3000);
     } catch (e) {
         console.error(e);
         ElMessage.error('发布失败');
@@ -292,5 +305,31 @@ onMounted(() => {
     align-items: center;
     padding: 0 16px;
     border-left: 1px solid #eff3f4;
+}
+
+.ai-tag-hint {
+    padding: 6px 0 2px;
+    font-size: 12px;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ai-analyzing {
+    color: #1DA1F2;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.fade-enter-active, .fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+    opacity: 0;
 }
 </style>

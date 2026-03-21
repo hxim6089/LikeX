@@ -22,6 +22,16 @@
         </template>
       </div>
 
+      <!-- AI 智能标签展示 -->
+      <div class="tweet-tags" v-if="tweet.tags && tweet.tags.length" @click.stop>
+        <span class="tag-item" 
+              v-for="tag in tweet.tags" 
+              :key="tag.id" 
+              @click="handleTagClick('#' + tag.name)">
+          #{{ tag.name }}
+        </span>
+      </div>
+
       <div v-if="tweet.imageUrl" class="tweet-image">
         <img :src="tweet.imageUrl" loading="lazy" />
       </div>
@@ -526,5 +536,26 @@ const submitQuote = async () => {
     max-height: 150px;
     border-radius: 12px;
     object-fit: cover;
+}
+
+/* AI 智能标签 */
+.tweet-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin-top: 8px;
+}
+
+.tag-item {
+    color: #1DA1F2;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tag-item:hover {
+    text-decoration: underline;
+    color: #0d8bd9;
 }
 </style>
