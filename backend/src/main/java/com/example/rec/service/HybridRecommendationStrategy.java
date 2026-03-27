@@ -310,6 +310,14 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         // 应用作者多样性惩罚
         applyAuthorDiversityPenaltyWithDetails(scoredList);
 
+        // 添加随机抖动 (±15%) 以确保每次刷新结果不同 (Exploration-Exploitation)
+        Random jitterRandom = new Random();
+        for (ScoredContentWithDetails sc : scoredList) {
+            double jitterFactor = 0.85 + (jitterRandom.nextDouble() * 0.30); // 0.85 ~ 1.15
+            double jitteredScore = sc.getFinalScore() * jitterFactor;
+            sc.getBreakdown().setFinalScore(Math.round(jitteredScore * 100.0) / 100.0);
+        }
+
         // 排序并构建返回结果
         scoredList.sort(Comparator.comparingDouble(ScoredContentWithDetails::getFinalScore).reversed());
         
