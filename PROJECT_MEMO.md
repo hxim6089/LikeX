@@ -1,8 +1,8 @@
 # 推荐系统项目备忘录 (Project Memo)
 
-> **最后更新时间**: 2026-01-27 21:50
+> **最后更新时间**: 2026-03-27 23:08
 > **项目名称**: recommendation-system (类Twitter推荐系统)
-> **技术栈**: Spring Boot 3.2.1 + Vue 3 + MySQL + Redis
+> **技术栈**: Spring Boot 3.2.1 + Vue 3 + MySQL + Redis + ECharts
 
 ---
 
@@ -25,10 +25,14 @@
 - 用户认证与个人资料管理
 - 内容发布（帖子、评论、图片）
 - 社交互动（点赞、评论、关注、转发、引用）
-- 智能推荐算法（混合推荐策略）
+- 智能推荐算法（混合推荐策略 + TF-IDF 内容相似度）
 - 实时通知（WebSocket）
-- 用户画像分析
+- 用户画像分析（多维度可视化）
 - 负面信号过滤（屏蔽、静音、不感兴趣）
+- AI 集成基础设施（支持本地/远程大模型）
+- 广告智能分发
+- 算法可视化与对比实验（答辩展示）
+- 外部数据导入（Python 爬虫）
 
 ---
 
@@ -94,21 +98,40 @@
 | 功能 | 状态 | 说明 |
 |------|------|------|
 | 混合推荐策略 | ✅ | HybridRecommendationStrategy.java |
-| 双候选源 | ✅ | In-Network + Out-of-Network |
-| 多行为加权评分 | ✅ | 点赞0.5 + 评论1.2 + 转发2.0 |
-| 时间衰减 | ✅ | 对数衰减函数 |
-| 作者多样性惩罚 | ✅ | 同作者多篇降权 |
-| 个性化加成 | ✅ | 匹配用户兴趣标签 |
+| 双候选源 | ✅ | In-Network (Thunder) + Out-of-Network (Phoenix) |
+| 多行为加权评分 | ✅ | like×0.5 + comment×1.2 + repost×2.0 + quote×1.8 |
+| 分段时间衰减 | ✅ | 0-6h黄金期 / 6-24h正常 / 24-72h加速 / 72h+对数长尾 |
+| 作者多样性惩罚 | ✅ | 同作者多篇降权 (×0.7^N) |
+| 个性化标签匹配 | ✅ | 匹配用户兴趣标签 +100分 |
+| TF-IDF 内容相似度 | ✅ | 余弦相似度 × 80.0 加成 |
 | 负面信号过滤 | ✅ | 屏蔽/静音/不感兴趣 |
-| 热门话题加成 | ✅ | TrendingService |
+| 热门话题加成 | ✅ | TrendingService ×50.0 |
 | 协同过滤 | ✅ | CollaborativeFilteringService |
 | 互动率因子 | ✅ | 高互动率内容加分 |
+| 随机抖动 (Jitter) | ✅ | ±15% 随机抖动确保每次刷新结果不同 |
+| 加权随机采样 | ✅ | Exploration-Exploitation 机制 |
+| 动态权重调节 | ✅ | 前端参数调节面板，按用户存储自定义权重 |
+| 算法对比实验 | ✅ | 推荐流 vs 时间流并排对比 |
+| 管道漏斗图 | ✅ | 候选池 → 过滤 → 评分 → 多样性 可视化 |
 
 ### ✅ 用户画像
 | 功能 | 状态 | 说明 |
 |------|------|------|
 | 兴趣标签分析 | ✅ | 基于点赞行为统计分类 |
-| 画像称号 | ✅ | Tech Enthusiast, Life Observer 等 |
+| 兴趣衰减评分 | ✅ | 30/60/90天分段计算，趋势判断 (rising/falling/stable) |
+| 用户行为分型 | ✅ | Creator / Interactor / Consumer 三角模型 |
+| 活跃度等级 | ✅ | Power User / High / Medium / Low |
+| 活跃时段分布 | ✅ | 24小时 ECharts 柱状图 + 峰值高亮 |
+| 内容偏好分析 | ✅ | 阅读长度/图片偏好/话题多样性 |
+| 概览仪表盘 | ✅ | 6指标摘要面板 (用户类型/活跃度/阅读偏好/图片偏好/多样性/夜猫子) |
+| 分类偏好环形图 | ✅ | ECharts 饼图，中心显示总点赞数 |
+| 兴趣词云 | ✅ | echarts-wordcloud 可视化 |
+| 行为雷达图 | ✅ | 点赞/评论/转发/浏览 四维雷达 |
+| 推荐匹配度 | ✅ | 基于互动行为计算匹配准确度 |
+| 画像卡片导出 | ✅ | html2canvas 导出 PNG |
+| 关注数/粉丝数 | ✅ | 实时查询数据库 |
+| 加入时间 | ✅ | 从 createdAt 动态格式化 |
+| 入场动画 | ✅ | CSS stagger fadeSlideUp |
 | Redis缓存 | ⚠️ | 需要LocalDateTime转String避免序列化错误 |
 
 ### ✅ 实时通知
@@ -135,33 +158,46 @@
 ### 1. 推荐算法流程
 
 ```
-用户请求Feed → 获取候选内容 → 应用负面信号过滤 → 计算评分 → 排序 → 返回结果
+用户请求Feed → 构建候选池(In-Network+Out-of-Network)
+→ 负面信号过滤 → 多因子评分 → 作者多样性惩罚
+→ 随机抖动(±15%) → 排序 → 返回结果
 ```
 
 **评分公式**:
 ```
-finalScore = baseScore × 行为权重 × (1 + 个性化加成) × 时间衰减 × 作者多样性惩罚
+finalScore = (baseEngagement / timeDecay)
+           + personalizationBoost
+           + tfidfSimilarity
+           + trendingBoost
+           + jitter(±15%)
 ```
 
 **行为权重**:
-- VIEW: 0.1
+- VIEW: 0.05
 - LIKE: 0.5
-- COMMENT: 1.0
-- REPOST: 1.5
-- QUOTE: 2.0
+- COMMENT: 1.2
+- REPOST: 2.0
+- QUOTE: 1.8
 
-**时间衰减**: 
-- 超过48小时的内容分数乘以0.5
+**分段时间衰减**:
+- 0-6h: 黄金期（几乎不衰减）
+- 6-24h: 正常指数衰减
+- 24-72h: 加速衰减
+- 72h+: 对数长尾衰减
 
 ### 2. 用户画像计算
 
 ```java
 // PersonaService.getUserPersona(userId)
-1. 查询用户基础信息
-2. 获取用户所有LIKE行为
-3. 统计点赞内容的分类分布
-4. 取Top3分类作为兴趣标签
-5. 根据第一兴趣分类生成称号
+1. 查询用户基础信息 + 关注数/粉丝数
+2. 获取用户所有行为记录 (VIEW/LIKE/COMMENT/REPOST)
+3. 计算兴趣标签分布 (Top3 分类)
+4. 兴趣衰减评分 (30/60/90天分段)
+5. 用户行为分型 (Creator/Interactor/Consumer)
+6. 活跃度等级 + 活跃时段分布
+7. 内容偏好分析 (阅读长度/图片偏好/话题多样性)
+8. 词云数据生成
+9. 生成称号 + 推荐匹配度
 ```
 
 ### 3. WebSocket通知机制
@@ -279,7 +315,7 @@ finalScore = baseScore × 行为权重 × (1 + 个性化加成) × 时间衰减 
 |------|------|------|
 | POST | `/api/upload` | 上传文件 |
 
-### 搜索 (SearchController) - Phase 26 新增
+### 搜索 (SearchController) - Phase 26
 | 方法 | 端点 | 说明 |
 |------|------|------|
 | GET | `/api/search` | 综合搜索 (帖子/用户/话题) |
@@ -288,10 +324,38 @@ finalScore = baseScore × 行为权重 × (1 + 个性化加成) × 时间衰减 
 | GET | `/api/search?type=topics` | 仅搜索话题 |
 | GET | `/api/search/suggest` | 搜索建议 (自动补全) |
 
-### 热门话题 (TrendingController) - Phase 26 新增
+### 热门话题 (TrendingController) - Phase 26
 | 方法 | 端点 | 说明 |
 |------|------|------|
 | GET | `/api/trending` | 获取热门话题列表 |
+
+### AI 助手 (AiController)
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| POST | `/api/ai/chat` | AI 问答对话 (支持 Ollama/OpenAI) |
+
+### 广告 (AdController)
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/api/ads/relevant` | 获取用户匹配广告 |
+
+### 数据导入 (ImportController)
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| POST | `/api/import/scraped-data` | 导入 Python 爬虫抓取的数据 |
+
+### 算法对比 (ExperimentController) - Phase 28
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/api/experiment/compare` | 获取推荐流 vs 时间流对比数据 |
+| GET | `/api/experiment/pipeline` | 获取管道漏斗图数据 |
+
+### 权重调节 (WeightsController) - Phase 28
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/api/weights/{userId}` | 获取用户自定义权重 |
+| PUT | `/api/weights/{userId}` | 保存用户自定义权重 |
+| DELETE | `/api/weights/{userId}` | 恢复默认权重 |
 
 ---
 
@@ -373,3 +437,10 @@ finalScore = baseScore × 行为权重 × (1 + 个性化加成) × 时间衰减 
 | 2026-01-29 | **Phase 26**: 前端新增 UserCard, TopicCard 组件 |
 | 2026-01-29 | **Phase 26**: 更新 SearchView 添加标签页切换 |
 | 2026-01-29 | **Phase 26**: 更新 RightPanel 热门话题展示和搜索建议 |
+| 2026-03-27 | **Phase 29**: 精细化用户画像 - 概览仪表盘(6指标) |
+| 2026-03-27 | **Phase 29**: 分类偏好进度条改为 ECharts 环形饼图 |
+| 2026-03-27 | **Phase 29**: 活跃时段热力图改为 ECharts 柱状图 |
+| 2026-03-27 | **Phase 29**: 新增卡片逐级淡入动画 |
+| 2026-03-27 | **Phase 29**: 修复关注数/粉丝数/加入时间硬编码问题 |
+| 2026-03-27 | **修复**: 推荐流每次刷新结果相同 - 添加±15%随机抖动 |
+
