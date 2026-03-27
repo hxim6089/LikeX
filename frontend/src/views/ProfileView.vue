@@ -1,6 +1,6 @@
 <template>
   <Layout>
-    <div class="profile-container">
+    <div class="profile-container" :class="{ 'insights-expanded': activeTab === 'insights' }">
         <!-- Header / Banner -->
         <div class="profile-header">
             <div class="back-btn" @click="$router.back()">
@@ -328,6 +328,10 @@ watch(() => route.query.userId, loadData); // reload on route change
     max-width: 600px;
     border-right: 1px solid #eff3f4;
     min-height: 100vh;
+    transition: max-width 0.3s ease;
+}
+.profile-container.insights-expanded {
+    max-width: 800px;
 }
 .profile-header {
     display: flex;
@@ -444,7 +448,7 @@ watch(() => route.query.userId, loadData); // reload on route change
 /* Overview Dashboard */
 .overview-dashboard {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 12px;
     margin-bottom: 20px;
     padding: 20px;

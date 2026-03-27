@@ -162,7 +162,7 @@ watch(() => props.data, () => {
 
 .chart {
   width: 100%;
-  height: 260px;
+  height: 300px;
 }
 
 .empty-state {
