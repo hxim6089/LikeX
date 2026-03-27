@@ -65,4 +65,12 @@ public class RelationService {
                 .limit(5)
                 .collect(Collectors.toList());
     }
+
+    public long countFollowing(Long userId) {
+        return followRepository.countByFollowerId(userId);
+    }
+
+    public long countFollowers(Long userId) {
+        return followRepository.countByFolloweeId(userId);
+    }
 }

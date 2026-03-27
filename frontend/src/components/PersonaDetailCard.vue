@@ -54,21 +54,12 @@
       </div>
     </div>
 
-    <!-- 活跃时段热力图 -->
+    <!-- 活跃时段柱状图 -->
     <div class="section time-section" v-if="persona.hourlyDistribution">
       <h4>🕐 活跃时段分布</h4>
-      <div class="time-content">
-        <div class="heatmap">
-          <div class="heat-cell" v-for="h in persona.hourlyDistribution" :key="h.hour"
-               :style="{ background: heatColor(h.count) }"
-               :title="h.hour + ':00 — ' + h.count + '次'"
-               :class="{ peak: persona.peakHours && persona.peakHours.includes(h.hour) }">
-            <span class="cell-hour" v-if="h.hour % 4 === 0">{{ h.hour }}</span>
-          </div>
-        </div>
-        <div class="night-owl" v-if="persona.nightOwlIndex !== undefined">
-          🦉 夜猫子指数：<strong>{{ Math.round(persona.nightOwlIndex * 100) }}%</strong>
-        </div>
+      <div ref="timeBarChart" class="time-bar-chart"></div>
+      <div class="night-owl" v-if="persona.nightOwlIndex !== undefined">
+        🦉 夜猫子指数：<strong>{{ Math.round(persona.nightOwlIndex * 100) }}%</strong>
       </div>
     </div>
 
@@ -99,7 +90,9 @@ const props = defineProps({
 })
 
 const radarChart = ref(null)
+const timeBarChart = ref(null)
 let chartInstance = null
+let timeChartInstance = null
 
 const activityColor = computed(() => {
   const level = props.persona?.activityLevel
@@ -134,6 +127,51 @@ const heatColor = (count) => {
   return `rgba(${r}, ${g}, ${b}, ${0.2 + intensity * 0.8})`
 }
 
+const renderTimeBar = () => {
+  if (!timeBarChart.value || !props.persona?.hourlyDistribution) return
+  if (!timeChartInstance) {
+    timeChartInstance = echarts.init(timeBarChart.value)
+  }
+
+  const hours = props.persona.hourlyDistribution.map(h => h.hour + ':00')
+  const counts = props.persona.hourlyDistribution.map(h => h.count || 0)
+  const peaks = props.persona.peakHours || []
+
+  timeChartInstance.setOption({
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params) => params[0].name + '<br/>行为次数: ' + params[0].value
+    },
+    grid: { left: '8%', right: '4%', bottom: '14%', top: '8%' },
+    xAxis: {
+      type: 'category',
+      data: hours,
+      axisLabel: {
+        interval: 3,
+        fontSize: 11,
+        color: '#536471'
+      },
+      axisLine: { lineStyle: { color: '#e1e8ed' } }
+    },
+    yAxis: {
+      type: 'value',
+      splitLine: { lineStyle: { color: '#f0f0f0' } },
+      axisLabel: { fontSize: 11, color: '#AAB8C2' }
+    },
+    series: [{
+      type: 'bar',
+      data: counts.map((val, i) => ({
+        value: val,
+        itemStyle: {
+          color: peaks.includes(i) ? '#1DA1F2' : '#d4e8f7',
+          borderRadius: [4, 4, 0, 0]
+        }
+      })),
+      barWidth: '60%'
+    }]
+  })
+}
+
 const renderRadar = () => {
   if (!radarChart.value || !props.persona?.userTypeDetail) return
   if (!chartInstance) {
@@ -164,8 +202,13 @@ const renderRadar = () => {
   })
 }
 
-onMounted(() => nextTick(renderRadar))
-watch(() => props.persona, () => nextTick(renderRadar), { deep: true })
+const renderAll = () => {
+  renderRadar()
+  renderTimeBar()
+}
+
+onMounted(() => nextTick(renderAll))
+watch(() => props.persona, () => nextTick(renderAll), { deep: true })
 </script>
 
 <style scoped>
@@ -288,33 +331,10 @@ watch(() => props.persona, () => nextTick(renderRadar), { deep: true })
 
 .int-trend { font-size: 14px; min-width: 20px; }
 
-/* 热力图 */
-.heatmap {
-  display: flex;
-  gap: 2px;
-  margin-bottom: 8px;
-}
-
-.heat-cell {
-  flex: 1;
-  height: 32px;
-  border-radius: 4px;
-  position: relative;
-  min-width: 0;
-  cursor: default;
-}
-
-.heat-cell.peak {
-  border: 2px solid #1DA1F2;
-}
-
-.cell-hour {
-  position: absolute;
-  bottom: -16px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 10px;
-  color: #AAB8C2;
+/* 活跃时段柱状图 */
+.time-bar-chart {
+  width: 100%;
+  height: 200px;
 }
 
 .night-owl {

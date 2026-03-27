@@ -44,11 +44,12 @@
                 <div class="bio">{{ persona.bio }}</div>
                 
                 <div class="meta-row">
-                    <span class="meta-item"><el-icon><Calendar /></el-icon> Joined December 2025</span>
+                    <span class="meta-item"><el-icon><Calendar /></el-icon> Joined {{ formatJoinDate(persona.createdAt) }}</span>
                 </div>
 
                 <div class="follow-stats">
-                    <span><strong>120</strong> Following</span>
+                    <span><strong>{{ persona.followingCount || 0 }}</strong> Following</span>
+                    <span><strong>{{ persona.followerCount || 0 }}</strong> Followers</span>
                     <span><strong>{{ persona.totalLikes || 0 }}</strong> Likes</span>
                 </div>
             </div>
@@ -76,21 +77,63 @@
                 <h3>🎯 用户画像分析</h3>
                 <p class="persona-title">{{ persona.personaTitle }}</p>
             </div>
+
+            <!-- 概览仪表盘 -->
+            <div class="overview-dashboard animate-in" style="animation-delay: 0s">
+                <div class="overview-item">
+                    <span class="ov-icon">🧬</span>
+                    <span class="ov-value">{{ persona.userTypeDetail?.label || persona.userTypeDetail?.type || '—' }}</span>
+                    <span class="ov-label">用户类型</span>
+                </div>
+                <div class="overview-item">
+                    <span class="ov-icon">⚡</span>
+                    <span class="ov-value">{{ persona.activityLevel || '—' }}<small v-if="persona.activityScore">({{ persona.activityScore }}分)</small></span>
+                    <span class="ov-label">活跃度</span>
+                </div>
+                <div class="overview-item">
+                    <span class="ov-icon">📏</span>
+                    <span class="ov-value">{{ readPrefLabel }}</span>
+                    <span class="ov-label">阅读偏好</span>
+                </div>
+                <div class="overview-item">
+                    <span class="ov-icon">🖼️</span>
+                    <span class="ov-value">{{ Math.round((persona.contentPreference?.imagePreference || 0) * 100) }}%</span>
+                    <span class="ov-label">图片偏好</span>
+                </div>
+                <div class="overview-item">
+                    <span class="ov-icon">🌐</span>
+                    <span class="ov-value">{{ Math.round((persona.contentPreference?.topicDiversity || 0) * 100) }}%</span>
+                    <span class="ov-label">话题多样性</span>
+                </div>
+                <div class="overview-item">
+                    <span class="ov-icon">🦉</span>
+                    <span class="ov-value">{{ Math.round((persona.nightOwlIndex || 0) * 100) }}%</span>
+                    <span class="ov-label">夜猫子指数</span>
+                </div>
+            </div>
             
             <!-- 兴趣词云 -->
-            <InterestWordCloud :data="persona.wordCloudData || []" />
+            <div class="animate-in" style="animation-delay: 0.1s">
+              <InterestWordCloud :data="persona.wordCloudData || []" />
+            </div>
             
             <!-- 行为雷达图 -->
-            <BehaviorRadarChart :stats="persona.behaviorStats || {}" />
+            <div class="animate-in" style="animation-delay: 0.2s">
+              <BehaviorRadarChart :stats="persona.behaviorStats || {}" />
+            </div>
             
-            <!-- 分类偏好进度条 -->
-            <MatchRateBar 
-                :data="persona.categoryDistribution || []" 
-                :matchRate="persona.recommendationMatchRate" 
-            />
+            <!-- 分类偏好 -->
+            <div class="animate-in" style="animation-delay: 0.3s">
+              <MatchRateBar 
+                  :data="persona.categoryDistribution || []" 
+                  :matchRate="persona.recommendationMatchRate" 
+              />
+            </div>
 
             <!-- Phase 29: 精细化画像 -->
-            <PersonaDetailCard :persona="persona" />
+            <div class="animate-in" style="animation-delay: 0.4s">
+              <PersonaDetailCard :persona="persona" />
+            </div>
         </div>
 
         <!-- Edit Modal (Simplified reuse) -->
@@ -123,7 +166,7 @@ import InterestWordCloud from '../components/InterestWordCloud.vue'
 import BehaviorRadarChart from '../components/BehaviorRadarChart.vue'
 import MatchRateBar from '../components/MatchRateBar.vue'
 import PersonaDetailCard from '../components/PersonaDetailCard.vue'
-import { ref, onMounted, reactive, watch } from 'vue'
+import { ref, onMounted, reactive, watch, computed } from 'vue'
 import { ArrowLeft, Calendar, Message } from '@element-plus/icons-vue'
 import api from '../api'
 import { useRoute, useRouter } from 'vue-router'
@@ -142,7 +185,24 @@ const isOwnProfile = ref(true);
 const editForm = reactive({ handle: '', bio: '', avatarUrl: '' })
 
 const isFollowing = ref(false);
-const activeTab = ref('posts'); // posts, replies, likes
+const activeTab = ref('posts');
+
+const readPrefLabel = computed(() => {
+    const len = persona.value?.contentPreference?.avgReadLength
+    if (len === 'long') return '长文爱好者'
+    if (len === 'medium') return '中等篇幅'
+    if (len === 'short') return '快餐阅读'
+    return '未知'
+})
+
+const formatJoinDate = (dateStr) => {
+    if (!dateStr) return 'Unknown'
+    try {
+        const d = new Date(dateStr)
+        const months = ['January','February','March','April','May','June','July','August','September','October','November','December']
+        return months[d.getMonth()] + ' ' + d.getFullYear()
+    } catch { return dateStr }
+}
 
 const loadData = async () => {
     const queryId = route.query.userId;
@@ -379,5 +439,55 @@ watch(() => route.query.userId, loadData); // reload on route change
     font-size: 16px;
     color: #1da1f2;
     font-weight: 600;
+}
+
+/* Overview Dashboard */
+.overview-dashboard {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.overview-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    border-radius: 12px;
+    background: #f7f9fa;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.overview-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(29, 161, 242, 0.15);
+}
+
+.ov-icon { font-size: 24px; }
+.ov-value { font-size: 14px; font-weight: 700; color: #0f1419; text-align: center; }
+.ov-value small { font-size: 11px; font-weight: 500; color: #536471; margin-left: 2px; }
+.ov-label { font-size: 11px; color: #536471; }
+
+/* Staggered Fade-in Animation */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-in {
+    animation: fadeSlideUp 0.4s ease forwards;
+    opacity: 0;
 }
 </style>

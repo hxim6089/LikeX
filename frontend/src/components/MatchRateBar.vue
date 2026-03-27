@@ -1,21 +1,7 @@
 <template>
   <div class="match-rate-container">
     <h4 class="section-title">📈 分类偏好分布</h4>
-    <div v-if="data && data.length > 0" class="bars">
-      <div v-for="item in data" :key="item.category" class="bar-item">
-        <div class="bar-header">
-          <span class="category-name">{{ getCategoryLabel(item.category) }}</span>
-          <span class="percentage">{{ item.percentage }}%</span>
-        </div>
-        <div class="bar-bg">
-          <div 
-            class="bar-fill" 
-            :style="{ width: item.percentage + '%', background: getCategoryColor(item.category) }"
-          ></div>
-        </div>
-        <div class="count-text">{{ item.count }} 次点赞</div>
-      </div>
-    </div>
+    <div v-if="data && data.length > 0" ref="chartRef" class="chart"></div>
     <div v-else class="empty-state">
       <p>暂无分类数据</p>
       <small>多浏览和点赞内容来生成分析！</small>
@@ -38,6 +24,9 @@
 </template>
 
 <script setup>
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import * as echarts from 'echarts'
+
 const props = defineProps({
   data: {
     type: Array,
@@ -48,6 +37,9 @@ const props = defineProps({
     default: null
   }
 })
+
+const chartRef = ref(null)
+let chart = null
 
 const getCategoryLabel = (category) => {
   const labels = {
@@ -63,15 +55,93 @@ const getCategoryLabel = (category) => {
 
 const getCategoryColor = (category) => {
   const colors = {
-    'Tech': 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-    'Life': 'linear-gradient(90deg, #11998e 0%, #38ef7d 100%)',
-    'Sports': 'linear-gradient(90deg, #fc4a1a 0%, #f7b733 100%)',
-    'News': 'linear-gradient(90deg, #4facfe 0%, #00f2fe 100%)',
-    'Entertainment': 'linear-gradient(90deg, #f093fb 0%, #f5576c 100%)',
-    'Finance': 'linear-gradient(90deg, #ffecd2 0%, #fcb69f 100%)'
+    'Tech': '#667eea',
+    'Life': '#17bf63',
+    'Sports': '#fc4a1a',
+    'News': '#4facfe',
+    'Entertainment': '#f093fb',
+    'Finance': '#fcb69f'
   }
-  return colors[category] || 'linear-gradient(90deg, #1da1f2 0%, #0d8bd9 100%)'
+  return colors[category] || '#1da1f2'
 }
+
+const initChart = () => {
+  if (!chartRef.value || !props.data || props.data.length === 0) return
+  
+  if (chart) {
+    chart.dispose()
+  }
+  
+  chart = echarts.init(chartRef.value)
+  
+  const totalLikes = props.data.reduce((sum, d) => sum + (d.count || 0), 0)
+  
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}: {c} 次 ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      right: '5%',
+      top: 'center',
+      textStyle: { fontSize: 13, color: '#536471' },
+      formatter: (name) => getCategoryLabel(name)
+    },
+    series: [{
+      type: 'pie',
+      radius: ['45%', '72%'],
+      center: ['35%', '50%'],
+      avoidLabelOverlap: false,
+      itemStyle: {
+        borderRadius: 8,
+        borderColor: '#fff',
+        borderWidth: 3
+      },
+      label: {
+        show: true,
+        position: 'center',
+        formatter: () => totalLikes + '\n总点赞',
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#0f1419',
+        lineHeight: 24
+      },
+      emphasis: {
+        label: {
+          show: true,
+          fontSize: 20,
+          fontWeight: 'bold'
+        }
+      },
+      data: props.data.map(item => ({
+        name: item.category,
+        value: item.count || 0,
+        itemStyle: { color: getCategoryColor(item.category) }
+      }))
+    }]
+  }
+  
+  chart.setOption(option)
+}
+
+const handleResize = () => {
+  if (chart) chart.resize()
+}
+
+onMounted(() => {
+  setTimeout(initChart, 100)
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  if (chart) chart.dispose()
+  window.removeEventListener('resize', handleResize)
+})
+
+watch(() => props.data, () => {
+  setTimeout(initChart, 100)
+}, { deep: true })
 </script>
 
 <style scoped>
@@ -90,52 +160,9 @@ const getCategoryColor = (category) => {
   color: #0f1419;
 }
 
-.bars {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.bar-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.bar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.category-name {
-  font-weight: 600;
-  color: #0f1419;
-  font-size: 15px;
-}
-
-.percentage {
-  font-weight: 700;
-  color: #1da1f2;
-  font-size: 15px;
-}
-
-.bar-bg {
-  height: 10px;
-  background: #e9ecef;
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.bar-fill {
-  height: 100%;
-  border-radius: 5px;
-  transition: width 0.5s ease;
-}
-
-.count-text {
-  font-size: 12px;
-  color: #536471;
+.chart {
+  width: 100%;
+  height: 260px;
 }
 
 .empty-state {

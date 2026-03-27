@@ -19,11 +19,13 @@ public class PersonaService {
     private final BehaviorRepository behaviorRepository;
     private final ContentRepository contentRepository;
     private final UserRepository userRepository;
+    private final com.example.rec.repository.FollowRepository followRepository;
 
-    public PersonaService(BehaviorRepository behaviorRepository, ContentRepository contentRepository, UserRepository userRepository) {
+    public PersonaService(BehaviorRepository behaviorRepository, ContentRepository contentRepository, UserRepository userRepository, com.example.rec.repository.FollowRepository followRepository) {
         this.behaviorRepository = behaviorRepository;
         this.contentRepository = contentRepository;
         this.userRepository = userRepository;
+        this.followRepository = followRepository;
     }
 
     /**
@@ -54,6 +56,10 @@ public class PersonaService {
             result.put("avatarUrl", user.getAvatarUrl() != null ? user.getAvatarUrl() : "");
             result.put("bio", user.getBio() != null ? user.getBio() : "");
             result.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : "");
+
+            // 关注/粉丝计数
+            result.put("followingCount", followRepository.countByFollowerId(userId));
+            result.put("followerCount", followRepository.countByFolloweeId(userId));
 
             // ========== 行为数据 ==========
             List<Behavior> allBehaviors = behaviorRepository.findByUserId(userId);
