@@ -64,7 +64,7 @@
         </div>
 
         <!-- Feed -->
-        <div class="profile-feed" v-show="activeTab !== 'insights'">
+        <div class="profile-feed" v-if="activeTab !== 'insights'">
              <div v-for="tweet in posts" :key="tweet.id" class="feed-item">
                  <TweetCard :tweet="tweet" />
              </div>
@@ -72,7 +72,7 @@
         </div>
         
         <!-- Insights Panel (Phase 27: 答辩展示) -->
-        <div class="insights-panel" v-show="activeTab === 'insights'">
+        <div class="insights-panel" v-if="activeTab === 'insights'">
             <div class="insights-header">
                 <h3>🎯 用户画像分析</h3>
                 <p class="persona-title">{{ persona.personaTitle }}</p>
