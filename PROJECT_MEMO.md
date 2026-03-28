@@ -445,4 +445,5 @@ finalScore = (baseEngagement / timeDecay)
 | 2026-03-27 | **修复**: 推荐流每次刷新结果相同 - 添加±15%随机抖动 |
 | 2026-03-27 | **修复**: Insights 面板显示比例 - 宽度扩展800px + 图表高度增加 |
 | 2026-03-27 | **新增**: Admin Dashboard 画像详情弹窗 (📊 详情按钮) |
+| 2026-03-28 | **修复**: Insights ECharts 图表尺寸异常 - v-show→v-if 避免隐藏容器初始化 |
 
