@@ -60,6 +60,7 @@ const goToMyProfile = () => {
 const handleLogout = () => {
     if(confirm('确定要退出登录吗?')) {
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
         router.push('/login');
     }
 }

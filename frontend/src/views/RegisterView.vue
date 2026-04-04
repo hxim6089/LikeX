@@ -37,7 +37,9 @@ const handleRegister = async () => {
             username: username.value,
             password: password.value
         });
-        localStorage.setItem('user', JSON.stringify(res.data));
+        // 存储用户信息（格式不变）和 JWT Token（独立 key）
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        localStorage.setItem('token', res.data.token);
         ElMessage.success('Account created!');
         router.push('/');
     } catch (e) {

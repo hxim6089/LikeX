@@ -37,9 +37,10 @@ const handleLogin = async () => {
             username: username.value,
             password: password.value
         });
-        // Store User
-        localStorage.setItem('user', JSON.stringify(res.data));
-        ElMessage.success('Welcome back, ' + res.data.username);
+        // 存储用户信息（格式不变）和 JWT Token（独立 key）
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        localStorage.setItem('token', res.data.token);
+        ElMessage.success('Welcome back, ' + res.data.user.username);
         router.push('/');
     } catch (e) {
         ElMessage.error('Invalid credentials');

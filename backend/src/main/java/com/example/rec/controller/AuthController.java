@@ -2,8 +2,10 @@ package com.example.rec.controller;
 
 import com.example.rec.model.User;
 import com.example.rec.service.AuthService;
+import com.example.rec.util.JwtUtil;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -11,20 +13,34 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtUtil jwtUtil;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, JwtUtil jwtUtil) {
         this.authService = authService;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/register")
-    public User register(@RequestBody User user) {
-        return authService.register(user);
+    public Map<String, Object> register(@RequestBody User user) {
+        User saved = authService.register(user);
+        String token = jwtUtil.generateToken(saved.getId(), saved.getUsername());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("user", saved);
+        result.put("token", token);
+        return result;
     }
 
     @PostMapping("/login")
-    public User login(@RequestBody Map<String, String> payload) {
+    public Map<String, Object> login(@RequestBody Map<String, String> payload) {
         String username = payload.get("username");
         String password = payload.get("password");
-        return authService.login(username, password);
+        User user = authService.login(username, password);
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("user", user);
+        result.put("token", token);
+        return result;
     }
 }
