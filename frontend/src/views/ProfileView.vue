@@ -48,8 +48,12 @@
                 </div>
 
                 <div class="follow-stats">
-                    <span><strong>{{ persona.followingCount || 0 }}</strong> Following</span>
-                    <span><strong>{{ persona.followerCount || 0 }}</strong> Followers</span>
+                    <span class="follow-stat-link" @click="openFollowList('following')">
+                        <strong>{{ persona.followingCount || 0 }}</strong> Following
+                    </span>
+                    <span class="follow-stat-link" @click="openFollowList('followers')">
+                        <strong>{{ persona.followerCount || 0 }}</strong> Followers
+                    </span>
                     <span><strong>{{ persona.totalLikes || 0 }}</strong> Likes</span>
                 </div>
             </div>
@@ -66,7 +70,7 @@
         <!-- Feed -->
         <div class="profile-feed" v-if="activeTab !== 'insights'">
              <div v-for="tweet in posts" :key="tweet.id" class="feed-item">
-                 <TweetCard :tweet="tweet" />
+                 <TweetCard :tweet="tweet" @deleted="handlePostDeleted" />
              </div>
              <el-empty v-if="posts.length === 0" description="No posts yet" />
         </div>
@@ -155,6 +159,21 @@
             </template>
          </el-dialog>
 
+         <!-- 关注/粉丝列表弹窗 -->
+         <el-dialog v-model="showFollowDialog" :title="followDialogTitle" width="420px">
+            <div v-if="followListLoading" style="text-align:center;padding:20px;">加载中...</div>
+            <div v-else-if="followList.length === 0" style="text-align:center;padding:20px;color:#536471;">暂无数据</div>
+            <div v-else class="follow-list">
+                <div v-for="u in followList" :key="u.id" class="follow-list-item" @click="goToUserProfile(u.id)">
+                    <el-avatar :size="44" :src="u.avatarUrl" />
+                    <div class="follow-list-info">
+                        <div class="follow-list-name">{{ u.username }}</div>
+                        <div class="follow-list-handle">{{ u.handle || '@' + u.username }}</div>
+                    </div>
+                </div>
+            </div>
+         </el-dialog>
+
     </div>
   </Layout>
 </template>
@@ -177,6 +196,10 @@ const router = useRouter()
 const persona = ref({})
 const posts = ref([])
 const showEditModal = ref(false)
+const showFollowDialog = ref(false)
+const followDialogTitle = ref('')
+const followList = ref([])
+const followListLoading = ref(false)
 
 const userStr = localStorage.getItem('user');
 const currentUser = userStr ? JSON.parse(userStr) : null;
@@ -317,6 +340,34 @@ const saveProfile = async () => {
         setTimeout(() => location.reload(), 500);
         
     } catch(e) { ElMessage.error('Save failed'); }
+}
+
+// 打开关注/粉丝列表
+const openFollowList = async (type) => {
+    const targetId = route.query.userId || (currentUser ? currentUser.id : null);
+    if (!targetId) return;
+    followDialogTitle.value = type === 'following' ? 'Following' : 'Followers';
+    showFollowDialog.value = true;
+    followListLoading.value = true;
+    followList.value = [];
+    try {
+        const res = await api.get(`/relation/${type}`, { params: { userId: targetId } });
+        followList.value = res.data;
+    } catch (e) {
+        console.error(e);
+    } finally {
+        followListLoading.value = false;
+    }
+}
+
+const goToUserProfile = (userId) => {
+    showFollowDialog.value = false;
+    router.push(`/profile?userId=${userId}`);
+}
+
+// 处理帖子删除
+const handlePostDeleted = (postId) => {
+    posts.value = posts.value.filter(p => p.id !== postId);
 }
 
 onMounted(loadData);
@@ -493,5 +544,38 @@ watch(() => route.query.userId, loadData); // reload on route change
 .animate-in {
     animation: fadeSlideUp 0.4s ease forwards;
     opacity: 0;
+}
+
+/* 关注/粉丝列表 */
+.follow-stat-link {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.follow-stat-link:hover {
+    color: #1da1f2;
+    text-decoration: underline;
+}
+.follow-list-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+.follow-list-item:hover {
+    background: #f7f9f9;
+}
+.follow-list-info {
+    margin-left: 12px;
+}
+.follow-list-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: #0f1419;
+}
+.follow-list-handle {
+    font-size: 13px;
+    color: #536471;
 }
 </style>

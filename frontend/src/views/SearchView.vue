@@ -57,9 +57,12 @@
       <template v-if="activeTab === 'all' || activeTab === 'posts'">
         <div v-if="results.posts && results.posts.length > 0" class="section">
           <h3 v-if="activeTab === 'all'" class="section-title">帖子</h3>
-          <TweetCard v-for="item in results.posts" :key="item.id" :tweet="item" />
+          <TweetCard v-for="item in results.posts" :key="item.id" :tweet="item" @deleted="handlePostDeleted" />
           <div v-if="activeTab === 'all' && results.totalPosts > 10" class="show-more" @click="switchTab('posts')">
             查看全部 {{ results.totalPosts }} 条帖子
+          </div>
+          <div v-if="activeTab === 'posts' && hasMorePosts" class="show-more" @click="loadMorePosts">
+            {{ loadingMore ? '加载中...' : '加载更多' }}
           </div>
         </div>
       </template>
@@ -89,6 +92,11 @@ const results = ref({
 })
 const loading = ref(false)
 const activeTab = ref('all')
+const currentPage = ref(0)
+const totalPages = ref(0)
+const loadingMore = ref(false)
+
+const hasMorePosts = computed(() => currentPage.value < totalPages.value - 1)
 
 const tabs = computed(() => [
   { label: '全部', value: 'all', count: null },
@@ -114,19 +122,49 @@ const doSearch = async () => {
   if (!query.value) return
   
   loading.value = true
+  currentPage.value = 0
   try {
     const res = await api.get('/search', { 
       params: { 
         q: query.value,
-        type: activeTab.value
+        type: activeTab.value,
+        page: 0,
+        size: 10
       } 
     })
     results.value = res.data
+    if (res.data.totalPages !== undefined) {
+      totalPages.value = res.data.totalPages
+    }
   } catch (e) { 
     console.error(e) 
   } finally { 
     loading.value = false 
   }
+}
+
+const loadMorePosts = async () => {
+  if (loadingMore.value || !hasMorePosts.value) return
+  loadingMore.value = true
+  try {
+    const nextPage = currentPage.value + 1
+    const res = await api.get('/search', {
+      params: { q: query.value, type: 'posts', page: nextPage, size: 10 }
+    })
+    if (res.data.posts) {
+      results.value.posts = [...results.value.posts, ...res.data.posts]
+    }
+    currentPage.value = nextPage
+    totalPages.value = res.data.totalPages
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loadingMore.value = false
+  }
+}
+
+const handlePostDeleted = (postId) => {
+  results.value.posts = results.value.posts.filter(p => p.id !== postId)
 }
 
 const switchTab = (tab) => {

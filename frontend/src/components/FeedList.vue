@@ -67,6 +67,7 @@
             :scoreBreakdown="isPersonalized ? item.scoreBreakdown : null"
             :rank="isPersonalized ? item.rank : 0"
             :showScore="isPersonalized && (debugMode || index < 5) && item.scoreBreakdown"
+            @deleted="handlePostDeleted"
         />
         <!-- 每5条帖子插入1条广告 -->
         <AdCard 
@@ -118,6 +119,14 @@ const user = userStr ? JSON.parse(userStr) : null;
 const userId = user ? user.id : null;
 
 const triggerFileInput = () => fileInput.value.click();
+
+// 处理帖子被删除
+const handlePostDeleted = (postId) => {
+    items.value = items.value.filter(item => {
+        const id = item.content?.id || item.id;
+        return id !== postId;
+    });
+}
 
 const handleFileChange = (e) => {
     const file = e.target.files[0];

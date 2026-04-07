@@ -448,4 +448,8 @@ finalScore = (baseEngagement / timeDecay)
 | 2026-03-28 | **修复**: Insights ECharts 图表尺寸异常 - v-show→v-if 避免隐藏容器初始化 |
 | 2026-04-04 | **新增**: JWT Token 鉴权 v2（软校验模式: permitAll + Filter 仅注入 Context） |
 | 2026-04-04 | **新增**: @EnableAsync 启用异步线程池 |
+| 2026-04-07 | **新增**: 全局错误提示拦截器 (api.js ElMessage toast) |
+| 2026-04-07 | **新增**: 关注/粉丝列表弹窗 (ProfileView 点击数字查看) |
+| 2026-04-07 | **新增**: 帖子删除功能 (TweetCard 垃圾桶图标, 仅作者可删) |
+| 2026-04-07 | **新增**: 搜索结果分页 (posts tab 支持"加载更多") |
 

@@ -8,10 +8,14 @@ import com.example.rec.model.User;
 import com.example.rec.repository.ContentRepository;
 import com.example.rec.repository.TagRepository;
 import com.example.rec.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -42,13 +46,14 @@ public class SearchController {
      * @param type 搜索类型: all/posts/users/topics
      */
     @GetMapping
-    public SearchResult search(
+    public Object search(
             @RequestParam String q,
-            @RequestParam(defaultValue = "all") String type) {
-        
-        SearchResult result = new SearchResult();
+            @RequestParam(defaultValue = "all") String type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         
         if (q == null || q.trim().isEmpty()) {
+            SearchResult result = new SearchResult();
             result.setPosts(new ArrayList<>());
             result.setUsers(new ArrayList<>());
             result.setTopics(new ArrayList<>());
@@ -56,17 +61,22 @@ public class SearchController {
         }
 
         String keyword = q.trim();
-        // 如果以#开头，去掉#号搜索话题
         String cleanKeyword = keyword.startsWith("#") ? keyword.substring(1) : keyword;
 
-        // 根据type决定搜索范围
+        // posts 类型使用分页
+        if ("posts".equals(type)) {
+            Page<Content> postPage = contentRepository.findByContentContainingIgnoreCase(
+                    cleanKeyword, PageRequest.of(page, size));
+            Map<String, Object> pagedResult = new HashMap<>();
+            pagedResult.put("posts", postPage.getContent());
+            pagedResult.put("totalPosts", postPage.getTotalElements());
+            pagedResult.put("totalPages", postPage.getTotalPages());
+            pagedResult.put("currentPage", page);
+            return pagedResult;
+        }
+
+        SearchResult result = new SearchResult();
         switch (type) {
-            case "posts":
-                List<Content> posts = contentRepository.findByContentContainingIgnoreCase(cleanKeyword);
-                result.setPosts(posts);
-                result.setTotalPosts(posts.size());
-                break;
-                
             case "users":
                 List<User> users = userRepository.findByUsernameContainingIgnoreCaseOrHandleContainingIgnoreCase(cleanKeyword, cleanKeyword);
                 result.setUsers(users);
@@ -81,7 +91,6 @@ public class SearchController {
                 
             case "all":
             default:
-                // 搜索所有类型，每种限制数量
                 List<Content> allPosts = contentRepository.findByContentContainingIgnoreCase(cleanKeyword);
                 List<User> allUsers = userRepository.findByUsernameContainingIgnoreCaseOrHandleContainingIgnoreCase(cleanKeyword, cleanKeyword);
                 List<Tag> allTopics = tagRepository.findByNameContainingIgnoreCase(cleanKeyword);

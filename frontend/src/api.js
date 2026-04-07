@@ -22,7 +22,20 @@ api.interceptors.request.use(config => {
     return config;
 });
 
-// 注意：不添加任何 401/403 响应拦截器
-// 路由守卫 router.beforeEach 已负责未登录跳转
+// 全局错误提示（只弹 toast，不踢人）
+api.interceptors.response.use(
+    response => response,
+    error => {
+        const msg = error.response?.data?.message
+            || error.response?.data?.error
+            || error.message
+            || '请求失败';
+        // 动态导入 ElMessage 避免循环依赖
+        import('element-plus').then(({ ElMessage }) => {
+            ElMessage.error(msg);
+        });
+        return Promise.reject(error);
+    }
+);
 
 export default api;

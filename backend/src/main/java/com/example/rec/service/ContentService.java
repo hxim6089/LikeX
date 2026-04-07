@@ -243,4 +243,16 @@ public class ContentService {
         
         return contentRepository.save(quote);
     }
+
+    /**
+     * 删除帖子（仅作者本人可删除）
+     */
+    public void deleteContent(Long contentId, Long userId) {
+        Content content = contentRepository.findById(contentId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+        if (!content.getAuthor().getId().equals(userId)) {
+            throw new RuntimeException("Only the author can delete this post");
+        }
+        contentRepository.delete(content);
+    }
 }

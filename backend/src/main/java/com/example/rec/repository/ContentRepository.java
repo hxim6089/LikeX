@@ -22,6 +22,7 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
     
     // For Search
     List<Content> findByContentContainingIgnoreCase(String keyword);
+    Page<Content> findByContentContainingIgnoreCase(String keyword, Pageable pageable);
     List<Content> findByTags_Name(String tagName);
     
     // List<Content> findByCategoryIn(List<String> categories);

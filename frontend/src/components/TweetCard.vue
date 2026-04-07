@@ -11,6 +11,7 @@
         <span class="dot">·</span>
         <span class="time">{{ formatTime(tweet.createdAt) }}</span>
         <div class="header-actions">
+             <el-icon v-if="tweet.author?.id === currentUser.id" class="delete-btn" @click.stop="handleDelete" title="删除"><Delete /></el-icon>
              <el-icon class="grok-btn" @click.stop="analyzeTweet" title="Ask Grok"><Cpu /></el-icon>
         </div>
       </div>
@@ -130,7 +131,7 @@
 </template>
 
 <script setup>
-import { ChatLineRound, Star, StarFilled, Refresh, DataAnalysis, Cpu } from '@element-plus/icons-vue'
+import { ChatLineRound, Star, StarFilled, Refresh, DataAnalysis, Cpu, Delete } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
@@ -146,6 +147,8 @@ const props = defineProps({
   rank: Number,            // 排名 (debug模式)
   showScore: Boolean       // 是否显示评分面板
 })
+
+const emit = defineEmits(['deleted'])
 
 const showReplyInput = ref(false)
 const replyContent = ref('')
@@ -311,6 +314,17 @@ const submitQuote = async () => {
         ElMessage.error('引用失败');
     }
 }
+
+const handleDelete = async () => {
+    if (!confirm('确定要删除这条帖子吗？')) return;
+    try {
+        await api.delete(`/content/${props.tweet.id}?userId=${currentUser.id}`);
+        ElMessage.success('已删除');
+        emit('deleted', props.tweet.id);
+    } catch (e) {
+        // 全局拦截器已处理
+    }
+}
 </script>
 
 <style scoped>
@@ -445,6 +459,16 @@ const submitQuote = async () => {
 }
 .grok-btn:hover {
     color: #1d9bf0;
+}
+.delete-btn {
+    cursor: pointer;
+    font-size: 16px;
+    color: #536471;
+    transition: color 0.2s;
+    margin-right: 8px;
+}
+.delete-btn:hover {
+    color: #f4212e;
 }
 
 .grok-content {

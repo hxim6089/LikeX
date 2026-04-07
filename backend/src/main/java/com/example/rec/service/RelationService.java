@@ -73,4 +73,24 @@ public class RelationService {
     public long countFollowers(Long userId) {
         return followRepository.countByFolloweeId(userId);
     }
+
+    /**
+     * 获取某用户的关注列表（User 对象）
+     */
+    public List<User> getFollowingList(Long userId) {
+        return followRepository.findByFollowerId(userId).stream()
+                .map(f -> userRepository.findById(f.getFolloweeId()).orElse(null))
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取某用户的粉丝列表（User 对象）
+     */
+    public List<User> getFollowerList(Long userId) {
+        return followRepository.findByFolloweeId(userId).stream()
+                .map(f -> userRepository.findById(f.getFollowerId()).orElse(null))
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+    }
 }

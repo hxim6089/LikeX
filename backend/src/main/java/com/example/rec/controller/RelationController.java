@@ -42,4 +42,14 @@ public class RelationController {
     public List<User> getSuggestions(@RequestParam Long userId) {
         return relationService.getSuggestions(userId);
     }
+
+    @GetMapping("/following")
+    public List<User> getFollowingList(@RequestParam Long userId) {
+        return relationService.getFollowingList(userId);
+    }
+
+    @GetMapping("/followers")
+    public List<User> getFollowerList(@RequestParam Long userId) {
+        return relationService.getFollowerList(userId);
+    }
 }

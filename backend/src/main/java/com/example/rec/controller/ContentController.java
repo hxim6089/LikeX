@@ -139,4 +139,14 @@ public class ContentController {
         String content = (String) payload.get("content");
         return contentService.quote(id, authorId, content);
     }
+
+    /**
+     * 删除帖子（仅作者本人可删除）
+     */
+    @DeleteMapping("/{id}")
+    public java.util.Map<String, String> deleteContent(@PathVariable Long id,
+                                                        @RequestParam Long userId) {
+        contentService.deleteContent(id, userId);
+        return java.util.Map.of("message", "Deleted");
+    }
 }
