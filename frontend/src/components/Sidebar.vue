@@ -16,6 +16,9 @@
       <router-link to="/notifications" class="nav-item"><el-icon><Bell /></el-icon> <span>通知</span></router-link>
       <router-link to="/messages" class="nav-item"><el-icon><Message /></el-icon> <span>私信</span></router-link>
       <router-link to="/profile" class="nav-item"><el-icon><User /></el-icon> <span>个人主页</span></router-link>
+      <router-link v-if="currentUser?.role === 'ADMIN'" to="/admin" class="nav-item admin-nav">
+        <el-icon><Setting /></el-icon> <span>管理</span>
+      </router-link>
     </nav>
 
     <button class="tweet-btn" @click="toggleCompose">发帖</button>
@@ -36,7 +39,7 @@
 </template>
 
 <script setup>
-import { HomeFilled, Search, Bell, Message, User, More, Cpu, DataAnalysis, Coin } from '@element-plus/icons-vue'
+import { HomeFilled, Search, Bell, Message, User, More, Cpu, DataAnalysis, Coin, Setting } from '@element-plus/icons-vue'
 import { useRouter, useRoute } from 'vue-router'
 import { toggleCompose } from '../store'
 

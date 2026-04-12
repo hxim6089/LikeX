@@ -250,8 +250,11 @@ public class ContentService {
     public void deleteContent(Long contentId, Long userId) {
         Content content = contentRepository.findById(contentId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-        if (!content.getAuthor().getId().equals(userId)) {
-            throw new RuntimeException("Only the author can delete this post");
+        // 管理员或作者本人可删除
+        com.example.rec.model.User operator = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!"ADMIN".equals(operator.getRole()) && !content.getAuthor().getId().equals(userId)) {
+            throw new RuntimeException("No permission to delete this post");
         }
         contentRepository.delete(content);
     }

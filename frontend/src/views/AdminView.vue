@@ -2,10 +2,45 @@
   <Layout>
     <div class="admin-container">
         <h2>Admin Dashboard</h2>
-        
-        <el-table :data="users" style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column label="User">
+
+        <!-- 平台数据概览 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value">{{ stats.totalUsers || 0 }}</div>
+                <div class="stat-label">总用户数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <div class="stat-value">{{ stats.totalPosts || 0 }}</div>
+                <div class="stat-label">总帖子数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-value">{{ stats.totalBehaviors || 0 }}</div>
+                <div class="stat-label">总互动数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🆕</div>
+                <div class="stat-value">{{ stats.todayNewPosts || 0 }}</div>
+                <div class="stat-label">今日新增</div>
+            </div>
+        </div>
+
+        <!-- 操作按钮组 -->
+        <div class="action-bar">
+            <el-button type="warning" @click="batchTagAll" :loading="tagging">
+                🤖 AI 批量打标
+            </el-button>
+            <span v-if="tagResult" class="tag-result">
+                ✅ 已处理 {{ tagResult.tagged }} / {{ tagResult.total }} 条帖子
+            </span>
+        </div>
+
+        <!-- 用户管理表格 -->
+        <el-table :data="users" style="width: 100%" stripe>
+            <el-table-column prop="id" label="ID" width="70" />
+            <el-table-column label="用户" min-width="180">
                 <template #default="scope">
                     <div style="display:flex;align-items:center;gap:10px">
                         <el-avatar :src="scope.row.avatarUrl" />
@@ -16,10 +51,36 @@
                     </div>
                 </template>
             </el-table-column>
-            <el-table-column label="Actions" width="260">
+            <el-table-column label="角色" width="150">
                 <template #default="scope">
-                    <el-button size="small" @click="viewPersona(scope.row)">View Persona</el-button>
+                    <el-switch
+                        :model-value="scope.row.role === 'ADMIN'"
+                        active-text="管理员"
+                        inactive-text="用户"
+                        @change="val => toggleRole(scope.row, val)"
+                        :disabled="scope.row.id === currentUser?.id"
+                    />
+                </template>
+            </el-table-column>
+            <el-table-column label="状态" width="100">
+                <template #default="scope">
+                    <el-tag :type="scope.row.banned ? 'danger' : 'success'" size="small">
+                        {{ scope.row.banned ? '已封禁' : '正常' }}
+                    </el-tag>
+                </template>
+            </el-table-column>
+            <el-table-column label="操作" width="320">
+                <template #default="scope">
+                    <el-button size="small" @click="viewPersona(scope.row)">画像</el-button>
                     <el-button size="small" type="primary" @click="viewDetail(scope.row)">📊 详情</el-button>
+                    <el-button
+                        size="small"
+                        :type="scope.row.banned ? 'success' : 'danger'"
+                        @click="toggleBan(scope.row)"
+                        :disabled="scope.row.id === currentUser?.id"
+                    >
+                        {{ scope.row.banned ? '解封' : '封禁' }}
+                    </el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -103,20 +164,34 @@ import BehaviorRadarChart from '../components/BehaviorRadarChart.vue'
 import MatchRateBar from '../components/MatchRateBar.vue'
 import PersonaDetailCard from '../components/PersonaDetailCard.vue'
 import { ref, onMounted, nextTick } from 'vue'
+import { ElMessage } from 'element-plus'
 import api from '../api'
 import html2canvas from 'html2canvas'
 
+const userStr = localStorage.getItem('user');
+const currentUser = userStr ? JSON.parse(userStr) : null;
+
 const users = ref([])
+const stats = ref({})
 const showPersonaModal = ref(false)
 const showDetailModal = ref(false)
 const currentPersona = ref(null)
 const detailPersona = ref(null)
 const cardRef = ref(null)
+const tagging = ref(false)
+const tagResult = ref(null)
 
 const fetchUsers = async () => {
     try {
         const res = await api.get('/user/all');
         users.value = res.data;
+    } catch(e) { console.error(e); }
+}
+
+const fetchStats = async () => {
+    try {
+        const res = await api.get('/admin/stats');
+        stats.value = res.data;
     } catch(e) { console.error(e); }
 }
 
@@ -134,6 +209,43 @@ const viewDetail = async (user) => {
         detailPersona.value = res.data;
         showDetailModal.value = true;
     } catch(e) { console.error(e); }
+}
+
+const toggleRole = async (user, isAdmin) => {
+    try {
+        const newRole = isAdmin ? 'ADMIN' : 'USER';
+        const res = await api.put(`/user/${user.id}/role`, { role: newRole });
+        user.role = res.data.role;
+        ElMessage.success(`${user.username} 角色已切换为 ${newRole}`);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+const toggleBan = async (user) => {
+    const action = user.banned ? '解封' : '封禁';
+    if (!confirm(`确定要${action} ${user.username} 吗？`)) return;
+    try {
+        const res = await api.put(`/user/${user.id}/ban`);
+        user.banned = res.data.banned;
+        ElMessage.success(`${user.username} 已${action}`);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+const batchTagAll = async () => {
+    tagging.value = true;
+    tagResult.value = null;
+    try {
+        const res = await api.post('/ai/tag-all');
+        tagResult.value = res.data;
+        ElMessage.success('AI 批量打标完成');
+    } catch (e) {
+        ElMessage.error('打标失败，请确认 Ollama 服务已启动');
+    } finally {
+        tagging.value = false;
+    }
 }
 
 const getReadPref = (persona) => {
@@ -160,6 +272,7 @@ const exportCard = async () => {
 
 onMounted(() => {
     fetchUsers();
+    fetchStats();
 })
 </script>
 
@@ -167,6 +280,64 @@ onMounted(() => {
 .admin-container {
     padding: 20px;
 }
+
+/* 统计卡片 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+    border: 1px solid #eff3f4;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(29, 161, 242, 0.12);
+}
+
+.stat-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f1419;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #536471;
+    margin-top: 4px;
+}
+
+/* 操作栏 */
+.action-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: #f7f9fa;
+    border-radius: 12px;
+}
+
+.tag-result {
+    font-size: 14px;
+    color: #00ba7c;
+    font-weight: 500;
+}
+
+/* Modal */
 .modal-body {
     display: flex;
     justify-content: center;

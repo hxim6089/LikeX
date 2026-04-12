@@ -28,6 +28,8 @@ public class User {
 
     private String role;
 
+    private Boolean banned = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -66,6 +68,9 @@ public class User {
 
     public String getCustomWeights() { return customWeights; }
     public void setCustomWeights(String customWeights) { this.customWeights = customWeights; }
+
+    public Boolean getBanned() { return banned; }
+    public void setBanned(Boolean banned) { this.banned = banned; }
 
     @Override
     public boolean equals(Object o) {

@@ -24,7 +24,14 @@ const routes = [
     { path: '/messages', component: MessagesView },
     { path: '/login', component: LoginView },
     { path: '/register', component: RegisterView },
-    { path: '/admin', component: AdminView },
+    {
+        path: '/admin',
+        component: AdminView,
+        beforeEnter: (to, from, next) => {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            user.role === 'ADMIN' ? next() : next('/');
+        }
+    },
 ]
 
 const router = createRouter({

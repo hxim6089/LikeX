@@ -48,4 +48,22 @@ public class UserService {
     public java.util.List<User> getAllUsers() {
         return userRepository.findAll();
     }
+
+    /**
+     * 切换用户角色
+     */
+    public User updateRole(Long id, String role) {
+        User user = getUser(id);
+        user.setRole(role);
+        return userRepository.save(user);
+    }
+
+    /**
+     * 切换用户封禁状态
+     */
+    public User toggleBan(Long id) {
+        User user = getUser(id);
+        user.setBanned(!Boolean.TRUE.equals(user.getBanned()));
+        return userRepository.save(user);
+    }
 }

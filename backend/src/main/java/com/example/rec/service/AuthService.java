@@ -46,6 +46,10 @@ public class AuthService {
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
+            // 检查封禁状态
+            if (Boolean.TRUE.equals(user.getBanned())) {
+                throw new RuntimeException("Account has been banned");
+            }
             // TODO: 生产环境应比对加密后的密码
             if (user.getPassword().equals(password)) {
                 return user;

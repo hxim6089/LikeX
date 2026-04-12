@@ -11,7 +11,7 @@
         <span class="dot">·</span>
         <span class="time">{{ formatTime(tweet.createdAt) }}</span>
         <div class="header-actions">
-             <el-icon v-if="tweet.author?.id === currentUser.id" class="delete-btn" @click.stop="handleDelete" title="删除"><Delete /></el-icon>
+             <el-icon v-if="tweet.author?.id === currentUser.id || currentUser.role === 'ADMIN'" class="delete-btn" @click.stop="handleDelete" title="删除"><Delete /></el-icon>
              <el-icon class="grok-btn" @click.stop="analyzeTweet" title="Ask Grok"><Cpu /></el-icon>
         </div>
       </div>

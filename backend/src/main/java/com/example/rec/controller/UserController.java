@@ -34,4 +34,20 @@ public class UserController {
     public java.util.List<User> getAllUsers() {
         return userService.getAllUsers();
     }
+
+    /**
+     * 切换用户角色
+     */
+    @PutMapping("/{id}/role")
+    public User updateRole(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        return userService.updateRole(id, payload.get("role"));
+    }
+
+    /**
+     * 切换用户封禁状态
+     */
+    @PutMapping("/{id}/ban")
+    public User toggleBan(@PathVariable Long id) {
+        return userService.toggleBan(id);
+    }
 }
