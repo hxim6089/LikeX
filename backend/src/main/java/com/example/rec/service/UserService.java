@@ -27,7 +27,13 @@ public class UserService {
      */
     public User updateUser(Long id, Map<String, Object> updates) {
         User user = getUser(id);
-        
+
+        if (updates.containsKey("username")) {
+            String newUsername = (String) updates.get("username");
+            if (newUsername != null && !newUsername.isBlank()) {
+                user.setUsername(newUsername);
+            }
+        }
         if (updates.containsKey("bio")) {
             user.setBio((String) updates.get("bio"));
         }
@@ -38,7 +44,6 @@ public class UserService {
             }
         }
         if (updates.containsKey("handle")) {
-            // 在实际应用中, 此处应检查 handle 的唯一性
             user.setHandle((String) updates.get("handle"));
         }
         

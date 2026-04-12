@@ -143,6 +143,9 @@
         <!-- Edit Modal (Simplified reuse) -->
          <el-dialog v-model="showEditModal" title="Edit Profile" width="500px">
             <el-form label-position="top">
+                <el-form-item label="Username">
+                    <el-input v-model="editForm.username" />
+                </el-form-item>
                 <el-form-item label="Avatar">
                      <input type="file" @change="handleFileChange" accept="image/*" />
                 </el-form-item>
@@ -205,7 +208,7 @@ const userStr = localStorage.getItem('user');
 const currentUser = userStr ? JSON.parse(userStr) : null;
 const isOwnProfile = ref(true);
 
-const editForm = reactive({ handle: '', bio: '', avatarUrl: '' })
+const editForm = reactive({ username: '', handle: '', bio: '', avatarUrl: '' })
 
 const isFollowing = ref(false);
 const activeTab = ref('posts');
@@ -240,6 +243,7 @@ const loadData = async () => {
         const res = await api.get(`/user/${targetId}/persona`);
         persona.value = res.data;
         
+        editForm.username = persona.value.username;
         editForm.handle = persona.value.handle;
         editForm.bio = persona.value.bio;
         editForm.avatarUrl = persona.value.avatarUrl;
@@ -321,6 +325,7 @@ const handleFileChange = async (e) => {
 const saveProfile = async () => {
     try {
         const res = await api.put(`/user/${currentUser.id}`, {
+            username: editForm.username,
             handle: editForm.handle,
             bio: editForm.bio,
             avatarUrl: editForm.avatarUrl
