@@ -47,17 +47,19 @@ public class NotificationService {
         
         // 实时推送通知
         User actor = userRepository.findById(actorId).orElse(null);
+        java.util.HashMap<String, Object> payload = new java.util.HashMap<>();
+        payload.put("id", saved.getId());
+        payload.put("type", type);
+        payload.put("actorId", actorId);
+        payload.put("actorName", actor != null ? actor.getUsername() : "Unknown");
+        payload.put("createdAt", saved.getCreatedAt().toString());
+        if (entityId != null) {
+            payload.put("entityId", entityId);
+        }
         messagingTemplate.convertAndSendToUser(
             recipientId.toString(),
             "/queue/notifications",
-            Map.of(
-                "id", saved.getId(),
-                "type", type,
-                "actorId", actorId,
-                "actorName", actor != null ? actor.getUsername() : "Unknown",
-                "entityId", entityId,
-                "createdAt", saved.getCreatedAt().toString()
-            )
+            payload
         );
     }
 
