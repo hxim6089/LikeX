@@ -55,7 +55,7 @@ onMounted(async () => {
       const res = await api.get('/relation/status', {
         params: { 
           followerId: currentUserId.value, 
-          followingId: props.user.id 
+          followeeId: props.user.id 
         }
       })
       isFollowing.value = res.data
@@ -79,13 +79,13 @@ const toggleFollow = async () => {
     if (isFollowing.value) {
       await api.post('/relation/unfollow', { 
         followerId: currentUserId.value, 
-        followingId: props.user.id 
+        followeeId: props.user.id 
       })
       isFollowing.value = false
     } else {
       await api.post('/relation/follow', { 
         followerId: currentUserId.value, 
-        followingId: props.user.id 
+        followeeId: props.user.id 
       })
       isFollowing.value = true
     }
