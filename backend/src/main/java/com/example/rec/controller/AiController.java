@@ -25,9 +25,13 @@ public class AiController {
     }
 
     @PostMapping("/chat")
-    public Map<String, Object> chat(@RequestBody Map<String, String> payload) {
-        String message = payload.get("message");
-        return aiService.chat(message);
+    public Map<String, Object> chat(@RequestBody Map<String, Object> payload) {
+        String message = (String) payload.get("message");
+        List<Map<String, String>> history = null;
+        if (payload.containsKey("history")) {
+            history = (List<Map<String, String>>) payload.get("history");
+        }
+        return aiService.chat(message, history);
     }
 
     /**

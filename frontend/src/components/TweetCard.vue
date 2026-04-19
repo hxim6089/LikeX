@@ -165,7 +165,22 @@ const analyzeTweet = async () => {
     analyzing.value = true;
     grokAnalysis.value = '';
     
-    const prompt = `请分析并解释这条推文的内容，用幽默风趣的语言：\n"${props.tweet.content}"`;
+    const t = props.tweet;
+    const tagsStr = t.tags && t.tags.length ? t.tags.map(tag => '#' + tag.name).join(' ') : '无标签';
+    const prompt = `你是社交媒体分析专家 Grok，请从以下维度分析这条推文：
+1. 内容解读：核心观点或意图
+2. 传播力评估：基于互动数据判断内容质量
+3. 受众画像：推测目标受众
+
+推文信息：
+- 作者：${t.author?.username || 'Unknown'} (${t.author?.handle || '@unknown'})
+- 内容："${t.content}"
+- 标签：${tagsStr}
+- 分类：${t.category || '未分类'}
+- 互动数据：${t.likeCount} 点赞 / ${t.commentCount} 评论 / ${t.repostCount || 0} 转发 / ${t.viewCount} 浏览
+- 发布时间：${formatTime(t.createdAt)}
+
+请用简洁、有洞察力的风格回答，适当加入幽默感。`;
     
     try {
         const res = await api.post('/ai/chat', { message: prompt });

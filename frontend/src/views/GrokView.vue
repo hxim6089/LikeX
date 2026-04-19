@@ -5,6 +5,7 @@
         <div class="grok-header">
             <h3>Grok</h3>
             <span class="beta-badge">Early Access</span>
+            <button v-if="messages.length > 0" class="clear-btn" @click="clearChat">清空对话</button>
         </div>
 
         <!-- Chat History -->
@@ -57,13 +58,27 @@ import { ref, onMounted, nextTick } from 'vue'
 import { Position } from '@element-plus/icons-vue'
 import api from '../api'
 
-const messages = ref([])
+const userStr = localStorage.getItem('user');
+const currentUser = userStr ? JSON.parse(userStr) : null;
+
+const chatStorageKey = currentUser ? `grok_chat_${currentUser.id}` : 'grok_chat_guest';
+
+// Load persisted chat history
+const savedChat = localStorage.getItem(chatStorageKey);
+const messages = ref(savedChat ? JSON.parse(savedChat) : [])
 const inputMessage = ref('')
 const loading = ref(false)
 const chatContainer = ref(null)
 
-const userStr = localStorage.getItem('user');
-const currentUser = userStr ? JSON.parse(userStr) : null;
+const saveMessages = () => {
+    localStorage.setItem(chatStorageKey, JSON.stringify(messages.value));
+}
+
+const clearChat = () => {
+    if (!confirm('确定清空所有对话记录？')) return;
+    messages.value = [];
+    localStorage.removeItem(chatStorageKey);
+}
 
 // Markdown-ish formatter (simple)
 const formatMessage = (text) => {
@@ -85,11 +100,16 @@ const sendMessage = async () => {
     messages.value.push({ role: 'user', content: text });
     inputMessage.value = '';
     loading.value = true;
+    saveMessages();
     scrollToBottom();
 
     try {
-        // 2. Call API
-        const res = await api.post('/ai/chat', { message: text });
+        // 2. Call API with full conversation history
+        const res = await api.post('/ai/chat', { 
+            message: text,
+            history: messages.value.filter(m => m.role === 'user' || m.role === 'assistant')
+                .slice(-20) // 最近20条上下文
+        });
         
         // 3. Add Assistant Message
         if (res.data && res.data.reply) {
@@ -103,9 +123,16 @@ const sendMessage = async () => {
         console.error(e);
     } finally {
         loading.value = false;
+        saveMessages();
         scrollToBottom();
     }
 }
+
+onMounted(() => {
+    if (messages.value.length > 0) {
+        scrollToBottom();
+    }
+})
 </script>
 
 <style scoped>
@@ -139,6 +166,22 @@ const sendMessage = async () => {
     padding: 2px 6px;
     border-radius: 4px;
     font-weight: bold;
+}
+.clear-btn {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid #cfd9de;
+    color: #536471;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.clear-btn:hover {
+    background: #f4212e;
+    color: #fff;
+    border-color: #f4212e;
 }
 
 .chat-history {
