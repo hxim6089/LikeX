@@ -149,13 +149,12 @@ public class ContentService {
     }
 
     /**
-     * 获取某条推文的所有评论 (支持二级评论)
+     * 获取某条推文的所有评论 (支持多级嵌套评论)
      */
     public List<Content> getComments(Long parentId) {
         List<Content> comments = contentRepository.findByParentContentId(parentId);
-        // Populate one level of sub-comments (replies)
         for (Content comment : comments) {
-             List<Content> replies = contentRepository.findByParentContentId(comment.getId());
+             List<Content> replies = getComments(comment.getId());
              comment.setReplies(replies);
         }
         return comments;

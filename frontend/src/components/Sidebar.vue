@@ -111,8 +111,11 @@ const handleLogout = () => {
     font-weight: 500;
 }
 
-.nav-item.active {
+.nav-item.active,
+.nav-item.router-link-exact-active {
     font-weight: 700;
+    color: #1d9bf0;
+    background-color: #e8f5fd;
 }
 
 .tweet-btn {

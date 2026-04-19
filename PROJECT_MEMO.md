@@ -458,4 +458,6 @@ finalScore = (baseEngagement / timeDecay)
 | 2026-04-12 | **新增**: 平台数据概览 (AdminController /stats + 统计卡片) |
 | 2026-04-12 | **新增**: AI 批量打标按钮 (调用 /ai/tag-all) |
 | 2026-04-12 | **新增**: 用户封禁/解封功能 (User.banned + 登录拦截) |
+| 2026-04-19 | **修复**: 侧边栏选中状态样式 - 添加背景色(#e8f5fd)和字体颜色(#1d9bf0)高亮，支持 router-link-exact-active |
+| 2026-04-19 | **修复**: 多级评论刷新丢失 - getComments 改为递归加载，支持任意深度嵌套评论 |
 
