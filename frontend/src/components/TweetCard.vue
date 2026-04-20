@@ -162,6 +162,16 @@ const quoteContent = ref('')
 
 const analyzeTweet = async () => {
     showGrokModal.value = true;
+    
+    // Check cache first
+    const cacheKey = `grok_analysis_${props.tweet.id}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+        grokAnalysis.value = cached;
+        analyzing.value = false;
+        return;
+    }
+    
     analyzing.value = true;
     grokAnalysis.value = '';
     
@@ -186,6 +196,7 @@ const analyzeTweet = async () => {
         const res = await api.post('/ai/chat', { message: prompt });
         if(res.data && res.data.reply) {
             grokAnalysis.value = res.data.reply;
+            localStorage.setItem(cacheKey, res.data.reply);
         } else {
             grokAnalysis.value = "Grok seems to be sleeping.";
         }
