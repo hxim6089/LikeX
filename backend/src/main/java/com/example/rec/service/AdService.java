@@ -1,7 +1,9 @@
 package com.example.rec.service;
 
 import com.example.rec.model.Ad;
+import com.example.rec.model.AdConfig;
 import com.example.rec.repository.AdRepository;
+import com.example.rec.repository.AdConfigRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -12,6 +14,7 @@ import java.util.stream.Collectors;
 public class AdService {
 
     private final AdRepository adRepository;
+    private final AdConfigRepository adConfigRepository;
     private final PersonaService personaService;
 
     /**
@@ -21,9 +24,29 @@ public class AdService {
     private final ConcurrentHashMap<Long, Map<Long, Integer>> freqCapMap = new ConcurrentHashMap<>();
     private static final int MAX_IMPRESSIONS_PER_USER = 3;
 
-    public AdService(AdRepository adRepository, PersonaService personaService) {
+    public AdService(AdRepository adRepository, AdConfigRepository adConfigRepository, PersonaService personaService) {
         this.adRepository = adRepository;
+        this.adConfigRepository = adConfigRepository;
         this.personaService = personaService;
+    }
+
+    /**
+     * 获取广告投放配置（单行，不存在则创建默认）
+     */
+    public AdConfig getAdConfig() {
+        return adConfigRepository.findAll().stream().findFirst()
+                .orElseGet(() -> adConfigRepository.save(new AdConfig()));
+    }
+
+    /**
+     * 更新广告投放配置
+     */
+    public AdConfig updateAdConfig(AdConfig incoming) {
+        AdConfig config = getAdConfig();
+        if (incoming.getAdInterval() != null) config.setAdInterval(incoming.getAdInterval());
+        if (incoming.getMaxAdsPerPage() != null) config.setMaxAdsPerPage(incoming.getMaxAdsPerPage());
+        if (incoming.getGlobalEnabled() != null) config.setGlobalEnabled(incoming.getGlobalEnabled());
+        return adConfigRepository.save(config);
     }
 
     public List<Ad> getAllAds() {

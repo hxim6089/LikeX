@@ -8,6 +8,38 @@
       <button class="add-ad-btn" @click="openCreateDialog">+ 添加广告</button>
     </div>
 
+    <!-- 投放设置 -->
+    <div class="config-card">
+      <h3 class="config-title">⚙️ 投放设置</h3>
+      <div class="config-body">
+        <div class="config-item">
+          <div class="config-label">
+            <span>全局广告开关</span>
+            <span class="config-hint">关闭后信息流中不再展示广告</span>
+          </div>
+          <el-switch v-model="adConfig.globalEnabled" @change="saveConfig" />
+        </div>
+        <div class="config-item">
+          <div class="config-label">
+            <span>广告间隔</span>
+            <span class="config-hint">每 <strong>{{ adConfig.adInterval }}</strong> 条帖子后插入一条广告</span>
+          </div>
+          <el-slider v-model="adConfig.adInterval" :min="2" :max="20" :step="1" :disabled="!adConfig.globalEnabled" style="width: 220px" />
+        </div>
+        <div class="config-item">
+          <div class="config-label">
+            <span>单页最大广告数</span>
+            <span class="config-hint">单次加载信息流最多展示 <strong>{{ adConfig.maxAdsPerPage }}</strong> 条广告</span>
+          </div>
+          <el-slider v-model="adConfig.maxAdsPerPage" :min="1" :max="10" :step="1" :disabled="!adConfig.globalEnabled" style="width: 220px" />
+        </div>
+        <div class="config-actions">
+          <el-button type="primary" :loading="savingConfig" @click="saveConfig" :disabled="!configChanged">保存设置</el-button>
+          <span v-if="configSaved" class="config-saved-tip">✅ 已保存</span>
+        </div>
+      </div>
+    </div>
+
     <!-- 指标卡片 -->
     <div class="stats-cards" v-if="stats">
       <div class="stat-card">
@@ -134,7 +166,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed } from 'vue'
+import { ref, onMounted, nextTick, computed, reactive, watch } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import api from '../api'
@@ -146,6 +178,54 @@ const ctrChart = ref(null)
 const pieChart = ref(null)
 const sortKey = ref('ctr')
 const sortOrder = ref('descending')
+
+// Ad config state
+const adConfig = reactive({ adInterval: 5, maxAdsPerPage: 3, globalEnabled: true })
+const originalConfig = ref({ adInterval: 5, maxAdsPerPage: 3, globalEnabled: true })
+const savingConfig = ref(false)
+const configSaved = ref(false)
+const configChanged = computed(() =>
+  adConfig.adInterval !== originalConfig.value.adInterval ||
+  adConfig.maxAdsPerPage !== originalConfig.value.maxAdsPerPage ||
+  adConfig.globalEnabled !== originalConfig.value.globalEnabled
+)
+
+const loadAdConfig = async () => {
+  try {
+    const res = await api.get('/ads/config')
+    const cfg = res.data
+    adConfig.adInterval = cfg.adInterval ?? 5
+    adConfig.maxAdsPerPage = cfg.maxAdsPerPage ?? 3
+    adConfig.globalEnabled = cfg.globalEnabled !== false
+    originalConfig.value = { ...adConfig }
+  } catch (e) {
+    console.error('Load ad config failed', e)
+  }
+}
+
+const saveConfig = async () => {
+  savingConfig.value = true
+  configSaved.value = false
+  try {
+    const res = await api.put('/ads/config', {
+      adInterval: adConfig.adInterval,
+      maxAdsPerPage: adConfig.maxAdsPerPage,
+      globalEnabled: adConfig.globalEnabled
+    })
+    const cfg = res.data
+    adConfig.adInterval = cfg.adInterval
+    adConfig.maxAdsPerPage = cfg.maxAdsPerPage
+    adConfig.globalEnabled = cfg.globalEnabled
+    originalConfig.value = { ...adConfig }
+    configSaved.value = true
+    ElMessage.success('投放设置已保存')
+    setTimeout(() => configSaved.value = false, 2000)
+  } catch (e) {
+    ElMessage.error('保存失败')
+  } finally {
+    savingConfig.value = false
+  }
+}
 
 // Dialog state
 const dialogVisible = ref(false)
@@ -295,7 +375,10 @@ const renderPieChart = () => {
   })
 }
 
-onMounted(loadStats)
+onMounted(() => {
+  loadStats()
+  loadAdConfig()
+})
 </script>
 
 <style scoped>
@@ -339,6 +422,56 @@ onMounted(loadStats)
 }
 .add-ad-btn:hover {
   background: #1a8cd8;
+}
+
+.config-card {
+  background: white;
+  border: 1px solid #e1e8ed;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.config-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f1419;
+  margin: 0 0 16px 0;
+}
+.config-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.config-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.config-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.config-label span:first-child {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f1419;
+}
+.config-hint {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: #536471 !important;
+}
+.config-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 4px;
+}
+.config-saved-tip {
+  font-size: 13px;
+  color: #00ba7c;
+  font-weight: 500;
 }
 
 .stats-cards {

@@ -69,11 +69,11 @@
             :showScore="isPersonalized && (debugMode || index < 5) && item.scoreBreakdown"
             @deleted="handlePostDeleted"
         />
-        <!-- 每5条帖子插入1条广告 -->
+        <!-- 按配置频率插入广告 -->
         <AdCard 
-            v-if="(index + 1) % 5 === 0 && ads[Math.floor(index / 5)]" 
-            :ad="ads[Math.floor(index / 5)].ad" 
-            :matchedTags="ads[Math.floor(index / 5)].matchedTags || []"
+            v-if="adEnabled && adInterval > 0 && (index + 1) % adInterval === 0 && ads[Math.floor(index / adInterval)]" 
+            :ad="ads[Math.floor(index / adInterval)].ad" 
+            :matchedTags="ads[Math.floor(index / adInterval)].matchedTags || []"
             :userId="userId"
         />
     </template>
@@ -103,6 +103,8 @@ const selectedFile = ref(null)
 const previewImage = ref(null)
 const aiTagging = ref(false)
 const hasCustomWeights = ref(false)
+const adInterval = ref(5)
+const adEnabled = ref(true)
 
 const route = useRoute()
 
@@ -212,7 +214,16 @@ const fetchFeed = async () => {
 const fetchAds = async () => {
     if (!userId) return;
     try {
-        const res = await api.get('/ads/relevant', { params: { userId, count: 3 } });
+        // 先获取广告配置
+        const cfgRes = await api.get('/ads/config');
+        const cfg = cfgRes.data || {};
+        adInterval.value = cfg.adInterval || 5;
+        adEnabled.value = cfg.globalEnabled !== false;
+        const maxAds = cfg.maxAdsPerPage || 3;
+
+        if (!adEnabled.value) { ads.value = []; return; }
+
+        const res = await api.get('/ads/relevant', { params: { userId, count: maxAds } });
         ads.value = res.data || [];
     } catch (e) {
         console.log('Ads load skipped');

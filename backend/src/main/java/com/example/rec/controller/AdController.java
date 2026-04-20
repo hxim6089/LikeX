@@ -1,5 +1,6 @@
 package com.example.rec.controller;
 
+import com.example.rec.model.AdConfig;
 import com.example.rec.service.AdService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -79,5 +80,21 @@ public class AdController {
     public ResponseEntity<?> getAdStats() {
         Map<String, Object> stats = adService.getAdStats();
         return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * 获取广告投放配置
+     */
+    @GetMapping("/config")
+    public ResponseEntity<?> getAdConfig() {
+        return ResponseEntity.ok(adService.getAdConfig());
+    }
+
+    /**
+     * 更新广告投放配置
+     */
+    @PutMapping("/config")
+    public ResponseEntity<?> updateAdConfig(@RequestBody AdConfig config) {
+        return ResponseEntity.ok(adService.updateAdConfig(config));
     }
 }

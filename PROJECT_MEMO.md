@@ -342,6 +342,8 @@ finalScore = (baseEngagement / timeDecay)
 | GET | `/api/ads` | 获取所有广告列表 |
 | POST | `/api/ads` | 创建新广告 |
 | PUT | `/api/ads/{id}` | 更新广告信息 |
+| GET | `/api/ads/config` | 获取广告投放配置 |
+| PUT | `/api/ads/config` | 更新广告投放配置 |
 
 ### 数据导入 (ImportController)
 | 方法 | 端点 | 说明 |
@@ -474,4 +476,5 @@ finalScore = (baseEngagement / timeDecay)
 | 2026-04-20 | **新增**: 后端 markAllAsRead 批量已读实现 + POST /api/notifications/read-all 端点 |
 | 2026-04-20 | **新增**: 广告管理CRUD - AdController新增GET/POST/PUT接口, AdService新增createAd/updateAd方法 |
 | 2026-04-20 | **新增**: AdDashboard添加/编辑广告弹窗 - 表单含标题/描述/广告主/标签/分类/出价/URL/启用状态, 支持创建和编辑 |
+| 2026-04-20 | **新增**: 广告频率配置 - AdConfig实体(ad_config表)、投放设置卡片(间隔/最大数/全局开关)、FeedList动态读取配置 |
 
