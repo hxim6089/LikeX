@@ -1,7 +1,8 @@
 import { reactive } from 'vue'
 
 export const uiState = reactive({
-    isComposeOpen: false
+    isComposeOpen: false,
+    unreadNotifications: 0
 })
 
 export const toggleCompose = () => {

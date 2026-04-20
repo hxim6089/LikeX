@@ -13,7 +13,10 @@
       <router-link to="/grok" class="nav-item"><el-icon><Cpu /></el-icon> <span>Grok</span></router-link>
       <router-link to="/compare" class="nav-item"><el-icon><DataAnalysis /></el-icon> <span>算法对比</span></router-link>
       <router-link to="/ad-dashboard" class="nav-item"><el-icon><Coin /></el-icon> <span>广告报表</span></router-link>
-      <router-link to="/notifications" class="nav-item"><el-icon><Bell /></el-icon> <span>通知</span></router-link>
+      <router-link to="/notifications" class="nav-item">
+        <el-icon><Bell /></el-icon> <span>通知</span>
+        <span v-if="uiState.unreadNotifications > 0" class="badge">{{ uiState.unreadNotifications > 99 ? '99+' : uiState.unreadNotifications }}</span>
+      </router-link>
       <router-link to="/messages" class="nav-item"><el-icon><Message /></el-icon> <span>私信</span></router-link>
       <router-link to="/profile" class="nav-item"><el-icon><User /></el-icon> <span>个人主页</span></router-link>
       <router-link v-if="currentUser?.role === 'ADMIN'" to="/admin" class="nav-item admin-nav">
@@ -41,7 +44,7 @@
 <script setup>
 import { HomeFilled, Search, Bell, Message, User, More, Cpu, DataAnalysis, Coin, Setting } from '@element-plus/icons-vue'
 import { useRouter, useRoute } from 'vue-router'
-import { toggleCompose } from '../store'
+import { toggleCompose, uiState } from '../store'
 
 const router = useRouter()
 const userStr = localStorage.getItem('user');
@@ -109,6 +112,21 @@ const handleLogout = () => {
 
 .nav-item span {
     font-weight: 500;
+}
+
+.badge {
+    background: #1d9bf0;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    margin-left: 8px;
 }
 
 .nav-item.active,

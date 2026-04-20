@@ -102,8 +102,10 @@ public class NotificationService {
     }
     
     public void markAllAsRead(Long userId) {
-        // 简单的实现：获取未读并更新。
-        // 在大型应用中，应使用自定义的批量更新查询以提升性能。
-        // 暂时跳过 MVP 实现。
+        List<Notification> unreads = notificationRepository.findByRecipientIdAndIsReadFalse(userId);
+        for (Notification n : unreads) {
+            n.setRead(true);
+        }
+        notificationRepository.saveAll(unreads);
     }
 }

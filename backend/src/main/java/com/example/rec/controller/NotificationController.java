@@ -43,4 +43,12 @@ public class NotificationController {
     public void markAsRead(@PathVariable Long id) {
         notificationService.markAsRead(id);
     }
+
+    /**
+     * 标记所有通知为已读
+     */
+    @PostMapping("/read-all")
+    public void markAllAsRead(@RequestParam Long userId) {
+        notificationService.markAllAsRead(userId);
+    }
 }

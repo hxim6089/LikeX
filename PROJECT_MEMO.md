@@ -465,4 +465,7 @@ finalScore = (baseEngagement / timeDecay)
 | 2026-04-19 | **新增**: Grok 多轮对话上下文 - 前端发送最近20条历史，后端拼装完整 messages 数组 |
 | 2026-04-19 | **新增**: Grok 系统提示词 - AiService 添加 SYSTEM_PROMPT 注入平台功能描述，AI 具备平台认知 |
 | 2026-04-20 | **新增**: Ask Grok 分析结果缓存 - localStorage 按帖子ID缓存AI回复(key: grok_analysis_{id})，避免重复API调用 |
+| 2026-04-20 | **完善**: 通知系统全面升级 - Sidebar未读角标、Layout全局WebSocket接入、实时弹窗推送 |
+| 2026-04-20 | **完善**: NotificationView 重构 - 使用封装api、分类型图标(LIKE/COMMENT/FOLLOW/REPOST/QUOTE)、点击跳转原帖、全部已读 |
+| 2026-04-20 | **新增**: 后端 markAllAsRead 批量已读实现 + POST /api/notifications/read-all 端点 |
 
