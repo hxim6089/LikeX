@@ -18,6 +18,30 @@ public class AdController {
     }
 
     /**
+     * 获取所有广告列表（管理用）
+     */
+    @GetMapping
+    public ResponseEntity<?> getAllAds() {
+        return ResponseEntity.ok(adService.getAllAds());
+    }
+
+    /**
+     * 创建广告
+     */
+    @PostMapping
+    public ResponseEntity<?> createAd(@RequestBody com.example.rec.model.Ad ad) {
+        return ResponseEntity.ok(adService.createAd(ad));
+    }
+
+    /**
+     * 编辑广告
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateAd(@PathVariable Long id, @RequestBody com.example.rec.model.Ad ad) {
+        return ResponseEntity.ok(adService.updateAd(id, ad));
+    }
+
+    /**
      * 获取与用户画像匹配的广告
      */
     @GetMapping("/relevant")

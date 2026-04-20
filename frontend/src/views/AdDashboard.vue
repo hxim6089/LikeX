@@ -1,7 +1,12 @@
 <template>
   <div class="ad-dashboard">
-    <h2 class="page-title">📊 广告效果报表</h2>
-    <p class="page-desc">模拟 Google AdSense 广告投放数据，展示推荐系统在商业变现中的应用</p>
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">📊 广告效果报表</h2>
+        <p class="page-desc">模拟 Google AdSense 广告投放数据，展示推荐系统在商业变现中的应用</p>
+      </div>
+      <button class="add-ad-btn" @click="openCreateDialog">+ 添加广告</button>
+    </div>
 
     <!-- 指标卡片 -->
     <div class="stats-cards" v-if="stats">
@@ -65,6 +70,11 @@
         <el-table-column prop="ecpm" label="eCPM" width="90" sortable>
           <template #default="{ row }">¥{{ row.ecpm }}</template>
         </el-table-column>
+        <el-table-column label="操作" width="80" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="openEditDialog(row)">编辑</el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </div>
 
@@ -72,12 +82,61 @@
       <el-icon class="is-loading" :size="32"><Loading /></el-icon>
       <span>加载中...</span>
     </div>
+
+    <!-- 添加/编辑广告弹窗 -->
+    <el-dialog 
+      v-model="dialogVisible" 
+      :title="isEditing ? '编辑广告' : '添加广告'" 
+      width="560px"
+      destroy-on-close
+    >
+      <el-form :model="adForm" label-width="90px" label-position="left">
+        <el-form-item label="广告标题">
+          <el-input v-model="adForm.title" placeholder="请输入广告标题" />
+        </el-form-item>
+        <el-form-item label="广告描述">
+          <el-input v-model="adForm.description" type="textarea" :rows="3" placeholder="请输入广告描述" />
+        </el-form-item>
+        <el-form-item label="广告主">
+          <el-input v-model="adForm.advertiser" placeholder="如：TechCorp" />
+        </el-form-item>
+        <el-form-item label="定向标签">
+          <el-input v-model="adForm.targetTags" placeholder="逗号分隔，如：Tech,AI,Programming" />
+        </el-form-item>
+        <el-form-item label="分类">
+          <el-select v-model="adForm.category" placeholder="选择分类" style="width: 100%">
+            <el-option label="Tech" value="Tech" />
+            <el-option label="Life" value="Life" />
+            <el-option label="Education" value="Education" />
+            <el-option label="Sports" value="Sports" />
+            <el-option label="Finance" value="Finance" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="出价(CPM)">
+          <el-input-number v-model="adForm.bidPrice" :min="0.1" :step="0.5" :precision="2" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="目标URL">
+          <el-input v-model="adForm.targetUrl" placeholder="https://example.com" />
+        </el-form-item>
+        <el-form-item label="图片URL">
+          <el-input v-model="adForm.imageUrl" placeholder="可选，广告配图链接" />
+        </el-form-item>
+        <el-form-item label="启用状态">
+          <el-switch v-model="adForm.active" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitAd" :loading="submitting">{{ isEditing ? '保存' : '创建' }}</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick, computed } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import api from '../api'
 import * as echarts from 'echarts'
 
@@ -87,6 +146,72 @@ const ctrChart = ref(null)
 const pieChart = ref(null)
 const sortKey = ref('ctr')
 const sortOrder = ref('descending')
+
+// Dialog state
+const dialogVisible = ref(false)
+const isEditing = ref(false)
+const editingId = ref(null)
+const submitting = ref(false)
+
+const defaultForm = () => ({
+  title: '',
+  description: '',
+  advertiser: '',
+  targetTags: '',
+  category: 'Tech',
+  bidPrice: 5.0,
+  targetUrl: '',
+  imageUrl: '',
+  active: true
+})
+const adForm = ref(defaultForm())
+
+const openCreateDialog = () => {
+  isEditing.value = false
+  editingId.value = null
+  adForm.value = defaultForm()
+  dialogVisible.value = true
+}
+
+const openEditDialog = (row) => {
+  isEditing.value = true
+  editingId.value = row.id
+  adForm.value = {
+    title: row.title || '',
+    description: row.description || '',
+    advertiser: row.advertiser || '',
+    targetTags: row.targetTags || '',
+    category: row.category || 'Tech',
+    bidPrice: row.bidPrice || 5.0,
+    targetUrl: row.targetUrl || '',
+    imageUrl: row.imageUrl || '',
+    active: row.active !== false
+  }
+  dialogVisible.value = true
+}
+
+const submitAd = async () => {
+  if (!adForm.value.title.trim()) {
+    ElMessage.warning('请输入广告标题')
+    return
+  }
+  submitting.value = true
+  try {
+    if (isEditing.value) {
+      await api.put(`/ads/${editingId.value}`, adForm.value)
+      ElMessage.success('广告已更新')
+    } else {
+      await api.post('/ads', adForm.value)
+      ElMessage.success('广告已创建')
+    }
+    dialogVisible.value = false
+    loadStats() // Refresh
+  } catch (e) {
+    console.error('Submit failed', e)
+  } finally {
+    submitting.value = false
+  }
+}
 
 const sortedAds = computed(() => {
   if (!stats.value || !stats.value.ads) return []
@@ -180,6 +305,13 @@ onMounted(loadStats)
   padding: 20px;
 }
 
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
 .page-title {
   font-size: 24px;
   font-weight: 800;
@@ -190,7 +322,23 @@ onMounted(loadStats)
 .page-desc {
   font-size: 14px;
   color: #536471;
-  margin: 0 0 20px 0;
+  margin: 0;
+}
+
+.add-ad-btn {
+  background: #1d9bf0;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+.add-ad-btn:hover {
+  background: #1a8cd8;
 }
 
 .stats-cards {

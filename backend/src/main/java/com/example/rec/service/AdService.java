@@ -26,6 +26,29 @@ public class AdService {
         this.personaService = personaService;
     }
 
+    public List<Ad> getAllAds() {
+        return adRepository.findAll();
+    }
+
+    public Ad createAd(Ad ad) {
+        return adRepository.save(ad);
+    }
+
+    public Ad updateAd(Long id, Ad updated) {
+        Ad ad = adRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ad not found: " + id));
+        if (updated.getTitle() != null) ad.setTitle(updated.getTitle());
+        if (updated.getDescription() != null) ad.setDescription(updated.getDescription());
+        if (updated.getAdvertiser() != null) ad.setAdvertiser(updated.getAdvertiser());
+        if (updated.getTargetTags() != null) ad.setTargetTags(updated.getTargetTags());
+        if (updated.getCategory() != null) ad.setCategory(updated.getCategory());
+        if (updated.getBidPrice() != null) ad.setBidPrice(updated.getBidPrice());
+        if (updated.getTargetUrl() != null) ad.setTargetUrl(updated.getTargetUrl());
+        if (updated.getImageUrl() != null) ad.setImageUrl(updated.getImageUrl());
+        if (updated.getActive() != null) ad.setActive(updated.getActive());
+        return adRepository.save(ad);
+    }
+
     /**
      * 根据用户画像匹配最相关的广告
      * 
@@ -137,10 +160,14 @@ public class AdService {
             Map<String, Object> detail = new HashMap<>();
             detail.put("id", ad.getId());
             detail.put("title", ad.getTitle());
+            detail.put("description", ad.getDescription());
             detail.put("advertiser", ad.getAdvertiser());
             detail.put("targetTags", ad.getTargetTags());
             detail.put("category", ad.getCategory());
             detail.put("bidPrice", ad.getBidPrice());
+            detail.put("targetUrl", ad.getTargetUrl());
+            detail.put("imageUrl", ad.getImageUrl());
+            detail.put("active", ad.getActive());
             detail.put("impressions", ad.getImpressionCount());
             detail.put("clicks", ad.getClickCount());
             double ctr = ad.getImpressionCount() > 0 ?

@@ -338,6 +338,10 @@ finalScore = (baseEngagement / timeDecay)
 | 方法 | 端点 | 说明 |
 |------|------|------|
 | GET | `/api/ads/relevant` | 获取用户匹配广告 |
+| GET | `/api/ads/stats` | 获取广告统计报表 |
+| GET | `/api/ads` | 获取所有广告列表 |
+| POST | `/api/ads` | 创建新广告 |
+| PUT | `/api/ads/{id}` | 更新广告信息 |
 
 ### 数据导入 (ImportController)
 | 方法 | 端点 | 说明 |
@@ -468,4 +472,6 @@ finalScore = (baseEngagement / timeDecay)
 | 2026-04-20 | **完善**: 通知系统全面升级 - Sidebar未读角标、Layout全局WebSocket接入、实时弹窗推送 |
 | 2026-04-20 | **完善**: NotificationView 重构 - 使用封装api、分类型图标(LIKE/COMMENT/FOLLOW/REPOST/QUOTE)、点击跳转原帖、全部已读 |
 | 2026-04-20 | **新增**: 后端 markAllAsRead 批量已读实现 + POST /api/notifications/read-all 端点 |
+| 2026-04-20 | **新增**: 广告管理CRUD - AdController新增GET/POST/PUT接口, AdService新增createAd/updateAd方法 |
+| 2026-04-20 | **新增**: AdDashboard添加/编辑广告弹窗 - 表单含标题/描述/广告主/标签/分类/出价/URL/启用状态, 支持创建和编辑 |
 
