@@ -477,4 +477,5 @@ finalScore = (baseEngagement / timeDecay)
 | 2026-04-20 | **新增**: 广告管理CRUD - AdController新增GET/POST/PUT接口, AdService新增createAd/updateAd方法 |
 | 2026-04-20 | **新增**: AdDashboard添加/编辑广告弹窗 - 表单含标题/描述/广告主/标签/分类/出价/URL/启用状态, 支持创建和编辑 |
 | 2026-04-20 | **新增**: 广告频率配置 - AdConfig实体(ad_config表)、投放设置卡片(间隔/最大数/全局开关)、FeedList动态读取配置 |
+| 2026-04-20 | **新增**: Grok多对话管理 - 对话列表侧栏(新建/切换/删除)、自动标题(首条消息摘要)、旧数据自动迁移、localStorage多会话隔离 |
 
