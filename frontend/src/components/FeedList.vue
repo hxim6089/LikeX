@@ -77,11 +77,23 @@
             :userId="userId"
         />
     </template>
+
+    <!-- 加载更多 / 底部状态 -->
+    <div v-if="loadingMore" class="loading-more">
+        <el-icon class="is-loading"><Loading /></el-icon>
+        <span>加载更多...</span>
+    </div>
+    <div v-else-if="!hasMore && items.length > 0" class="no-more">
+        已经到底了
+    </div>
+
+    <!-- 滚动探测哨兵 -->
+    <div ref="scrollSentinel" class="scroll-sentinel"></div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Loading, Picture, Location } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import TweetCard from './TweetCard.vue'
@@ -89,14 +101,12 @@ import AdCard from './AdCard.vue'
 import api from '../api'
 import { useRoute } from 'vue-router'
 
-// Mock User ID for demo
-// Mock User ID removed, using real user from storage below
-
 const items = ref([])
 const ads = ref([])
 const loading = ref(false)
+const loadingMore = ref(false)
 const isPersonalized = ref(true)
-const debugMode = ref(false)  // Debug 模式 (答辩展示用)
+const debugMode = ref(false)
 const tweetContent = ref('')
 const fileInput = ref(null)
 const selectedFile = ref(null)
@@ -106,16 +116,20 @@ const hasCustomWeights = ref(false)
 const adInterval = ref(5)
 const adEnabled = ref(true)
 
+const currentPage = ref(0)
+const pageSize = 10
+const hasMore = ref(true)
+const scrollSentinel = ref(null)
+let observer = null
+
 const route = useRoute()
 
-// Watch for "Home" button clicks (refresh param)
 watch(() => route.query.refresh, () => {
     if (isPersonalized.value) {
-        fetchFeed();
+        resetAndFetch();
     }
 })
 
-// Get User from Storage
 const userStr = localStorage.getItem('user');
 const user = userStr ? JSON.parse(userStr) : null;
 const userId = user ? user.id : null;
@@ -173,7 +187,7 @@ const publishTweet = async () => {
         aiTagging.value = true;
         setTimeout(() => {
             aiTagging.value = false;
-            fetchFeed(); // AI 打标完成后刷新
+            resetAndFetch();
         }, 3000);
     } catch (e) {
         console.error(e);
@@ -183,32 +197,66 @@ const publishTweet = async () => {
 
 const switchTab = (personalized) => {
     isPersonalized.value = personalized;
+    resetAndFetch();
+}
+
+const resetAndFetch = () => {
+    items.value = [];
+    currentPage.value = 0;
+    hasMore.value = true;
     fetchFeed();
 }
 
 const fetchFeed = async () => {
-    loading.value = true;
+    if (currentPage.value === 0) {
+        loading.value = true;
+    } else {
+        loadingMore.value = true;
+    }
     try {
         if (isPersonalized.value) {
-            // "推荐" - 始终获取带评分详情的数据 (前5条默认显示评分)
             const res = await api.get('/content/feed', { 
                 params: { 
                     personalized: true, 
                     userId,
-                    debug: true  // 始终获取评分数据
+                    debug: true,
+                    page: currentPage.value,
+                    size: pageSize
                 } 
             });
-            items.value = res.data.content;
+            const newItems = res.data.content || [];
+            if (currentPage.value === 0) {
+                items.value = newItems;
+            } else {
+                items.value = [...items.value, ...newItems];
+            }
+            const totalPages = res.data.totalPages || 1;
+            hasMore.value = currentPage.value + 1 < totalPages;
         } else {
-            // "关注"
-            const res = await api.get('/content/following', { params: { userId } });
-            items.value = res.data.content;
+            const res = await api.get('/content/following', { 
+                params: { userId, page: currentPage.value, size: pageSize } 
+            });
+            const newItems = res.data.content || [];
+            if (currentPage.value === 0) {
+                items.value = newItems;
+            } else {
+                items.value = [...items.value, ...newItems];
+            }
+            const totalPages = res.data.totalPages || 1;
+            hasMore.value = currentPage.value + 1 < totalPages;
         }
     } catch (e) {
         console.error(e);
     } finally {
         loading.value = false;
+        loadingMore.value = false;
     }
+}
+
+const loadNextPage = () => {
+    if (loadingMore.value || loading.value || !hasMore.value) return;
+    currentPage.value++;
+    fetchFeed();
 }
 
 const fetchAds = async () => {
@@ -234,6 +282,24 @@ onMounted(() => {
     fetchFeed();
     fetchAds();
     checkCustomWeights();
+
+    if (typeof IntersectionObserver !== 'undefined') {
+        observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && hasMore.value) {
+                loadNextPage();
+            }
+        }, { rootMargin: '200px' });
+        if (scrollSentinel.value) {
+            observer.observe(scrollSentinel.value);
+        }
+    }
+})
+
+onBeforeUnmount(() => {
+    if (observer) {
+        observer.disconnect();
+        observer = null;
+    }
 })
 
 // 检查用户是否有自定义权重
@@ -254,7 +320,7 @@ const resetWeights = async () => {
         await api.delete(`/weights/${userId}`);
         hasCustomWeights.value = false;
         ElMessage.success('已恢复默认算法参数');
-        fetchFeed(); // 刷新推荐结果
+        resetAndFetch();
     } catch (e) {
         ElMessage.error('恢复失败');
     }
@@ -399,5 +465,27 @@ const resetWeights = async () => {
 }
 .fade-enter-from, .fade-leave-to {
     opacity: 0;
+}
+
+.loading-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    color: #1d9bf0;
+    font-size: 14px;
+}
+
+.no-more {
+    text-align: center;
+    padding: 20px;
+    color: #536471;
+    font-size: 14px;
+    border-top: 1px solid #eff3f4;
+}
+
+.scroll-sentinel {
+    height: 1px;
 }
 </style>
