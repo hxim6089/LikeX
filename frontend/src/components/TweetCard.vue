@@ -1,5 +1,5 @@
 <template>
-  <div class="tweet-card" @click="goToDetail">
+  <div class="tweet-card" ref="tweetCardRef" @click="goToDetail">
     <div class="tweet-avatar" @click.stop="goToProfile(tweet.author)">
       <el-avatar :size="48" :src="tweet.author.avatarUrl || 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'" />
     </div>
@@ -133,7 +133,7 @@
 <script setup>
 import { ChatLineRound, Star, StarFilled, Refresh, DataAnalysis, Cpu, Delete } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '../api'
 import ScorePanel from './ScorePanel.vue'
@@ -143,12 +143,59 @@ const router = useRouter()
 const props = defineProps({
   tweet: Object,
   isReply: Boolean,
-  scoreBreakdown: Object,  // 评分详情 (debug模式)
-  rank: Number,            // 排名 (debug模式)
-  showScore: Boolean       // 是否显示评分面板
+  scoreBreakdown: Object,
+  rank: Number,
+  showScore: Boolean
 })
 
 const emit = defineEmits(['deleted'])
+
+// ===== 浏览时长追踪 =====
+const tweetCardRef = ref(null)
+let viewStartTime = null
+let viewTimer = null
+let hasReportedView = false
+
+const userStr = localStorage.getItem('user')
+const currentUser = userStr ? JSON.parse(userStr) : { id: 1 }
+
+const startViewTracking = () => {
+  if (hasReportedView || !props.tweet?.id) return
+  viewStartTime = Date.now()
+}
+
+const stopViewTracking = () => {
+  if (!viewStartTime || hasReportedView || !props.tweet?.id) return
+  const duration = Math.round((Date.now() - viewStartTime) / 1000)
+  viewStartTime = null
+  if (duration >= 2) {
+    hasReportedView = true
+    api.post('/behavior/view', {
+      userId: currentUser.id,
+      contentId: props.tweet.id,
+      duration: duration
+    }).catch(() => {})
+  }
+}
+
+onMounted(() => {
+  if (typeof IntersectionObserver !== 'undefined' && tweetCardRef.value) {
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          startViewTracking()
+        } else {
+          stopViewTracking()
+        }
+      }
+    }, { threshold: 0.5 })
+    observer.observe(tweetCardRef.value)
+    onBeforeUnmount(() => {
+      observer.disconnect()
+      stopViewTracking()
+    })
+  }
+})
 
 const showReplyInput = ref(false)
 const replyContent = ref('')
@@ -211,9 +258,7 @@ const toggleReplyInput = () => {
     showReplyInput.value = !showReplyInput.value
 }
 
-// Get User from Storage (Simplified)
-const userStr = localStorage.getItem('user');
-const currentUser = userStr ? JSON.parse(userStr) : { id: 1 }; 
+// currentUser already declared above for view tracking
 
 const handleLike = async () => {
     if (props.tweet.liked) return; 

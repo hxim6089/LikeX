@@ -1,31 +1,42 @@
 package com.example.rec.dto;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 推荐评分详情 DTO
- * 用于答辩展示，详细分解评分因子
+ * 详细分解评分因子 + 行为画像驱动的个性化信息
  */
 public class ScoreBreakdown {
     
-    private double finalScore;           // 最终评分
-    private double baseEngagement;       // 基础互动分
-    private double engagementRate;       // 互动率
-    private double timeDecayFactor;      // 时间衰减系数
-    private double trendingBoost;        // 热门话题加成
-    private double personalizationBoost; // 个性化加成
-    private double jitter;               // 探索因子
-    private boolean isInNetwork;         // 是否关注来源
-    private String matchedTags;          // 匹配的兴趣标签
-    private long hoursAgo;               // 发布距今小时数
+    private double finalScore;
+    private double baseEngagement;
+    private double engagementRate;
+    private double timeDecayFactor;
+    private double trendingBoost;
+    private double personalizationBoost;
+    private double jitter;
+    private boolean isInNetwork;
+    private String matchedTags;
+    private long hoursAgo;
     
-    // 详细分项（用于前端展示）
     private int likeCount;
     private int commentCount;
     private int repostCount;
     private int viewCount;
-    private double contentSimilarityBoost; // TF-IDF 内容相似度加成
-    
+    private double contentSimilarityBoost;
+
+    // ===== 新增：行为画像驱动的个性化字段 =====
+    private double topicAffinityBoost;     // 话题亲和度加成
+    private double authorAffinityBoost;    // 作者亲密度加成
+    private double depthMatchBoost;        // 内容深度匹配加成
+    private double freshnessBoost;         // 新鲜度匹配加成
+    private List<String> recommendReasons = new ArrayList<>(); // 推荐理由列表
+    private String userStage;              // 用户阶段: COLD_START / BEGINNER / ACTIVE
+    private String profileSummary;         // 用户画像摘要
+    private Map<String, Double> dynamicWeights; // 当前生效的动态权重
+
     public ScoreBreakdown() {}
 
     // ===== Getters and Setters =====
@@ -74,4 +85,28 @@ public class ScoreBreakdown {
 
     public double getContentSimilarityBoost() { return contentSimilarityBoost; }
     public void setContentSimilarityBoost(double contentSimilarityBoost) { this.contentSimilarityBoost = contentSimilarityBoost; }
+
+    public double getTopicAffinityBoost() { return topicAffinityBoost; }
+    public void setTopicAffinityBoost(double topicAffinityBoost) { this.topicAffinityBoost = topicAffinityBoost; }
+
+    public double getAuthorAffinityBoost() { return authorAffinityBoost; }
+    public void setAuthorAffinityBoost(double authorAffinityBoost) { this.authorAffinityBoost = authorAffinityBoost; }
+
+    public double getDepthMatchBoost() { return depthMatchBoost; }
+    public void setDepthMatchBoost(double depthMatchBoost) { this.depthMatchBoost = depthMatchBoost; }
+
+    public double getFreshnessBoost() { return freshnessBoost; }
+    public void setFreshnessBoost(double freshnessBoost) { this.freshnessBoost = freshnessBoost; }
+
+    public List<String> getRecommendReasons() { return recommendReasons; }
+    public void setRecommendReasons(List<String> recommendReasons) { this.recommendReasons = recommendReasons; }
+
+    public String getUserStage() { return userStage; }
+    public void setUserStage(String userStage) { this.userStage = userStage; }
+
+    public String getProfileSummary() { return profileSummary; }
+    public void setProfileSummary(String profileSummary) { this.profileSummary = profileSummary; }
+
+    public Map<String, Double> getDynamicWeights() { return dynamicWeights; }
+    public void setDynamicWeights(Map<String, Double> dynamicWeights) { this.dynamicWeights = dynamicWeights; }
 }

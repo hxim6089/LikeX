@@ -18,7 +18,9 @@ public class Behavior {
     @Column(name = "content_id")
     private Long contentId;
 
-    private String type; // VIEW, LIKE, COMMENT, COLLECT
+    private String type; // VIEW, LIKE, COMMENT, REPOST, SKIP
+
+    private Integer duration; // 浏览停留时长（秒），仅 VIEW 类型有效
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -42,4 +44,7 @@ public class Behavior {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Integer getDuration() { return duration; }
+    public void setDuration(Integer duration) { this.duration = duration; }
 }

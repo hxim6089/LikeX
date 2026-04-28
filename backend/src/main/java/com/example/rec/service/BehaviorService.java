@@ -7,6 +7,8 @@ import com.example.rec.repository.ContentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class BehaviorService {
 
@@ -22,8 +24,6 @@ public class BehaviorService {
 
     @Transactional
     public void likeContent(Long userId, Long contentId) {
-        // 0. Check if already liked to prevent duplicates
-        // Note: Ideally we should "Unlike" here, but for now we just prevent duplicates as requested.
         boolean alreadyLiked = behaviorRepository.findByUserIdAndType(userId, "LIKE").stream()
                 .anyMatch(b -> b.getContentId().equals(contentId));
         
@@ -31,20 +31,58 @@ public class BehaviorService {
             return; 
         }
 
-        // 1. Save Behavior Record
         Behavior behavior = new Behavior();
         behavior.setUserId(userId);
         behavior.setContentId(contentId);
         behavior.setType("LIKE");
         behaviorRepository.save(behavior);
 
-        // 2. Increment Like Count in Content
         Content content = contentRepository.findById(contentId)
                 .orElseThrow(() -> new RuntimeException("Content not found"));
         content.setLikeCount(content.getLikeCount() + 1);
         contentRepository.save(content);
         
-        // 3. Trigger Notification
         notificationService.createNotification(content.getAuthor().getId(), userId, "LIKE", contentId);
+    }
+
+    @Transactional
+    public void recordView(Long userId, Long contentId, Integer duration) {
+        if (userId == null || contentId == null) return;
+
+        List<Behavior> existing = behaviorRepository.findByUserIdAndContentIdAndType(userId, contentId, "VIEW");
+        if (!existing.isEmpty()) {
+            Behavior last = existing.get(existing.size() - 1);
+            if (duration != null && (last.getDuration() == null || duration > last.getDuration())) {
+                last.setDuration(duration);
+                behaviorRepository.save(last);
+            }
+            return;
+        }
+
+        Behavior behavior = new Behavior();
+        behavior.setUserId(userId);
+        behavior.setContentId(contentId);
+        behavior.setType("VIEW");
+        behavior.setDuration(duration);
+        behaviorRepository.save(behavior);
+
+        contentRepository.findById(contentId).ifPresent(content -> {
+            content.setViewCount((content.getViewCount() != null ? content.getViewCount() : 0) + 1);
+            contentRepository.save(content);
+        });
+    }
+
+    @Transactional
+    public void recordSkip(Long userId, Long contentId) {
+        if (userId == null || contentId == null) return;
+
+        List<Behavior> existing = behaviorRepository.findByUserIdAndContentIdAndType(userId, contentId, "SKIP");
+        if (!existing.isEmpty()) return;
+
+        Behavior behavior = new Behavior();
+        behavior.setUserId(userId);
+        behavior.setContentId(contentId);
+        behavior.setType("SKIP");
+        behaviorRepository.save(behavior);
     }
 }
