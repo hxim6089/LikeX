@@ -3,18 +3,24 @@ package com.example.rec.controller;
 import com.example.rec.dto.ContentWithScore;
 import com.example.rec.dto.PipelineStats;
 import com.example.rec.model.Content;
+import com.example.rec.model.User;
 import com.example.rec.service.ContentService;
 import com.example.rec.service.RecommendationService;
+import com.example.rec.service.UserBehaviorProfileService;
+import com.example.rec.service.UserBehaviorProfileService.BehaviorProfile;
+import com.example.rec.service.UserBehaviorProfileService.DynamicWeights;
+import com.example.rec.repository.UserRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 推荐效果对比 Controller (Phase 28)
- * 
- * 提供推荐算法 vs 时间序的对比 API，
- * 用于答辩展示推荐算法的效果。
+ * 个性化推荐效果验证 Controller
+ *
+ * 提供：
+ * 1. 推荐 vs 时间序对比（证明算法有效）
+ * 2. 多用户行为画像对比（证明千人千面）
  */
 @RestController
 @RequestMapping("/api/compare")
@@ -22,11 +28,17 @@ public class CompareController {
 
     private final RecommendationService recommendationService;
     private final ContentService contentService;
+    private final UserBehaviorProfileService behaviorProfileService;
+    private final UserRepository userRepository;
 
     public CompareController(RecommendationService recommendationService,
-                             ContentService contentService) {
+                             ContentService contentService,
+                             UserBehaviorProfileService behaviorProfileService,
+                             UserRepository userRepository) {
         this.recommendationService = recommendationService;
         this.contentService = contentService;
+        this.behaviorProfileService = behaviorProfileService;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -165,4 +177,90 @@ public class CompareController {
 
         return stats;
     }
+
+    /**
+     * 多用户行为画像对比 API — 核心"千人千面"演示接口
+     *
+     * 对比两个用户的行为画像、动态权重和 Top 5 推荐结果，
+     * 直观展示不同用户获得完全不同的推荐策略和内容排序。
+     */
+    @GetMapping("/profiles")
+    public Map<String, Object> compareProfiles(@RequestParam Long userId,
+                                                @RequestParam(required = false) Long compareUserId) {
+        Map<String, Object> result = new HashMap<>();
+
+        result.put("currentUser", buildUserProfileData(userId));
+
+        if (compareUserId != null && !compareUserId.equals(userId)) {
+            result.put("compareUser", buildUserProfileData(compareUserId));
+        }
+
+        List<Map<String, Object>> userList = new ArrayList<>();
+        List<User> allUsers = userRepository.findAll();
+        for (User u : allUsers) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", u.getId());
+            item.put("username", u.getUsername());
+            item.put("avatarUrl", u.getAvatarUrl());
+            item.put("handle", u.getHandle());
+            userList.add(item);
+        }
+        result.put("users", userList);
+
+        return result;
+    }
+
+    private Map<String, Object> buildUserProfileData(Long userId) {
+        Map<String, Object> data = new HashMap<>();
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            data.put("error", "User not found");
+            return data;
+        }
+        data.put("id", user.getId());
+        data.put("username", user.getUsername());
+        data.put("avatarUrl", user.getAvatarUrl());
+        data.put("handle", user.getHandle());
+
+        BehaviorProfile profile = behaviorProfileService.buildProfile(userId);
+        data.put("userStage", profile.userStage);
+        data.put("profileSummary", profile.profileSummary);
+        data.put("engagementStyle", profile.engagementStyle);
+        data.put("depthPreference", profile.depthPreference);
+        data.put("freshnessPreference", profile.freshnessPreference);
+        data.put("explorationRate", profile.explorationRate);
+
+        List<Map<String, Object>> topTopics = new ArrayList<>();
+        int i = 0;
+        for (Map.Entry<String, Double> entry : profile.topicPreferences.entrySet()) {
+            if (i++ >= 8) break;
+            Map<String, Object> t = new HashMap<>();
+            t.put("name", entry.getKey());
+            t.put("score", Math.round(entry.getValue() * 100.0) / 100.0);
+            topTopics.add(t);
+        }
+        data.put("topTopics", topTopics);
+
+        DynamicWeights dw = behaviorProfileService.computeDynamicWeights(userId);
+        Map<String, Double> weightsMap = new LinkedHashMap<>();
+        weightsMap.put("wLike", round(dw.wLike));
+        weightsMap.put("wReply", round(dw.wReply));
+        weightsMap.put("wRepost", round(dw.wRepost));
+        weightsMap.put("wTopicAffinity", round(dw.wTopicAffinity));
+        weightsMap.put("wAuthorAffinity", round(dw.wAuthorAffinity));
+        weightsMap.put("wTrending", round(dw.wTrending));
+        weightsMap.put("wSimilarity", round(dw.wSimilarity));
+        weightsMap.put("wFreshness", round(dw.wFreshness));
+        weightsMap.put("wDepthMatch", round(dw.wDepthMatch));
+        weightsMap.put("explorationFactor", round(dw.explorationFactor));
+        data.put("dynamicWeights", weightsMap);
+
+        List<ContentWithScore> topRecs = recommendationService.getRecommendedFeedWithScore(userId);
+        data.put("topRecommendations", topRecs.stream().limit(5).collect(Collectors.toList()));
+
+        return data;
+    }
+
+    private static double round(double v) { return Math.round(v * 100.0) / 100.0; }
 }

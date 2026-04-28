@@ -11,7 +11,7 @@
       </a>
       <a href="#" class="nav-item"><el-icon><Search /></el-icon> <span>发现</span></a>
       <router-link to="/grok" class="nav-item"><el-icon><Cpu /></el-icon> <span>Grok</span></router-link>
-      <router-link to="/compare" class="nav-item"><el-icon><DataAnalysis /></el-icon> <span>算法对比</span></router-link>
+      <router-link to="/compare" class="nav-item"><el-icon><DataAnalysis /></el-icon> <span>算法验证</span></router-link>
       <router-link to="/ad-dashboard" class="nav-item"><el-icon><Coin /></el-icon> <span>广告报表</span></router-link>
       <router-link to="/notifications" class="nav-item">
         <el-icon><Bell /></el-icon> <span>通知</span>
