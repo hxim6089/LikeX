@@ -2,9 +2,11 @@ package com.example.rec.controller;
 
 import com.example.rec.dto.SearchResult;
 import com.example.rec.dto.SearchSuggestion;
+import com.example.rec.model.Behavior;
 import com.example.rec.model.Content;
 import com.example.rec.model.Tag;
 import com.example.rec.model.User;
+import com.example.rec.repository.BehaviorRepository;
 import com.example.rec.repository.ContentRepository;
 import com.example.rec.repository.TagRepository;
 import com.example.rec.repository.UserRepository;
@@ -12,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,13 +32,16 @@ public class SearchController {
     private final ContentRepository contentRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
+    private final BehaviorRepository behaviorRepository;
 
     public SearchController(ContentRepository contentRepository,
                            UserRepository userRepository,
-                           TagRepository tagRepository) {
+                           TagRepository tagRepository,
+                           BehaviorRepository behaviorRepository) {
         this.contentRepository = contentRepository;
         this.userRepository = userRepository;
         this.tagRepository = tagRepository;
+        this.behaviorRepository = behaviorRepository;
     }
 
     /**
@@ -50,7 +56,8 @@ public class SearchController {
             @RequestParam String q,
             @RequestParam(defaultValue = "all") String type,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long userId) {
         
         if (q == null || q.trim().isEmpty()) {
             SearchResult result = new SearchResult();
@@ -61,6 +68,16 @@ public class SearchController {
         }
 
         String keyword = q.trim();
+
+        if (userId != null && page == 0) {
+            try {
+                Behavior searchBehavior = new Behavior();
+                searchBehavior.setUserId(userId);
+                searchBehavior.setType("SEARCH");
+                searchBehavior.setCreatedAt(LocalDateTime.now());
+                behaviorRepository.save(searchBehavior);
+            } catch (Exception ignored) {}
+        }
         String cleanKeyword = keyword.startsWith("#") ? keyword.substring(1) : keyword;
 
         // posts 类型使用分页

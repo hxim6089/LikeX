@@ -24,11 +24,16 @@ public class BehaviorService {
 
     @Transactional
     public void likeContent(Long userId, Long contentId) {
-        boolean alreadyLiked = behaviorRepository.findByUserIdAndType(userId, "LIKE").stream()
-                .anyMatch(b -> b.getContentId().equals(contentId));
-        
-        if (alreadyLiked) {
-            return; 
+        List<Behavior> existingLike = behaviorRepository.findByUserIdAndContentIdAndType(userId, contentId, "LIKE");
+        if (!existingLike.isEmpty()) return;
+
+        Content content = contentRepository.findById(contentId)
+                .orElseThrow(() -> new RuntimeException("Content not found"));
+
+        List<Behavior> existingDislike = behaviorRepository.findByUserIdAndContentIdAndType(userId, contentId, "DISLIKE");
+        if (!existingDislike.isEmpty()) {
+            behaviorRepository.deleteAll(existingDislike);
+            content.setDislikeCount(Math.max(0, (content.getDislikeCount() != null ? content.getDislikeCount() : 0) - 1));
         }
 
         Behavior behavior = new Behavior();
@@ -37,11 +42,9 @@ public class BehaviorService {
         behavior.setType("LIKE");
         behaviorRepository.save(behavior);
 
-        Content content = contentRepository.findById(contentId)
-                .orElseThrow(() -> new RuntimeException("Content not found"));
         content.setLikeCount(content.getLikeCount() + 1);
         contentRepository.save(content);
-        
+
         notificationService.createNotification(content.getAuthor().getId(), userId, "LIKE", contentId);
     }
 
@@ -70,6 +73,30 @@ public class BehaviorService {
             content.setViewCount((content.getViewCount() != null ? content.getViewCount() : 0) + 1);
             contentRepository.save(content);
         });
+    }
+
+    @Transactional
+    public void dislikeContent(Long userId, Long contentId) {
+        List<Behavior> existingDislike = behaviorRepository.findByUserIdAndContentIdAndType(userId, contentId, "DISLIKE");
+        if (!existingDislike.isEmpty()) return;
+
+        Content content = contentRepository.findById(contentId)
+                .orElseThrow(() -> new RuntimeException("Content not found"));
+
+        List<Behavior> existingLike = behaviorRepository.findByUserIdAndContentIdAndType(userId, contentId, "LIKE");
+        if (!existingLike.isEmpty()) {
+            behaviorRepository.deleteAll(existingLike);
+            content.setLikeCount(Math.max(0, content.getLikeCount() - 1));
+        }
+
+        Behavior behavior = new Behavior();
+        behavior.setUserId(userId);
+        behavior.setContentId(contentId);
+        behavior.setType("DISLIKE");
+        behaviorRepository.save(behavior);
+
+        content.setDislikeCount((content.getDislikeCount() != null ? content.getDislikeCount() : 0) + 1);
+        contentRepository.save(content);
     }
 
     @Transactional

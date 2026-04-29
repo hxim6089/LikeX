@@ -2,7 +2,9 @@ package com.example.rec.service;
 
 import com.example.rec.dto.ContentWithScore;
 import com.example.rec.dto.ScoreBreakdown;
+import com.example.rec.model.Behavior;
 import com.example.rec.model.Content;
+import com.example.rec.repository.BehaviorRepository;
 import com.example.rec.service.UserBehaviorProfileService.BehaviorProfile;
 import com.example.rec.service.UserBehaviorProfileService.DynamicWeights;
 import org.springframework.stereotype.Component;
@@ -28,20 +30,31 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
     private final TrendingService trendingService;
     private final TfIdfService tfIdfService;
     private final UserBehaviorProfileService behaviorProfileService;
+    private final CollaborativeFilteringService collaborativeFilteringService;
+    private final BehaviorRepository behaviorRepository;
 
     private static final double WEIGHT_VIEW = 0.05;
     private static final double WEIGHT_IN_NETWORK_BOOST = 1.5;
     private static final double AUTHOR_DIVERSITY_DECAY = 0.7;
     private static final double ENGAGEMENT_RATE_WEIGHT = 0.3;
+    private static final int CF_CANDIDATE_LIMIT = 50;
+    private static final double DISLIKE_PENALTY_FACTOR = 0.1;
+    private static final double LIKE_PENALTY_FACTOR = 0.5;
+    private static final double VIEWED_PENALTY_FACTOR = 0.7;
+    private static final int VIEW_THRESHOLD_SECONDS = 5;
 
     public HybridRecommendationStrategy(PersonaService personaService,
                                          TrendingService trendingService,
                                          TfIdfService tfIdfService,
-                                         UserBehaviorProfileService behaviorProfileService) {
+                                         UserBehaviorProfileService behaviorProfileService,
+                                         CollaborativeFilteringService collaborativeFilteringService,
+                                         BehaviorRepository behaviorRepository) {
         this.personaService = personaService;
         this.trendingService = trendingService;
         this.tfIdfService = tfIdfService;
         this.behaviorProfileService = behaviorProfileService;
+        this.collaborativeFilteringService = collaborativeFilteringService;
+        this.behaviorRepository = behaviorRepository;
     }
 
     @Override
@@ -65,8 +78,17 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         final Map<String, Double> tfidfProfile = userTfIdf;
         final Map<String, Double> idf = globalIdf;
 
+        Set<Long> cfRecommendedIds = getCfRecommendedIds(userId);
+        Set<Long> dislikedIds = getDislikedContentIds(userId);
+        Set<Long> likedIds = getLikedContentIds(userId);
+        Set<Long> viewedIds = getViewedContentIds(userId);
+
         List<ScoredContent> scoredList = candidates.stream()
-                .map(c -> new ScoredContent(c, calculateScore(c, interests, tfidfProfile, idf, profile, dw)))
+                .map(c -> {
+                    double score = calculateScore(c, interests, tfidfProfile, idf, profile, dw, cfRecommendedIds, dislikedIds);
+                    score = applyInteractionPenalty(c.getId(), score, dislikedIds, likedIds, viewedIds);
+                    return new ScoredContent(c, score);
+                })
                 .collect(Collectors.toList());
 
         applyAuthorDiversityPenalty(scoredList);
@@ -104,9 +126,13 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         final Map<String, Double> globalIdf = tmpIdf;
 
         Map<String, Double> weightsMap = dynamicWeightsToMap(dw);
+        Set<Long> cfRecommendedIds = getCfRecommendedIds(userId);
+        Set<Long> dislikedIds = getDislikedContentIds(userId);
+        Set<Long> likedIds = getLikedContentIds(userId);
+        Set<Long> viewedIds = getViewedContentIds(userId);
 
         List<ScoredContentWithDetails> scoredList = candidates.stream()
-                .map(c -> calculateScoreWithDetails(c, userInterests, userTfIdf, globalIdf, profile, dw, weightsMap))
+                .map(c -> calculateScoreWithDetails(c, userInterests, userTfIdf, globalIdf, profile, dw, weightsMap, cfRecommendedIds, dislikedIds, likedIds, viewedIds))
                 .collect(Collectors.toList());
 
         applyAuthorDiversityPenaltyWithDetails(scoredList);
@@ -133,7 +159,8 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
 
     private double calculateScore(Content content, List<String> userInterests,
                                    Map<String, Double> userTfIdf, Map<String, Double> idf,
-                                   BehaviorProfile profile, DynamicWeights dw) {
+                                   BehaviorProfile profile, DynamicWeights dw,
+                                   Set<Long> cfRecommendedIds, Set<Long> dislikedIds) {
         int likeCount = val(content.getLikeCount());
         int commentCount = val(content.getCommentCount());
         int viewCount = val(content.getViewCount());
@@ -174,8 +201,10 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         double freshness = computeFreshnessMatch(content, profile) * dw.wFreshness;
         double timeDecay = calculateTimeDecay(content);
 
+        double cfBoost = (cfRecommendedIds.contains(content.getId())) ? dw.wCollaborative : 0;
+
         double base = (engagement / timeDecay) + topicAffinity + authorAffinity
-                + personalization + similarity + trending + depthMatch + freshness;
+                + personalization + similarity + trending + depthMatch + freshness + cfBoost;
         double jitter = (Math.random() - 0.3) * base * dw.explorationFactor;
         return base + jitter;
     }
@@ -184,7 +213,9 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
 
     private ScoredContentWithDetails calculateScoreWithDetails(Content content,
             List<String> userInterests, Map<String, Double> userTfIdf, Map<String, Double> idf,
-            BehaviorProfile profile, DynamicWeights dw, Map<String, Double> weightsMap) {
+            BehaviorProfile profile, DynamicWeights dw, Map<String, Double> weightsMap,
+            Set<Long> cfRecommendedIds, Set<Long> dislikedIds,
+            Set<Long> likedIds, Set<Long> viewedIds) {
 
         ScoreBreakdown bd = new ScoreBreakdown();
         List<String> reasons = new ArrayList<>();
@@ -270,6 +301,11 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         double freshnessVal = computeFreshnessMatch(content, profile) * dw.wFreshness;
         bd.setFreshnessBoost(round(freshnessVal));
 
+        // 协同过滤加成
+        double cfBoost = cfRecommendedIds.contains(content.getId()) ? dw.wCollaborative : 0;
+        bd.setCollaborativeFilteringBoost(round(cfBoost));
+        if (cfBoost > 0) reasons.add("相似用户也喜欢");
+
         // 时间衰减
         long hoursDiff = 1;
         if (content.getCreatedAt() != null) {
@@ -285,7 +321,21 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
 
         // 最终评分
         double finalScore = (engagement / timeDecay) + topicAffinity + authorAffinity
-                + personalization + similarity + trending + depthMatch + freshnessVal + jitter;
+                + personalization + similarity + trending + depthMatch + freshnessVal + cfBoost + jitter;
+
+        Long cId = content.getId();
+        if (dislikedIds.contains(cId)) {
+            finalScore *= DISLIKE_PENALTY_FACTOR;
+            reasons.clear();
+            reasons.add("你已踩过此内容 (×0.1)");
+        } else if (likedIds.contains(cId)) {
+            finalScore *= LIKE_PENALTY_FACTOR;
+            reasons.add("已赞过，降低优先级 (×0.5)");
+        } else if (viewedIds.contains(cId)) {
+            finalScore *= VIEWED_PENALTY_FACTOR;
+            reasons.add("已浏览过 (×0.7)");
+        }
+
         bd.setFinalScore(round(finalScore));
 
         // 行为画像信息
@@ -451,6 +501,58 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         return Collections.emptyList();
     }
 
+    private double applyInteractionPenalty(Long contentId, double score,
+                                             Set<Long> dislikedIds, Set<Long> likedIds, Set<Long> viewedIds) {
+        if (dislikedIds.contains(contentId)) return score * DISLIKE_PENALTY_FACTOR;
+        if (likedIds.contains(contentId)) return score * LIKE_PENALTY_FACTOR;
+        if (viewedIds.contains(contentId)) return score * VIEWED_PENALTY_FACTOR;
+        return score;
+    }
+
+    private Set<Long> getLikedContentIds(Long userId) {
+        if (userId == null) return Collections.emptySet();
+        try {
+            return behaviorRepository.findByUserIdAndType(userId, "LIKE").stream()
+                    .map(Behavior::getContentId)
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            return Collections.emptySet();
+        }
+    }
+
+    private Set<Long> getViewedContentIds(Long userId) {
+        if (userId == null) return Collections.emptySet();
+        try {
+            return behaviorRepository.findByUserIdAndType(userId, "VIEW").stream()
+                    .filter(b -> b.getDuration() != null && b.getDuration() >= VIEW_THRESHOLD_SECONDS)
+                    .map(Behavior::getContentId)
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            return Collections.emptySet();
+        }
+    }
+
+    private Set<Long> getDislikedContentIds(Long userId) {
+        if (userId == null) return Collections.emptySet();
+        try {
+            return behaviorRepository.findByUserIdAndType(userId, "DISLIKE").stream()
+                    .map(Behavior::getContentId)
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            return Collections.emptySet();
+        }
+    }
+
+    private Set<Long> getCfRecommendedIds(Long userId) {
+        if (userId == null) return Collections.emptySet();
+        try {
+            List<Content> cfRecs = collaborativeFilteringService.getCollaborativeRecommendations(userId, CF_CANDIDATE_LIMIT);
+            return cfRecs.stream().map(Content::getId).collect(Collectors.toSet());
+        } catch (Exception e) {
+            return Collections.emptySet();
+        }
+    }
+
     private Map<String, Double> dynamicWeightsToMap(DynamicWeights dw) {
         Map<String, Double> m = new LinkedHashMap<>();
         m.put("wLike", round(dw.wLike));
@@ -462,6 +564,7 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         m.put("wSimilarity", round(dw.wSimilarity));
         m.put("wFreshness", round(dw.wFreshness));
         m.put("wDepthMatch", round(dw.wDepthMatch));
+        m.put("wCollaborative", round(dw.wCollaborative));
         m.put("explorationFactor", round(dw.explorationFactor));
         return m;
     }

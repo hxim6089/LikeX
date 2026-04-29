@@ -124,12 +124,14 @@ const doSearch = async () => {
   loading.value = true
   currentPage.value = 0
   try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
     const res = await api.get('/search', { 
       params: { 
         q: query.value,
         type: activeTab.value,
         page: 0,
-        size: 10
+        size: 10,
+        userId: user.id || undefined
       } 
     })
     results.value = res.data

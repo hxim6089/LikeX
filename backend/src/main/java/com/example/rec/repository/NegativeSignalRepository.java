@@ -17,4 +17,6 @@ public interface NegativeSignalRepository extends JpaRepository<NegativeSignal, 
     Optional<NegativeSignal> findByUserIdAndTargetTypeAndTargetId(Long userId, NegativeSignal.TargetType targetType, Long targetId);
     
     void deleteByUserIdAndTargetTypeAndTargetId(Long userId, NegativeSignal.TargetType targetType, Long targetId);
+
+    void deleteByTargetTypeAndTargetId(NegativeSignal.TargetType targetType, Long targetId);
 }

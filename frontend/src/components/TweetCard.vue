@@ -71,6 +71,10 @@
           <el-icon><StarFilled v-if="tweet.liked" /><Star v-else /></el-icon>
           <span>{{ tweet.likeCount }}</span>
         </div>
+        <div class="action-item dislike-action" :class="{ 'disliked': tweet.disliked }" @click.stop="handleDislike">
+          <el-icon><SortDown /></el-icon>
+          <span>{{ tweet.dislikeCount || 0 }}</span>
+        </div>
         <div class="action-item">
           <el-icon><DataAnalysis /></el-icon>
           <span>{{ tweet.viewCount }}</span>
@@ -131,7 +135,7 @@
 </template>
 
 <script setup>
-import { ChatLineRound, Star, StarFilled, Refresh, DataAnalysis, Cpu, Delete } from '@element-plus/icons-vue'
+import { ChatLineRound, Star, StarFilled, Refresh, DataAnalysis, Cpu, Delete, SortDown } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
@@ -262,20 +266,55 @@ const toggleReplyInput = () => {
 
 const handleLike = async () => {
     if (props.tweet.liked) return; 
-    
-    // Optimistic UI update
-    props.tweet.likeCount++;
-    props.tweet.liked = true;
-    
+
+    const wasDisliked = props.tweet.disliked
+    props.tweet.likeCount++
+    props.tweet.liked = true
+    if (wasDisliked) {
+        props.tweet.disliked = false
+        props.tweet.dislikeCount = Math.max(0, (props.tweet.dislikeCount || 0) - 1)
+    }
+
     try {
         await api.post('/behavior/like', { 
             userId: currentUser.id, 
             contentId: props.tweet.id 
         });
     } catch (e) {
-        props.tweet.likeCount--;
-        props.tweet.liked = false;
-        console.error("Like failed", e);
+        props.tweet.likeCount--
+        props.tweet.liked = false
+        if (wasDisliked) {
+            props.tweet.disliked = true
+            props.tweet.dislikeCount = (props.tweet.dislikeCount || 0) + 1
+        }
+        console.error("Like failed", e)
+    }
+}
+
+const handleDislike = async () => {
+    if (props.tweet.disliked) return
+
+    const wasLiked = props.tweet.liked
+    props.tweet.dislikeCount = (props.tweet.dislikeCount || 0) + 1
+    props.tweet.disliked = true
+    if (wasLiked) {
+        props.tweet.liked = false
+        props.tweet.likeCount = Math.max(0, props.tweet.likeCount - 1)
+    }
+
+    try {
+        await api.post('/behavior/dislike', {
+            userId: currentUser.id,
+            contentId: props.tweet.id
+        })
+    } catch (e) {
+        props.tweet.dislikeCount = Math.max(0, (props.tweet.dislikeCount || 0) - 1)
+        props.tweet.disliked = false
+        if (wasLiked) {
+            props.tweet.liked = true
+            props.tweet.likeCount++
+        }
+        console.error("Dislike failed", e)
     }
 }
 
@@ -473,6 +512,8 @@ const handleDelete = async () => {
 .action-item:hover { color: #1d9bf0; }
 .like-action:hover { color: #f91880; }
 .like-action.liked { color: #f91880; }
+.dislike-action:hover { color: #f4212e; }
+.dislike-action.disliked { color: #f4212e; }
 
 .action-item .el-icon { font-size: 18px; }
 

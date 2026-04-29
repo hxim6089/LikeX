@@ -18,7 +18,7 @@ public class Behavior {
     @Column(name = "content_id")
     private Long contentId;
 
-    private String type; // VIEW, LIKE, COMMENT, REPOST, SKIP
+    private String type; // VIEW, LIKE, COMMENT, REPOST, SKIP, SEARCH
 
     private Integer duration; // 浏览停留时长（秒），仅 VIEW 类型有效
 

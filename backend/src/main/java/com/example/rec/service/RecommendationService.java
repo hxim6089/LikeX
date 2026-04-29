@@ -14,20 +14,20 @@ import java.util.stream.Collectors;
 public class RecommendationService {
 
     private final ContentRepository contentRepository;
-    private final HybridRecommendationStrategy strategy;
+    private final RecommendationStrategyManager strategyManager;
     private final RelationService relationService;
     private final NegativeSignalService negativeSignalService;
     private final BehaviorRepository behaviorRepository;
     private final com.example.rec.repository.UserRepository userRepository;
 
-    public RecommendationService(ContentRepository contentRepository, 
-                                  HybridRecommendationStrategy strategy, 
-                                  RelationService relationService, 
+    public RecommendationService(ContentRepository contentRepository,
+                                  RecommendationStrategyManager strategyManager,
+                                  RelationService relationService,
                                   NegativeSignalService negativeSignalService,
                                   BehaviorRepository behaviorRepository,
                                   com.example.rec.repository.UserRepository userRepository) {
         this.contentRepository = contentRepository;
-        this.strategy = strategy;
+        this.strategyManager = strategyManager;
         this.relationService = relationService;
         this.negativeSignalService = negativeSignalService;
         this.behaviorRepository = behaviorRepository;
@@ -42,8 +42,8 @@ public class RecommendationService {
     public List<Content> getRecommendedFeed(Long userId) {
         List<Content> finalCandidates = buildCandidatePool(userId);
 
-        // === RANKING ===
-        List<Content> result = strategy.recommend(userId, finalCandidates);
+        // === RANKING (via active strategy) ===
+        List<Content> result = strategyManager.recommend(userId, finalCandidates);
         
         // Fill isLiked status for current user
         if (userId != null) {
@@ -54,7 +54,7 @@ public class RecommendationService {
     }
     
     /**
-     * 填充用户点赞状态
+     * 填充用户点赞/点踩状态
      */
     private void fillIsLiked(List<Content> contents, Long userId) {
         if (contents == null || contents.isEmpty()) return;
@@ -62,10 +62,18 @@ public class RecommendationService {
         Set<Long> likedContentIds = likes.stream()
                 .map(Behavior::getContentId)
                 .collect(Collectors.toSet());
-        
+
+        List<Behavior> dislikes = behaviorRepository.findByUserIdAndType(userId, "DISLIKE");
+        Set<Long> dislikedContentIds = dislikes.stream()
+                .map(Behavior::getContentId)
+                .collect(Collectors.toSet());
+
         for (Content c : contents) {
             if (likedContentIds.contains(c.getId())) {
                 c.setLiked(true);
+            }
+            if (dislikedContentIds.contains(c.getId())) {
+                c.setDisliked(true);
             }
         }
     }
@@ -80,9 +88,9 @@ public class RecommendationService {
         // 检查用户是否有自定义权重
         Map<String, Double> customWeights = loadUserCustomWeights(userId);
         if (customWeights != null) {
-            return strategy.recommendWithScore(userId, finalCandidates, customWeights);
+            return strategyManager.recommendWithScore(userId, finalCandidates, customWeights);
         }
-        return strategy.recommendWithScore(userId, finalCandidates);
+        return strategyManager.recommendWithScore(userId, finalCandidates);
     }
 
     /**
@@ -120,8 +128,8 @@ public class RecommendationService {
         List<Content> candidates = buildCandidatePoolWithStats(userId, stats);
         stats.setAfterNegativeFilter(candidates.size());
 
-        // 获取带评分的结果
-        List<com.example.rec.dto.ContentWithScore> scored = strategy.recommendWithScore(userId, candidates);
+        // 获取带评分的结果（对比页面始终使用传统策略）
+        List<com.example.rec.dto.ContentWithScore> scored = strategyManager.getTraditionalStrategy().recommendWithScore(userId, candidates);
         stats.setAfterScoring(scored.size());
         
         // 最终返回数量
@@ -148,8 +156,8 @@ public class RecommendationService {
             return b.getCreatedAt().compareTo(a.getCreatedAt());
         });
 
-        // 仍然计算评分（但不改变排序），用于对比展示
-        List<com.example.rec.dto.ContentWithScore> result = strategy.recommendWithScore(userId, candidates);
+        // 仍然计算评分（但不改变排序），用于对比展示（始终使用传统策略）
+        List<com.example.rec.dto.ContentWithScore> result = strategyManager.getTraditionalStrategy().recommendWithScore(userId, candidates);
         
         // 重新按时间排序（recommendWithScore 会改变顺序）
         result.sort((a, b) -> {
@@ -172,7 +180,11 @@ public class RecommendationService {
      */
     public List<com.example.rec.dto.ContentWithScore> getRecommendedFeedWithWeights(Long userId, Map<String, Double> weights) {
         List<Content> candidates = buildCandidatePool(userId);
-        return strategy.recommendWithScore(userId, candidates, weights);
+        return strategyManager.getTraditionalStrategy().recommendWithScore(userId, candidates, weights);
+    }
+
+    public String getCurrentStrategyType() {
+        return strategyManager.getCurrentStrategyType();
     }
 
     // ============================================================

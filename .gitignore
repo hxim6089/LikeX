@@ -26,6 +26,12 @@ hs_err_pid*
 .classpath
 .settings/
 
+# Uploads
+backend/uploads/
+
+# Cursor
+.cursor/
+
 # OS
 .DS_Store
 Thumbs.db

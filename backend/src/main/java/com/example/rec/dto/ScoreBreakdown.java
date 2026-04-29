@@ -32,6 +32,7 @@ public class ScoreBreakdown {
     private double authorAffinityBoost;    // 作者亲密度加成
     private double depthMatchBoost;        // 内容深度匹配加成
     private double freshnessBoost;         // 新鲜度匹配加成
+    private double collaborativeFilteringBoost; // 协同过滤加成
     private List<String> recommendReasons = new ArrayList<>(); // 推荐理由列表
     private String userStage;              // 用户阶段: COLD_START / BEGINNER / ACTIVE
     private String profileSummary;         // 用户画像摘要
@@ -97,6 +98,9 @@ public class ScoreBreakdown {
 
     public double getFreshnessBoost() { return freshnessBoost; }
     public void setFreshnessBoost(double freshnessBoost) { this.freshnessBoost = freshnessBoost; }
+
+    public double getCollaborativeFilteringBoost() { return collaborativeFilteringBoost; }
+    public void setCollaborativeFilteringBoost(double collaborativeFilteringBoost) { this.collaborativeFilteringBoost = collaborativeFilteringBoost; }
 
     public List<String> getRecommendReasons() { return recommendReasons; }
     public void setRecommendReasons(List<String> recommendReasons) { this.recommendReasons = recommendReasons; }

@@ -46,6 +46,7 @@ public class ContentController {
             result.put("totalElements", recList.size());
             result.put("totalPages", (int) Math.ceil((double) recList.size() / size));
             result.put("debug", true);
+            result.put("strategyType", recommendationService.getCurrentStrategyType());
             return result;
         }
         

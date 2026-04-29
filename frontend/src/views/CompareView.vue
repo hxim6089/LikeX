@@ -155,7 +155,14 @@
 
     <!-- ===== 第三部分：推荐 vs 时间序对比（保留） ===== -->
     <div class="section">
-      <div class="section-header"><h3>推荐算法 vs 时间倒序</h3></div>
+      <div class="section-header">
+        <h3>推荐算法 vs 时间倒序</h3>
+        <el-button size="small" :type="showTuner ? 'primary' : 'default'" @click="showTuner = !showTuner">
+          {{ showTuner ? '收起调参' : '参数调节' }}
+        </el-button>
+      </div>
+
+      <WeightTuner v-if="showTuner" @apply="applyTunedWeights" />
 
       <PipelineFunnel :stats="pipelineStats" v-if="pipelineStats" />
 
@@ -244,6 +251,7 @@ import { Loading } from '@element-plus/icons-vue'
 import api from '../api'
 import * as echarts from 'echarts'
 import PipelineFunnel from '../components/PipelineFunnel.vue'
+import WeightTuner from '../components/WeightTuner.vue'
 
 const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
@@ -252,6 +260,7 @@ const compareProfile = ref(null)
 const compareUserId = ref(null)
 const userList = ref([])
 
+const showTuner = ref(false)
 const personalizedFeed = ref([])
 const chronologicalFeed = ref([])
 const stats = ref(null)
@@ -297,6 +306,23 @@ const loadFeedCompare = async () => {
     nextTick(() => renderBarChart())
   } catch (e) {
     console.error('Compare load failed', e)
+  } finally {
+    feedLoading.value = false
+  }
+}
+
+const applyTunedWeights = async (weights) => {
+  if (!userId) return
+  feedLoading.value = true
+  try {
+    const res = await api.get('/compare/feed', { params: { userId, ...weights } })
+    personalizedFeed.value = res.data.personalized || []
+    chronologicalFeed.value = res.data.chronological || []
+    stats.value = res.data.stats || {}
+    pipelineStats.value = res.data.pipelineStats || {}
+    nextTick(() => renderBarChart())
+  } catch (e) {
+    console.error('Tuned feed load failed', e)
   } finally {
     feedLoading.value = false
   }

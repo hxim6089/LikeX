@@ -32,6 +32,14 @@ public class BehaviorController {
         return "Viewed";
     }
 
+    @PostMapping("/dislike")
+    public String dislike(@RequestBody Map<String, Long> payload) {
+        Long userId = payload.get("userId");
+        Long contentId = payload.get("contentId");
+        behaviorService.dislikeContent(userId, contentId);
+        return "Disliked";
+    }
+
     @PostMapping("/skip")
     public String skip(@RequestBody Map<String, Long> payload) {
         Long userId = payload.get("userId");

@@ -51,6 +51,9 @@ public class Content {
     @Column(name = "comment_count")
     private Integer commentCount = 0;
     
+    @Column(name = "dislike_count")
+    private Integer dislikeCount = 0;
+
     @Column(name = "repost_count")
     private Integer repostCount = 0;
     
@@ -84,6 +87,9 @@ public class Content {
 
     @Transient
     private boolean isLiked;
+
+    @Transient
+    private boolean isDisliked;
 
     @Transient
     private java.util.List<Content> replies = new java.util.ArrayList<>();
@@ -127,6 +133,12 @@ public class Content {
 
     public boolean isLiked() { return isLiked; }
     public void setLiked(boolean liked) { isLiked = liked; }
+
+    public boolean isDisliked() { return isDisliked; }
+    public void setDisliked(boolean disliked) { isDisliked = disliked; }
+
+    public Integer getDislikeCount() { return dislikeCount; }
+    public void setDislikeCount(Integer dislikeCount) { this.dislikeCount = dislikeCount; }
 
     public java.util.List<Content> getReplies() { return replies; }
     public void setReplies(java.util.List<Content> replies) { this.replies = replies; }

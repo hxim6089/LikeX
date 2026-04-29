@@ -14,4 +14,6 @@ public interface BehaviorRepository extends JpaRepository<Behavior, Long> {
     long countByUserId(Long userId);
 
     List<Behavior> findByUserIdAndContentIdAndType(Long userId, Long contentId, String type);
+
+    void deleteByContentId(Long contentId);
 }

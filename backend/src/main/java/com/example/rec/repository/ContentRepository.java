@@ -2,6 +2,7 @@ package com.example.rec.repository;
 
 import com.example.rec.model.Content;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -45,4 +46,12 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
     // For trending topics calculation (time-based query)
     @Query("SELECT c FROM Content c WHERE c.createdAt > :since")
     List<Content> findByCreatedAtAfter(@Param("since") java.time.LocalDateTime since);
+
+    @Modifying
+    @Query("UPDATE Content c SET c.repostOf = null WHERE c.repostOf.id = :contentId")
+    void nullifyRepostReferences(@Param("contentId") Long contentId);
+
+    @Modifying
+    @Query("UPDATE Content c SET c.quoteOf = null WHERE c.quoteOf.id = :contentId")
+    void nullifyQuoteReferences(@Param("contentId") Long contentId);
 }

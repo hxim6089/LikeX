@@ -1,10 +1,14 @@
 package com.example.rec.service;
 
 import com.example.rec.model.Content;
+import com.example.rec.model.NegativeSignal;
 import com.example.rec.repository.ContentRepository;
+import com.example.rec.repository.NotificationRepository;
+import com.example.rec.repository.NegativeSignalRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,15 +20,26 @@ public class ContentService {
     private final com.example.rec.repository.TagRepository tagRepository;
     private final com.example.rec.repository.BehaviorRepository behaviorRepository;
     private final com.example.rec.repository.UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
+    private final NegativeSignalRepository negativeSignalRepository;
     private final AiTaggingService aiTaggingService;
 
-    public ContentService(ContentRepository contentRepository, RelationService relationService, NotificationService notificationService, com.example.rec.repository.TagRepository tagRepository, com.example.rec.repository.BehaviorRepository behaviorRepository, com.example.rec.repository.UserRepository userRepository, AiTaggingService aiTaggingService) {
+    public ContentService(ContentRepository contentRepository, RelationService relationService,
+                          NotificationService notificationService,
+                          com.example.rec.repository.TagRepository tagRepository,
+                          com.example.rec.repository.BehaviorRepository behaviorRepository,
+                          com.example.rec.repository.UserRepository userRepository,
+                          NotificationRepository notificationRepository,
+                          NegativeSignalRepository negativeSignalRepository,
+                          AiTaggingService aiTaggingService) {
         this.contentRepository = contentRepository;
         this.relationService = relationService;
         this.notificationService = notificationService;
         this.tagRepository = tagRepository;
         this.behaviorRepository = behaviorRepository;
         this.userRepository = userRepository;
+        this.notificationRepository = notificationRepository;
+        this.negativeSignalRepository = negativeSignalRepository;
         this.aiTaggingService = aiTaggingService;
     }
 
@@ -60,10 +75,18 @@ public class ContentService {
         java.util.Set<Long> likedContentIds = likes.stream()
                 .map(com.example.rec.model.Behavior::getContentId)
                 .collect(java.util.stream.Collectors.toSet());
-        
+
+        List<com.example.rec.model.Behavior> dislikes = behaviorRepository.findByUserIdAndType(userId, "DISLIKE");
+        java.util.Set<Long> dislikedContentIds = dislikes.stream()
+                .map(com.example.rec.model.Behavior::getContentId)
+                .collect(java.util.stream.Collectors.toSet());
+
         for (Content c : contents) {
             if (likedContentIds.contains(c.getId())) {
                 c.setLiked(true);
+            }
+            if (dislikedContentIds.contains(c.getId())) {
+                c.setDisliked(true);
             }
         }
     }
@@ -244,17 +267,50 @@ public class ContentService {
     }
 
     /**
-     * 删除帖子（仅作者本人可删除）
+     * 删除帖子（仅作者本人或管理员可删除）
      */
+    @Transactional
     public void deleteContent(Long contentId, Long userId) {
         Content content = contentRepository.findById(contentId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-        // 管理员或作者本人可删除
         com.example.rec.model.User operator = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         if (!"ADMIN".equals(operator.getRole()) && !content.getAuthor().getId().equals(userId)) {
             throw new RuntimeException("No permission to delete this post");
         }
+        cascadeDeleteContent(content);
+    }
+
+    /**
+     * 递归级联删除内容及其所有关联数据
+     */
+    private void cascadeDeleteContent(Content content) {
+        Long id = content.getId();
+
+        // 1. 递归删除所有子评论
+        List<Content> replies = contentRepository.findByParentContentId(id);
+        for (Content reply : replies) {
+            cascadeDeleteContent(reply);
+        }
+
+        // 2. 解除其他帖子对本帖的转发/引用引用
+        contentRepository.nullifyRepostReferences(id);
+        contentRepository.nullifyQuoteReferences(id);
+
+        // 3. 删除关联的行为记录
+        behaviorRepository.deleteByContentId(id);
+
+        // 4. 删除关联的通知
+        notificationRepository.deleteByEntityId(id);
+
+        // 5. 删除关联的负面信号
+        negativeSignalRepository.deleteByTargetTypeAndTargetId(NegativeSignal.TargetType.CONTENT, id);
+
+        // 6. 清除标签关联（content_tags 联表）
+        content.getTags().clear();
+        contentRepository.save(content);
+
+        // 7. 删除帖子本身
         contentRepository.delete(content);
     }
 }

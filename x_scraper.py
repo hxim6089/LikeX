@@ -32,7 +32,7 @@ DB_CONFIG = {
 # Twitter API Bearer Token (Free tier)
 # 申请地址: https://developer.x.com/en/portal/dashboard
 # Free tier 每月可读 10,000 条推文
-BEARER_TOKEN = ""  # <-- 在此填入你的 Bearer Token
+BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAAGQx9QEAAAAAdQPRJRhz9JpSLNrfclQsfMVP3Nw%3D5noqwFM0jQ9o0U7HZFtbNpBexoo2aOpA0uXbUqMisHApV7zryI"  # <-- 在此填入你的 Bearer Token
 
 # 爬取的搜索关键词 (覆盖各个分类)
 SEARCH_QUERIES = {

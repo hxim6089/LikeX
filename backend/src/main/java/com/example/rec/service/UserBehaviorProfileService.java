@@ -252,6 +252,7 @@ public class UserBehaviorProfileService {
         public double wFreshness = 1.0;
         public double wDepthMatch = 30.0;
         public double explorationFactor = 0.15;
+        public double wCollaborative = 40.0;
     }
 
     public DynamicWeights computeDynamicWeights(Long userId) {
@@ -266,6 +267,7 @@ public class UserBehaviorProfileService {
                 weights.wAuthorAffinity = 10.0;
                 weights.explorationFactor = 0.30;
                 weights.wSimilarity = 30.0;
+                weights.wCollaborative = 10.0;
                 break;
 
             case BEGINNER:
@@ -274,6 +276,7 @@ public class UserBehaviorProfileService {
                 weights.wAuthorAffinity = 40.0;
                 weights.explorationFactor = 0.20;
                 weights.wSimilarity = 60.0;
+                weights.wCollaborative = 30.0;
                 adjustByEngagementStyle(weights, profile.engagementStyle);
                 break;
 
@@ -283,6 +286,7 @@ public class UserBehaviorProfileService {
                 weights.wAuthorAffinity = 70.0;
                 weights.explorationFactor = 0.10 + profile.explorationRate * 0.15;
                 weights.wSimilarity = 90.0;
+                weights.wCollaborative = 50.0;
                 adjustByEngagementStyle(weights, profile.engagementStyle);
                 adjustByDepthPreference(weights, profile.depthPreference);
                 adjustByFreshnessPreference(weights, profile.freshnessPreference);

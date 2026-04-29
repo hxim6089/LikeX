@@ -4,6 +4,9 @@
     <div class="feed-tabs">
         <div class="tab" :class="{ active: isPersonalized }" @click="switchTab(true)">
             <span>推荐</span>
+            <span v-if="isPersonalized && strategyType" class="strategy-tag" :class="strategyType">
+                {{ strategyType === 'ai' ? '🧠 AI' : '⚙️ 传统' }}
+            </span>
             <div class="indicator" v-if="isPersonalized"></div>
         </div>
         <div class="tab" :class="{ active: !isPersonalized }" @click="switchTab(false)">
@@ -113,6 +116,7 @@ const selectedFile = ref(null)
 const previewImage = ref(null)
 const aiTagging = ref(false)
 const hasCustomWeights = ref(false)
+const strategyType = ref('')
 const adInterval = ref(5)
 const adEnabled = ref(true)
 
@@ -225,6 +229,9 @@ const fetchFeed = async () => {
                 } 
             });
             const newItems = res.data.content || [];
+            if (res.data.strategyType) {
+                strategyType.value = res.data.strategyType;
+            }
             if (currentPage.value === 0) {
                 items.value = newItems;
             } else {
@@ -333,6 +340,23 @@ const resetWeights = async () => {
     border-bottom: 1px solid #eff3f4;
     height: 53px;
 }
+.strategy-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    line-height: 1.4;
+}
+.strategy-tag.ai {
+    background: linear-gradient(135deg, #e8f4fd, #d1ecf9);
+    color: #1a73e8;
+}
+.strategy-tag.traditional {
+    background: #f0f0f0;
+    color: #536471;
+}
+
 .tab {
     flex: 1;
     display: flex;

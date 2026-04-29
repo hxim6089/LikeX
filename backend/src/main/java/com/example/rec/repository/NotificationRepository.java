@@ -17,4 +17,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     
     // Find all unread notifications for a user
     List<Notification> findByRecipientIdAndIsReadFalse(Long recipientId);
+
+    void deleteByEntityId(Long entityId);
 }

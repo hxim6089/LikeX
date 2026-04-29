@@ -1,8 +1,8 @@
 # 推荐系统项目备忘录 (Project Memo)
 
-> **最后更新时间**: 2026-03-27 23:19
+> **最后更新时间**: 2026-04-29 18:54
 > **项目名称**: recommendation-system (类Twitter推荐系统)
-> **技术栈**: Spring Boot 3.2.1 + Vue 3 + MySQL + Redis + ECharts
+> **技术栈**: Spring Boot 3.2.1 + Vue 3 + MySQL + Redis + ECharts + Ollama AI
 
 ---
 
@@ -24,14 +24,18 @@
 这是一个类似 Twitter/X 的社交媒体推荐系统，包含以下核心功能：
 - 用户认证与个人资料管理
 - 内容发布（帖子、评论、图片）
-- 社交互动（点赞、评论、关注、转发、引用）
-- 智能推荐算法（混合推荐策略 + TF-IDF 内容相似度）
+- 社交互动（点赞、点踩、评论、关注、转发、引用）
+- **双推荐算法策略**（传统个性化混合推荐 + AI 大模型推荐，管理员可切换）
+- 基于用户行为画像的个性化推荐（多维度行为分析）
+- 协同过滤推荐（用户相似度计算）
 - 实时通知（WebSocket）
 - 用户画像分析（多维度可视化）
 - 负面信号过滤（屏蔽、静音、不感兴趣）
-- AI 集成基础设施（支持本地/远程大模型）
+- AI 集成（Ollama 本地大模型 + DeepSeek API）
 - 广告智能分发
 - 算法可视化与对比实验（答辩展示）
+- **X (Twitter) 推文爬取**（API v2 实时爬取 + 内置内容库后备）
+- 无限滚动信息流
 - 外部数据导入（Python 爬虫）
 
 ---
@@ -46,6 +50,9 @@
 | 缓存 | Redis | localhost:6379，可设为 `none` 禁用 |
 | 文件上传 | 10MB限制 | 保存在 `backend/uploads/` |
 | 图片访问 | `/images/**` | 映射到 `uploads/` 目录 |
+| AI 模型 | Ollama `qwen3:8b` | AI推荐策略使用 |
+| AI 打标 | Ollama `qwen3.5:0.8b` | 自动标签标注 |
+| AI 对话 | DeepSeek `deepseek-chat` | Grok 聊天助手 |
 
 ### 前端 (frontend/)
 | 配置项 | 值 | 说明 |
@@ -73,46 +80,54 @@
 | 个人资料查看 | ✅ | GET `/api/user/{id}/persona` |
 | 个人资料编辑 | ✅ | PUT `/api/user/{id}` |
 | 头像上传 | ✅ | POST `/api/upload` |
+| 用户封禁/解封 | ✅ | 管理员功能 |
 
 ### ✅ 内容系统
 | 功能 | 状态 | 说明 |
 |------|------|------|
 | 发布帖子 | ✅ | POST `/api/content/publish` |
-| 获取信息流 | ✅ | GET `/api/content/feed` |
+| 获取信息流 | ✅ | GET `/api/content/feed` (无限滚动) |
 | 获取单条内容 | ✅ | GET `/api/content/{id}` |
 | 获取用户帖子 | ✅ | GET `/api/content/user/{userId}` |
+| 删除帖子 | ✅ | DELETE `/api/content/{id}` (级联删除) |
 | 图片上传 | ✅ | POST `/api/upload` |
 | 评论 | ✅ | POST `/api/content/{id}/comment` |
 | 转发 (Repost) | ✅ | POST `/api/content/{id}/repost` |
 | 引用 (Quote) | ✅ | POST `/api/content/{id}/quote` |
+| 无限滚动 | ✅ | IntersectionObserver 自动加载更多 |
 
 ### ✅ 社交互动
 | 功能 | 状态 | 说明 |
 |------|------|------|
 | 点赞/取消点赞 | ✅ | POST `/api/content/{id}/like`, `/unlike` |
+| 点踩 | ✅ | POST `/api/behavior/dislike` (与点赞互斥) |
 | 关注用户 | ✅ | POST `/api/relation/follow` |
 | 取消关注 | ✅ | POST `/api/relation/unfollow` |
 | 关注状态查询 | ✅ | GET `/api/relation/status` |
 
-### ✅ 推荐系统
+### ✅ 推荐系统（双策略架构）
 | 功能 | 状态 | 说明 |
 |------|------|------|
-| 混合推荐策略 | ✅ | HybridRecommendationStrategy.java |
-| 双候选源 | ✅ | In-Network (Thunder) + Out-of-Network (Phoenix) |
+| **策略模式架构** | ✅ | RecommendationStrategyManager 管理多策略 |
+| **传统混合推荐** | ✅ | HybridRecommendationStrategy (默认) |
+| **AI 推荐** | ✅ | AiRecommendationStrategy (Ollama qwen3:8b) |
+| **管理员策略切换** | ✅ | AdminView 一键切换推荐算法 |
+| 用户行为画像驱动 | ✅ | UserBehaviorProfileService 动态权重 |
+| 协同过滤 | ✅ | CollaborativeFilteringService 相似用户推荐 |
 | 多行为加权评分 | ✅ | like×0.5 + comment×1.2 + repost×2.0 + quote×1.8 |
-| 分段时间衰减 | ✅ | 0-6h黄金期 / 6-24h正常 / 24-72h加速 / 72h+对数长尾 |
-| 作者多样性惩罚 | ✅ | 同作者多篇降权 (×0.7^N) |
-| 个性化标签匹配 | ✅ | 匹配用户兴趣标签 +100分 |
 | TF-IDF 内容相似度 | ✅ | 余弦相似度 × 80.0 加成 |
 | 负面信号过滤 | ✅ | 屏蔽/静音/不感兴趣 |
 | 热门话题加成 | ✅ | TrendingService ×50.0 |
-| 协同过滤 | ✅ | CollaborativeFilteringService |
-| 互动率因子 | ✅ | 高互动率内容加分 |
+| 互动惩罚机制 | ✅ | 踩过×0.1 / 赞过×0.5 / 浏览过×0.7 |
+| 分段时间衰减 | ✅ | 0-6h黄金期 / 6-24h正常 / 24-72h加速 / 72h+长尾 |
+| 作者多样性惩罚 | ✅ | 同作者多篇降权 (×0.7^N) |
+| 个性化标签匹配 | ✅ | 匹配用户兴趣标签 +100分 |
 | 随机抖动 (Jitter) | ✅ | ±15% 随机抖动确保每次刷新结果不同 |
 | 加权随机采样 | ✅ | Exploration-Exploitation 机制 |
-| 动态权重调节 | ✅ | 前端参数调节面板，按用户存储自定义权重 |
+| 动态权重调节 | ✅ | WeightTuner 前端参数调节面板 |
 | 算法对比实验 | ✅ | 推荐流 vs 时间流并排对比 |
 | 管道漏斗图 | ✅ | 候选池 → 过滤 → 评分 → 多样性 可视化 |
+| 搜索行为记录 | ✅ | 搜索关键词影响推荐 |
 
 ### ✅ 用户画像
 | 功能 | 状态 | 说明 |
@@ -123,16 +138,12 @@
 | 活跃度等级 | ✅ | Power User / High / Medium / Low |
 | 活跃时段分布 | ✅ | 24小时 ECharts 柱状图 + 峰值高亮 |
 | 内容偏好分析 | ✅ | 阅读长度/图片偏好/话题多样性 |
-| 概览仪表盘 | ✅ | 6指标摘要面板 (用户类型/活跃度/阅读偏好/图片偏好/多样性/夜猫子) |
+| 概览仪表盘 | ✅ | 6指标摘要面板 |
 | 分类偏好环形图 | ✅ | ECharts 饼图，中心显示总点赞数 |
 | 兴趣词云 | ✅ | echarts-wordcloud 可视化 |
 | 行为雷达图 | ✅ | 点赞/评论/转发/浏览 四维雷达 |
 | 推荐匹配度 | ✅ | 基于互动行为计算匹配准确度 |
 | 画像卡片导出 | ✅ | html2canvas 导出 PNG |
-| 关注数/粉丝数 | ✅ | 实时查询数据库 |
-| 加入时间 | ✅ | 从 createdAt 动态格式化 |
-| 入场动画 | ✅ | CSS stagger fadeSlideUp |
-| Redis缓存 | ⚠️ | 需要LocalDateTime转String避免序列化错误 |
 
 ### ✅ 实时通知
 | 功能 | 状态 | 说明 |
@@ -142,6 +153,31 @@
 | 评论通知 | ✅ | 同上 |
 | 关注通知 | ✅ | 同上 |
 | 私信通知 | ✅ | 推送到 `/user/{userId}/queue/messages` |
+| 侧边栏未读角标 | ✅ | 实时更新 |
+| 全部标记已读 | ✅ | POST `/api/notifications/read-all` |
+
+### ✅ 管理后台
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| 平台数据概览 | ✅ | 用户数/帖子数/互动数统计 |
+| 用户角色管理 | ✅ | 切换 USER/ADMIN |
+| 用户封禁/解封 | ✅ | 封禁用户无法登录 |
+| AI 批量打标 | ✅ | Ollama qwen3.5:0.8b 自动标签 |
+| 推荐算法切换 | ✅ | 传统/AI 策略一键切换 |
+| X 推文爬取 | ✅ | 一键爬取50条 + 单用户爬取 |
+| 广告管理 CRUD | ✅ | 创建/编辑/启停广告 |
+| 广告频率配置 | ✅ | 间隔/最大数/全局开关 |
+
+### ✅ X 推文爬取
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| Twitter API v2 搜索 | ✅ | Bearer Token 直连，15组搜索关键词 |
+| 单用户爬取 | ✅ | 指定 @username 爬取推文 |
+| 批量爬取 | ✅ | 一键50条，覆盖 Tech/Life/Sports/News/Education |
+| 内置内容库后备 | ✅ | API不可用时从95条高质量模板中补充 |
+| 自动标签 | ✅ | 13类关键词匹配自动打标 |
+| 去重检测 | ✅ | 已存在内容自动跳过 |
+| 爬取历史 | ✅ | 前端显示最近爬取记录 |
 
 ### ✅ 负面信号
 | 功能 | 状态 | 说明 |
@@ -155,21 +191,24 @@
 
 ## 业务逻辑说明
 
-### 1. 推荐算法流程
+### 1. 推荐算法流程（传统混合策略）
 
 ```
-用户请求Feed → 构建候选池(In-Network+Out-of-Network)
-→ 负面信号过滤 → 多因子评分 → 作者多样性惩罚
-→ 随机抖动(±15%) → 排序 → 返回结果
+用户请求Feed → 构建用户行为画像 → 计算动态权重
+→ 候选池(关注+全局) → 负面信号过滤
+→ 协同过滤加成 → 多因子评分 → 互动惩罚(踩/赞/浏览)
+→ 作者多样性惩罚 → 加权随机采样 → 返回结果
 ```
 
 **评分公式**:
 ```
 finalScore = (baseEngagement / timeDecay)
-           + personalizationBoost
+           + personalizationBoost (标签匹配/作者偏好/主题偏好)
            + tfidfSimilarity
            + trendingBoost
+           + collaborativeFilteringBoost
            + jitter(±15%)
+           × interactionPenalty (踩:0.1 / 赞:0.5 / 浏览:0.7)
 ```
 
 **行为权重**:
@@ -179,18 +218,47 @@ finalScore = (baseEngagement / timeDecay)
 - REPOST: 2.0
 - QUOTE: 1.8
 
-**分段时间衰减**:
-- 0-6h: 黄金期（几乎不衰减）
-- 6-24h: 正常指数衰减
-- 24-72h: 加速衰减
-- 72h+: 对数长尾衰减
+**用户阶段动态权重** (UserBehaviorProfileService):
+- COLD_START: 更依赖热门内容
+- BEGINNER: 逐步引入个性化
+- ACTIVE: 充分个性化 + 协同过滤
 
-### 2. 用户画像计算
+**互动惩罚** (防止重复推荐):
+- 已踩过: score × 0.1 (大幅降权)
+- 已点赞: score × 0.5 (降低优先级)
+- 已浏览 >5s: score × 0.7 (轻微降权)
+
+### 2. AI 推荐策略
+
+```
+获取用户行为画像 → 构建候选池
+→ 发送给 Ollama qwen3:8b (含用户兴趣描述+候选内容摘要)
+→ AI 返回排序建议 → 应用排序结果 → 返回
+```
+
+### 3. 策略切换机制
+
+```
+AdminView "切换按钮" → POST /api/admin/switch-strategy
+→ RecommendationStrategyManager 切换当前策略
+→ 全局所有用户生效
+```
+
+### 4. X 爬取流程
+
+```
+管理员点击"一键爬取" → POST /api/admin/crawl-x-batch
+→ Phase 1: Twitter API v2 搜索 (15组关键词, 覆盖5个分类)
+→ 如果API受限/不可用 → Phase 2: 内置内容库随机抽取
+→ 自动分配作者 + 自动标签 + 去重 → 保存到数据库
+```
+
+### 5. 用户画像计算
 
 ```java
 // PersonaService.getUserPersona(userId)
 1. 查询用户基础信息 + 关注数/粉丝数
-2. 获取用户所有行为记录 (VIEW/LIKE/COMMENT/REPOST)
+2. 获取用户所有行为记录 (VIEW/LIKE/COMMENT/REPOST/DISLIKE/SEARCH)
 3. 计算兴趣标签分布 (Top3 分类)
 4. 兴趣衰减评分 (30/60/90天分段)
 5. 用户行为分型 (Creator/Interactor/Consumer)
@@ -200,7 +268,7 @@ finalScore = (baseEngagement / timeDecay)
 9. 生成称号 + 推荐匹配度
 ```
 
-### 3. WebSocket通知机制
+### 6. WebSocket通知机制
 
 ```
 后端创建通知 → SimpMessagingTemplate.convertAndSendToUser() 
@@ -208,15 +276,16 @@ finalScore = (baseEngagement / timeDecay)
 → ElNotification弹窗显示
 ```
 
-### 4. 负面信号过滤
+### 7. 点赞/点踩互斥逻辑
 
-```java
-// NegativeSignalService
-1. 用户标记内容为"不感兴趣" → 记录 (userId, contentId, NOT_INTERESTED)
-2. 用户屏蔽某作者 → 记录 (userId, authorId, BLOCK)
-3. 推荐时过滤:
-   - 排除用户已标记NOT_INTERESTED的内容
-   - 排除用户BLOCK/MUTE的作者发布的内容
+```
+用户点踩 → 检查是否已点赞:
+  是 → 移除点赞记录 + likeCount-1
+  → 创建踩记录 + dislikeCount+1
+
+用户点赞 → 检查是否已点踩:
+  是 → 移除踩记录 + dislikeCount-1
+  → 创建点赞记录 + likeCount+1
 ```
 
 ---
@@ -249,6 +318,16 @@ finalScore = (baseEngagement / timeDecay)
 - Vue组件中使用Element Plus图标需要显式导入
 - 例如: `import { Search } from '@element-plus/icons-vue'`
 
+### ⚠️ Ollama AI 模型
+- AI 推荐策略需要本地运行 Ollama 并下载 `qwen3:8b` 模型
+- AI 自动打标使用 `qwen3.5:0.8b` (更轻量)
+- 启动命令: `ollama serve` → `ollama pull qwen3:8b`
+
+### ⚠️ X 爬取 Bearer Token
+- 使用 Twitter API v2 Free tier (每月10,000条读取额度)
+- Token 配置在 `XCrawlerService.java` 和 `x_scraper.py` 中
+- 如遇 429 Rate Limit 会自动退回内置内容库
+
 ---
 
 ## 已知问题与解决方案
@@ -260,7 +339,9 @@ finalScore = (baseEngagement / timeDecay)
 | 图片加载失败 | 数据库URL端口不对 | 执行SQL更新URL |
 | 500 Internal Server Error (Persona) | LocalDateTime序列化失败 | 转换为String |
 | Failed to resolve component: Search | 未导入Element Plus图标 | 添加import语句 |
-| 个人主页需二次点击加载 | 首次请求可能超时 | 检查后端是否正常运行 |
+| 删除帖子500错误 | 外键约束未级联删除 | 实现cascading delete逻辑 |
+| X爬取0条结果 | API限流/网络问题 | 自动退回内置内容库 |
+| lambda变量not final | Java lambda捕获限制 | 使用临时final变量 |
 
 ---
 
@@ -275,15 +356,22 @@ finalScore = (baseEngagement / timeDecay)
 ### 内容 (ContentController)
 | 方法 | 端点 | 说明 |
 |------|------|------|
-| GET | `/api/content/feed` | 获取推荐信息流 |
+| GET | `/api/content/feed` | 获取推荐信息流 (支持分页) |
 | GET | `/api/content/{id}` | 获取单条内容 |
 | GET | `/api/content/user/{userId}` | 获取用户帖子 |
 | POST | `/api/content/publish` | 发布内容 |
+| DELETE | `/api/content/{id}` | 删除内容 (级联删除) |
 | POST | `/api/content/{id}/like` | 点赞 |
 | POST | `/api/content/{id}/unlike` | 取消点赞 |
 | POST | `/api/content/{id}/comment` | 评论 |
 | POST | `/api/content/{id}/repost` | 转发 |
 | POST | `/api/content/{id}/quote` | 引用 |
+
+### 行为 (BehaviorController)
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| POST | `/api/behavior/view` | 记录浏览行为 (含duration) |
+| POST | `/api/behavior/dislike` | 点踩 (与点赞互斥) |
 
 ### 用户 (UserController / PersonaController)
 | 方法 | 端点 | 说明 |
@@ -309,22 +397,23 @@ finalScore = (baseEngagement / timeDecay)
 | 方法 | 端点 | 说明 |
 |------|------|------|
 | GET | `/api/notifications` | 获取通知列表 |
+| POST | `/api/notifications/read-all` | 全部标记已读 |
 
 ### 文件上传 (FileUploadController)
 | 方法 | 端点 | 说明 |
 |------|------|------|
 | POST | `/api/upload` | 上传文件 |
 
-### 搜索 (SearchController) - Phase 26
+### 搜索 (SearchController)
 | 方法 | 端点 | 说明 |
 |------|------|------|
-| GET | `/api/search` | 综合搜索 (帖子/用户/话题) |
+| GET | `/api/search` | 综合搜索 (帖子/用户/话题, 记录SEARCH行为) |
 | GET | `/api/search?type=posts` | 仅搜索帖子 |
 | GET | `/api/search?type=users` | 仅搜索用户 |
 | GET | `/api/search?type=topics` | 仅搜索话题 |
 | GET | `/api/search/suggest` | 搜索建议 (自动补全) |
 
-### 热门话题 (TrendingController) - Phase 26
+### 热门话题 (TrendingController)
 | 方法 | 端点 | 说明 |
 |------|------|------|
 | GET | `/api/trending` | 获取热门话题列表 |
@@ -332,7 +421,8 @@ finalScore = (baseEngagement / timeDecay)
 ### AI 助手 (AiController)
 | 方法 | 端点 | 说明 |
 |------|------|------|
-| POST | `/api/ai/chat` | AI 问答对话 (支持 Ollama/OpenAI) |
+| POST | `/api/ai/chat` | AI 问答对话 (支持 Ollama/DeepSeek) |
+| POST | `/api/ai/tag-all` | AI 批量自动打标 |
 
 ### 广告 (AdController)
 | 方法 | 端点 | 说明 |
@@ -345,18 +435,25 @@ finalScore = (baseEngagement / timeDecay)
 | GET | `/api/ads/config` | 获取广告投放配置 |
 | PUT | `/api/ads/config` | 更新广告投放配置 |
 
-### 数据导入 (ImportController)
+### 管理员 (AdminController)
 | 方法 | 端点 | 说明 |
 |------|------|------|
-| POST | `/api/import/scraped-data` | 导入 Python 爬虫抓取的数据 |
+| GET | `/api/admin/stats` | 平台数据统计 |
+| POST | `/api/admin/toggle-role/{userId}` | 切换用户角色 |
+| POST | `/api/admin/ban/{userId}` | 封禁用户 |
+| POST | `/api/admin/unban/{userId}` | 解封用户 |
+| POST | `/api/admin/switch-strategy` | 切换推荐算法策略 |
+| GET | `/api/admin/current-strategy` | 获取当前策略 |
+| POST | `/api/admin/crawl-x-batch` | 批量爬取X推文 (默认50条) |
+| POST | `/api/admin/crawl-x` | 爬取指定用户推文 |
 
-### 算法对比 (ExperimentController) - Phase 28
+### 算法对比 (CompareController)
 | 方法 | 端点 | 说明 |
 |------|------|------|
-| GET | `/api/experiment/compare` | 获取推荐流 vs 时间流对比数据 |
-| GET | `/api/experiment/pipeline` | 获取管道漏斗图数据 |
+| GET | `/api/compare/feed` | 获取推荐流 vs 时间流对比数据 |
+| GET | `/api/compare/pipeline` | 获取管道漏斗图数据 |
 
-### 权重调节 (WeightsController) - Phase 28
+### 权重调节 (WeightsController)
 | 方法 | 端点 | 说明 |
 |------|------|------|
 | GET | `/api/weights/{userId}` | 获取用户自定义权重 |
@@ -376,6 +473,8 @@ finalScore = (baseEngagement / timeDecay)
 - avatarUrl: String
 - bio: String
 - role: String (USER/ADMIN)
+- banned: Boolean
+- customWeights: String (JSON, 用户自定义推荐权重)
 - createdAt: LocalDateTime
 ```
 
@@ -385,14 +484,15 @@ finalScore = (baseEngagement / timeDecay)
 - title: String
 - content: String (TEXT)
 - imageUrl: String
-- category: String (Tech/Life/Sports/News)
+- category: String (Tech/Life/Sports/News/Education/imported)
 - author: User (FK)
 - parentContent: Content (FK, 用于评论)
 - repostOf: Content (FK, 转发原帖)
 - quoteOf: Content (FK, 引用原帖)
-- viewCount, likeCount, commentCount, repostCount: Integer
+- viewCount, likeCount, commentCount, repostCount, dislikeCount: Integer
 - tags: Set<Tag> (多对多)
 - createdAt: LocalDateTime
+- isDisliked: boolean (Transient, 当前用户是否已踩)
 ```
 
 ### Behavior (用户行为)
@@ -400,7 +500,8 @@ finalScore = (baseEngagement / timeDecay)
 - id: Long (PK)
 - userId: Long
 - contentId: Long
-- type: String (VIEW/LIKE/COMMENT/REPOST/QUOTE)
+- type: String (VIEW/LIKE/COMMENT/REPOST/QUOTE/SEARCH/DISLIKE)
+- duration: Integer (浏览时长, 秒)
 - createdAt: LocalDateTime
 ```
 
@@ -423,6 +524,46 @@ finalScore = (baseEngagement / timeDecay)
 - entityId: Long
 - isRead: Boolean
 - createdAt: LocalDateTime
+```
+
+### Tag (标签)
+```java
+- id: Long (PK)
+- name: String (UNIQUE)
+```
+
+---
+
+## 项目结构
+
+```
+recommendation-system/
+├── backend/                         # Spring Boot 后端
+│   ├── src/main/java/com/example/rec/
+│   │   ├── controller/              # REST控制器
+│   │   ├── model/                   # JPA实体
+│   │   ├── repository/              # 数据访问层
+│   │   ├── service/                 # 业务逻辑层
+│   │   │   ├── HybridRecommendationStrategy.java   # 传统混合推荐
+│   │   │   ├── AiRecommendationStrategy.java       # AI推荐策略
+│   │   │   ├── RecommendationStrategyManager.java  # 策略管理器
+│   │   │   ├── CollaborativeFilteringService.java  # 协同过滤
+│   │   │   ├── UserBehaviorProfileService.java     # 用户行为画像
+│   │   │   ├── XCrawlerService.java                # X推文爬取
+│   │   │   └── ...
+│   │   ├── dto/                     # 数据传输对象
+│   │   └── config/                  # 配置类
+│   └── pom.xml
+├── frontend/                        # Vue 3 前端
+│   ├── src/
+│   │   ├── views/                   # 页面视图
+│   │   ├── components/              # 可复用组件
+│   │   ├── utils/                   # 工具函数
+│   │   └── api.js                   # API封装
+│   └── package.json
+├── x_scraper.py                     # Python X爬虫脚本 (独立)
+├── PROJECT_MEMO.md                  # 本文档
+└── 毕业设计任务书.md                 # 毕设需求文档
 ```
 
 ---
@@ -464,18 +605,25 @@ finalScore = (baseEngagement / timeDecay)
 | 2026-04-12 | **新增**: 平台数据概览 (AdminController /stats + 统计卡片) |
 | 2026-04-12 | **新增**: AI 批量打标按钮 (调用 /ai/tag-all) |
 | 2026-04-12 | **新增**: 用户封禁/解封功能 (User.banned + 登录拦截) |
-| 2026-04-19 | **修复**: 侧边栏选中状态样式 - 添加背景色(#e8f5fd)和字体颜色(#1d9bf0)高亮，支持 router-link-exact-active |
-| 2026-04-19 | **修复**: 多级评论刷新丢失 - getComments 改为递归加载，支持任意深度嵌套评论 |
-| 2026-04-19 | **优化**: Ask Grok 帖文分析提示词 - 注入作者/标签/互动数据/分类等元信息，多维度分析 |
-| 2026-04-19 | **新增**: Grok 聊天记录持久化 - localStorage 保存对话历史，支持清空对话按钮 |
-| 2026-04-19 | **新增**: Grok 多轮对话上下文 - 前端发送最近20条历史，后端拼装完整 messages 数组 |
-| 2026-04-19 | **新增**: Grok 系统提示词 - AiService 添加 SYSTEM_PROMPT 注入平台功能描述，AI 具备平台认知 |
-| 2026-04-20 | **新增**: Ask Grok 分析结果缓存 - localStorage 按帖子ID缓存AI回复(key: grok_analysis_{id})，避免重复API调用 |
-| 2026-04-20 | **完善**: 通知系统全面升级 - Sidebar未读角标、Layout全局WebSocket接入、实时弹窗推送 |
-| 2026-04-20 | **完善**: NotificationView 重构 - 使用封装api、分类型图标(LIKE/COMMENT/FOLLOW/REPOST/QUOTE)、点击跳转原帖、全部已读 |
-| 2026-04-20 | **新增**: 后端 markAllAsRead 批量已读实现 + POST /api/notifications/read-all 端点 |
-| 2026-04-20 | **新增**: 广告管理CRUD - AdController新增GET/POST/PUT接口, AdService新增createAd/updateAd方法 |
-| 2026-04-20 | **新增**: AdDashboard添加/编辑广告弹窗 - 表单含标题/描述/广告主/标签/分类/出价/URL/启用状态, 支持创建和编辑 |
-| 2026-04-20 | **新增**: 广告频率配置 - AdConfig实体(ad_config表)、投放设置卡片(间隔/最大数/全局开关)、FeedList动态读取配置 |
-| 2026-04-20 | **新增**: Grok多对话管理 - 对话列表侧栏(新建/切换/删除)、自动标题(首条消息摘要)、旧数据自动迁移、localStorage多会话隔离 |
+| 2026-04-19 | **修复**: 侧边栏选中状态样式 |
+| 2026-04-19 | **修复**: 多级评论刷新丢失 - 递归加载支持任意深度嵌套 |
+| 2026-04-19 | **优化**: Ask Grok 帖文分析提示词 - 注入元信息多维度分析 |
+| 2026-04-19 | **新增**: Grok 聊天记录持久化 + 多轮对话上下文 |
+| 2026-04-20 | **新增**: Ask Grok 分析结果缓存 |
+| 2026-04-20 | **完善**: 通知系统全面升级 - Sidebar未读角标、实时弹窗推送 |
+| 2026-04-20 | **新增**: 广告管理CRUD + 频率配置 |
+| 2026-04-20 | **新增**: Grok多对话管理 - 对话列表侧栏 |
+| 2026-04-28 | **重构**: 推荐算法个性化重构 - 基于用户行为画像的动态权重推荐 |
+| 2026-04-28 | **新增**: UserBehaviorProfileService - 用户阶段判断/兴趣建模/动态权重 |
+| 2026-04-28 | **新增**: 协同过滤集成 - CollaborativeFilteringService 接入推荐主链路 |
+| 2026-04-28 | **重构**: CompareView → 个性化验证视图 (多用户画像对比 + WeightTuner) |
+| 2026-04-28 | **新增**: 无限滚动 - IntersectionObserver 实现类X信息流 |
+| 2026-04-28 | **修复**: 删除帖子500错误 - 实现级联删除(行为/通知/负面信号/子内容) |
+| 2026-04-28 | **新增**: AI 推荐策略 - AiRecommendationStrategy (Ollama qwen3:8b) |
+| 2026-04-28 | **新增**: 策略管理器 - RecommendationStrategyManager + Admin切换UI |
+| 2026-04-28 | **新增**: 点踩功能 - 与点赞互斥, dislikeCount字段, 推荐降权(×0.1) |
+| 2026-04-28 | **新增**: 互动惩罚三级机制 - 踩(×0.1)/赞(×0.5)/浏览(×0.7) |
+| 2026-04-28 | **新增**: 搜索行为记录 - SEARCH类型Behavior影响推荐 |
+| 2026-04-28 | **新增**: X推文爬取 - Twitter API v2 搜索 + 内置95条内容库后备 |
+| 2026-04-28 | **新增**: AdminView X爬取面板 - 批量/单用户爬取 + 爬取历史 |
 

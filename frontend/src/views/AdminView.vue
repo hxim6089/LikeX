@@ -27,6 +27,42 @@
             </div>
         </div>
 
+        <!-- 推荐算法引擎切换 -->
+        <div class="strategy-section">
+            <h3 class="section-title">推荐算法引擎</h3>
+            <div class="strategy-cards">
+                <div
+                    class="strategy-card"
+                    :class="{ active: strategyInfo.current === 'traditional' }"
+                    @click="switchStrategy('traditional')"
+                >
+                    <div class="strategy-icon">⚙️</div>
+                    <div class="strategy-name">传统多因子算法</div>
+                    <div class="strategy-desc">基于用户行为画像的多因子加权打分：互动热度、TF-IDF、话题亲和度、作者亲密度、动态权重</div>
+                    <el-tag v-if="strategyInfo.current === 'traditional'" type="success" size="small" class="strategy-badge">当前使用</el-tag>
+                </div>
+                <div
+                    class="strategy-card"
+                    :class="{ active: strategyInfo.current === 'ai', disabled: !strategyInfo.aiAvailable && strategyInfo.current !== 'ai' }"
+                    @click="switchStrategy('ai')"
+                >
+                    <div class="strategy-icon">🧠</div>
+                    <div class="strategy-name">AI 大模型推荐</div>
+                    <div class="strategy-desc">Ollama Qwen 8B 大语言模型驱动，智能分析内容语义并排序，生成个性化推荐理由</div>
+                    <div class="strategy-status-row">
+                        <el-tag v-if="strategyInfo.current === 'ai'" type="success" size="small" class="strategy-badge">当前使用</el-tag>
+                        <el-tag
+                            :type="strategyInfo.aiAvailable ? 'success' : 'danger'"
+                            size="small"
+                            effect="plain"
+                        >
+                            Ollama {{ strategyInfo.aiAvailable ? '在线' : '离线' }}
+                        </el-tag>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 操作按钮组 -->
         <div class="action-bar">
             <el-button type="warning" @click="batchTagAll" :loading="tagging">
@@ -35,6 +71,55 @@
             <span v-if="tagResult" class="tag-result">
                 ✅ 已处理 {{ tagResult.tagged }} / {{ tagResult.total }} 条帖子
             </span>
+        </div>
+
+        <!-- X 推文爬取 -->
+        <div class="crawl-section">
+            <h3 class="section-title">X 推文爬取</h3>
+            <div class="crawl-batch-row">
+                <el-button type="danger" size="large" @click="startBatchCrawl" :loading="batchCrawling">
+                    一键爬取 50 条最新推文
+                </el-button>
+                <span class="crawl-batch-hint">自动从 Elon Musk、Bill Gates、NASA、NYT 等 20 个热门账号抓取</span>
+            </div>
+            <div class="crawl-form">
+                <div class="crawl-divider">或指定用户爬取</div>
+                <div class="crawl-input-row">
+                    <el-input
+                        v-model="crawlScreenName"
+                        placeholder="输入 X 用户名，如 elonmusk"
+                        prefix-icon="Search"
+                        clearable
+                        style="flex:1"
+                        @keyup.enter="startCrawl"
+                    >
+                        <template #prepend>@</template>
+                    </el-input>
+                    <el-button type="primary" @click="startCrawl" :loading="crawling" :disabled="!crawlScreenName?.trim()">
+                        爬取
+                    </el-button>
+                </div>
+            </div>
+            <div v-if="crawlResult" class="crawl-result" :class="{ success: crawlResult.success, fail: !crawlResult.success }">
+                <div class="crawl-result-header">
+                    <span class="crawl-result-icon">{{ crawlResult.success ? '✅' : '❌' }}</span>
+                    <span class="crawl-result-msg">{{ crawlResult.message }}</span>
+                </div>
+                <div v-if="crawlResult.success" class="crawl-result-stats">
+                    <span>导入: <strong>{{ crawlResult.importedCount }}</strong> 条</span>
+                    <span>去重跳过: <strong>{{ crawlResult.skippedDuplicate }}</strong> 条</span>
+                    <span v-if="crawlResult.parseErrors > 0">解析失败: <strong>{{ crawlResult.parseErrors }}</strong> 条</span>
+                </div>
+            </div>
+            <div v-if="crawlHistory.length > 0" class="crawl-history">
+                <div class="crawl-history-title">爬取记录</div>
+                <div v-for="(h, i) in crawlHistory" :key="i" class="crawl-history-item">
+                    <span class="crawl-history-icon">{{ h.success ? '✅' : '❌' }}</span>
+                    <span class="crawl-history-name">@{{ h.screenName }}</span>
+                    <span class="crawl-history-count" v-if="h.success">+{{ h.importedCount }} 条</span>
+                    <span class="crawl-history-msg" v-else>{{ h.message }}</span>
+                </div>
+            </div>
         </div>
 
         <!-- 用户管理表格 -->
@@ -173,6 +258,7 @@ const currentUser = userStr ? JSON.parse(userStr) : null;
 
 const users = ref([])
 const stats = ref({})
+const strategyInfo = ref({ current: 'traditional', aiAvailable: false, strategies: [] })
 const showPersonaModal = ref(false)
 const showDetailModal = ref(false)
 const currentPersona = ref(null)
@@ -193,6 +279,28 @@ const fetchStats = async () => {
         const res = await api.get('/admin/stats');
         stats.value = res.data;
     } catch(e) { console.error(e); }
+}
+
+const fetchStrategy = async () => {
+    try {
+        const res = await api.get('/admin/rec-strategy');
+        strategyInfo.value = res.data;
+    } catch(e) { console.error(e); }
+}
+
+const switchStrategy = async (type) => {
+    if (strategyInfo.value.current === type) return;
+    if (type === 'ai' && !strategyInfo.value.aiAvailable) {
+        ElMessage.warning('Ollama 服务未启动，请先启动 Ollama 再切换到 AI 推荐');
+        return;
+    }
+    try {
+        await api.put('/admin/rec-strategy', { strategy: type });
+        strategyInfo.value.current = type;
+        ElMessage.success(`推荐算法已切换为：${type === 'ai' ? 'AI 大模型推荐' : '传统多因子算法'}`);
+    } catch(e) {
+        ElMessage.error('切换失败');
+    }
 }
 
 const viewPersona = async (user) => {
@@ -231,6 +339,58 @@ const toggleBan = async (user) => {
         ElMessage.success(`${user.username} 已${action}`);
     } catch (e) {
         console.error(e);
+    }
+}
+
+const crawlScreenName = ref('')
+const crawling = ref(false)
+const batchCrawling = ref(false)
+const crawlResult = ref(null)
+const crawlHistory = ref([])
+
+const startBatchCrawl = async () => {
+    batchCrawling.value = true
+    crawlResult.value = null
+    try {
+        const res = await api.post('/admin/crawl-x-batch', { target: 50 })
+        crawlResult.value = res.data
+        crawlHistory.value.unshift(res.data)
+        if (crawlHistory.value.length > 10) crawlHistory.value.pop()
+        if (res.data.success) {
+            ElMessage.success(`批量爬取完成，导入 ${res.data.importedCount} 条推文`)
+            fetchStats()
+        } else {
+            ElMessage.warning(res.data.message)
+        }
+    } catch (e) {
+        crawlResult.value = { success: false, message: '批量爬取请求失败: ' + (e.response?.data?.message || e.message) }
+        ElMessage.error('批量爬取请求失败')
+    } finally {
+        batchCrawling.value = false
+    }
+}
+
+const startCrawl = async () => {
+    const name = crawlScreenName.value?.trim()
+    if (!name) return
+    crawling.value = true
+    crawlResult.value = null
+    try {
+        const res = await api.post('/admin/crawl-x', { screenName: name })
+        crawlResult.value = res.data
+        crawlHistory.value.unshift(res.data)
+        if (crawlHistory.value.length > 10) crawlHistory.value.pop()
+        if (res.data.success) {
+            ElMessage.success(`成功导入 ${res.data.importedCount} 条推文`)
+            fetchStats()
+        } else {
+            ElMessage.warning(res.data.message)
+        }
+    } catch (e) {
+        crawlResult.value = { success: false, message: '请求失败: ' + (e.response?.data?.message || e.message) }
+        ElMessage.error('爬取请求失败')
+    } finally {
+        crawling.value = false
     }
 }
 
@@ -273,6 +433,7 @@ const exportCard = async () => {
 onMounted(() => {
     fetchUsers();
     fetchStats();
+    fetchStrategy();
 })
 </script>
 
@@ -318,6 +479,79 @@ onMounted(() => {
     font-size: 13px;
     color: #536471;
     margin-top: 4px;
+}
+
+/* 推荐算法引擎 */
+.strategy-section {
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f1419;
+    margin-bottom: 12px;
+}
+
+.strategy-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.strategy-card {
+    border: 2px solid #eff3f4;
+    border-radius: 16px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: #fff;
+    position: relative;
+}
+
+.strategy-card:hover {
+    border-color: #1da1f2;
+    box-shadow: 0 4px 16px rgba(29, 161, 242, 0.12);
+}
+
+.strategy-card.active {
+    border-color: #1da1f2;
+    background: linear-gradient(135deg, #f0f9ff 0%, #fff 100%);
+    box-shadow: 0 4px 16px rgba(29, 161, 242, 0.15);
+}
+
+.strategy-card.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.strategy-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.strategy-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f1419;
+    margin-bottom: 6px;
+}
+
+.strategy-desc {
+    font-size: 13px;
+    color: #536471;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.strategy-badge {
+    margin-right: 6px;
+}
+
+.strategy-status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* 操作栏 */
@@ -408,4 +642,97 @@ onMounted(() => {
 .ov-value { font-size: 13px; font-weight: 700; color: #0f1419; text-align: center; }
 .ov-value small { font-size: 10px; font-weight: 500; color: #536471; margin-left: 2px; }
 .ov-label { font-size: 10px; color: #536471; }
+
+/* X 爬取面板 */
+.crawl-section {
+    margin-bottom: 24px;
+    padding: 20px;
+    background: white;
+    border: 1px solid #eff3f4;
+    border-radius: 16px;
+}
+.crawl-batch-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+    margin-bottom: 16px;
+}
+.crawl-batch-hint {
+    font-size: 12px;
+    color: #536471;
+}
+.crawl-divider {
+    font-size: 12px;
+    color: #aab8c2;
+    text-align: center;
+    margin: 12px 0;
+    position: relative;
+}
+.crawl-divider::before, .crawl-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: #eff3f4;
+}
+.crawl-divider::before { left: 0; }
+.crawl-divider::after { right: 0; }
+.crawl-form { margin-top: 12px; }
+.crawl-input-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+.crawl-hint {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #536471;
+}
+.crawl-result {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid #e1e8ed;
+}
+.crawl-result.success { background: #f0fdf4; border-color: #bbf7d0; }
+.crawl-result.fail { background: #fef2f2; border-color: #fecaca; }
+.crawl-result-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+.crawl-result-stats {
+    margin-top: 8px;
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: #536471;
+}
+.crawl-result-stats strong { color: #0f1419; }
+.crawl-history {
+    margin-top: 16px;
+    border-top: 1px solid #eff3f4;
+    padding-top: 12px;
+}
+.crawl-history-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #536471;
+    margin-bottom: 8px;
+}
+.crawl-history-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 13px;
+    color: #0f1419;
+}
+.crawl-history-name { font-weight: 600; color: #1d9bf0; }
+.crawl-history-count { color: #00ba7c; }
+.crawl-history-msg { color: #f4212e; font-size: 12px; }
 </style>
