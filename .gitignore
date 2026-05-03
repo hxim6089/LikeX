@@ -32,6 +32,17 @@ backend/uploads/
 # Cursor
 .cursor/
 
+# Python cache
+__pycache__/
+*.pyc
+
+# Data files
+*.db
+*.jsonl
+
+# Frontend build
+frontend/dist/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -73,49 +73,47 @@
             </span>
         </div>
 
-        <!-- X 推文爬取 -->
+        <!-- Kaggle 数据导入 -->
         <div class="crawl-section">
-            <h3 class="section-title">X 推文爬取</h3>
+            <h3 class="section-title">📊 Kaggle 数据导入</h3>
             <div class="crawl-batch-row">
-                <el-button type="danger" size="large" @click="startBatchCrawl" :loading="batchCrawling">
-                    一键爬取 50 条最新推文
+                <el-button type="danger" size="large" @click="startBatchImport" :loading="batchImporting">
+                    一键导入 50 条帖文
                 </el-button>
-                <span class="crawl-batch-hint">自动从 Elon Musk、Bill Gates、NASA、NYT 等 20 个热门账号抓取</span>
+                <span class="crawl-batch-hint">从 Kaggle 公开数据集 (HuffPost News 21万条) 自动导入分类帖文，Kaggle 不可用时使用内置内容库</span>
             </div>
             <div class="crawl-form">
-                <div class="crawl-divider">或指定用户爬取</div>
+                <div class="crawl-divider">或指定 Kaggle 数据集导入</div>
                 <div class="crawl-input-row">
                     <el-input
-                        v-model="crawlScreenName"
-                        placeholder="输入 X 用户名，如 elonmusk"
-                        prefix-icon="Search"
+                        v-model="datasetSlug"
+                        placeholder="输入数据集路径，如 rmisra/news-category-dataset"
                         clearable
                         style="flex:1"
-                        @keyup.enter="startCrawl"
+                        @keyup.enter="startDatasetImport"
                     >
-                        <template #prepend>@</template>
+                        <template #prepend>kaggle.com/</template>
                     </el-input>
-                    <el-button type="primary" @click="startCrawl" :loading="crawling" :disabled="!crawlScreenName?.trim()">
-                        爬取
+                    <el-button type="primary" @click="startDatasetImport" :loading="importing" :disabled="!datasetSlug?.trim()">
+                        导入
                     </el-button>
                 </div>
             </div>
-            <div v-if="crawlResult" class="crawl-result" :class="{ success: crawlResult.success, fail: !crawlResult.success }">
+            <div v-if="importResult" class="crawl-result" :class="{ success: importResult.success, fail: !importResult.success }">
                 <div class="crawl-result-header">
-                    <span class="crawl-result-icon">{{ crawlResult.success ? '✅' : '❌' }}</span>
-                    <span class="crawl-result-msg">{{ crawlResult.message }}</span>
+                    <span class="crawl-result-icon">{{ importResult.success ? '✅' : '❌' }}</span>
+                    <span class="crawl-result-msg">{{ importResult.message }}</span>
                 </div>
-                <div v-if="crawlResult.success" class="crawl-result-stats">
-                    <span>导入: <strong>{{ crawlResult.importedCount }}</strong> 条</span>
-                    <span>去重跳过: <strong>{{ crawlResult.skippedDuplicate }}</strong> 条</span>
-                    <span v-if="crawlResult.parseErrors > 0">解析失败: <strong>{{ crawlResult.parseErrors }}</strong> 条</span>
+                <div v-if="importResult.success" class="crawl-result-stats">
+                    <span>导入: <strong>{{ importResult.importedCount }}</strong> 条</span>
+                    <span>去重跳过: <strong>{{ importResult.skippedDuplicate }}</strong> 条</span>
                 </div>
             </div>
-            <div v-if="crawlHistory.length > 0" class="crawl-history">
-                <div class="crawl-history-title">爬取记录</div>
-                <div v-for="(h, i) in crawlHistory" :key="i" class="crawl-history-item">
+            <div v-if="importHistory.length > 0" class="crawl-history">
+                <div class="crawl-history-title">导入记录</div>
+                <div v-for="(h, i) in importHistory" :key="i" class="crawl-history-item">
                     <span class="crawl-history-icon">{{ h.success ? '✅' : '❌' }}</span>
-                    <span class="crawl-history-name">@{{ h.screenName }}</span>
+                    <span class="crawl-history-name">{{ h.source || 'Kaggle 批量' }}</span>
                     <span class="crawl-history-count" v-if="h.success">+{{ h.importedCount }} 条</span>
                     <span class="crawl-history-msg" v-else>{{ h.message }}</span>
                 </div>
@@ -342,55 +340,55 @@ const toggleBan = async (user) => {
     }
 }
 
-const crawlScreenName = ref('')
-const crawling = ref(false)
-const batchCrawling = ref(false)
-const crawlResult = ref(null)
-const crawlHistory = ref([])
+const datasetSlug = ref('')
+const importing = ref(false)
+const batchImporting = ref(false)
+const importResult = ref(null)
+const importHistory = ref([])
 
-const startBatchCrawl = async () => {
-    batchCrawling.value = true
-    crawlResult.value = null
+const startBatchImport = async () => {
+    batchImporting.value = true
+    importResult.value = null
     try {
-        const res = await api.post('/admin/crawl-x-batch', { target: 50 })
-        crawlResult.value = res.data
-        crawlHistory.value.unshift(res.data)
-        if (crawlHistory.value.length > 10) crawlHistory.value.pop()
+        const res = await api.post('/admin/import-kaggle-batch', { target: 50 })
+        importResult.value = res.data
+        importHistory.value.unshift(res.data)
+        if (importHistory.value.length > 10) importHistory.value.pop()
         if (res.data.success) {
-            ElMessage.success(`批量爬取完成，导入 ${res.data.importedCount} 条推文`)
+            ElMessage.success(`批量导入完成，导入 ${res.data.importedCount} 条帖文`)
             fetchStats()
         } else {
             ElMessage.warning(res.data.message)
         }
     } catch (e) {
-        crawlResult.value = { success: false, message: '批量爬取请求失败: ' + (e.response?.data?.message || e.message) }
-        ElMessage.error('批量爬取请求失败')
+        importResult.value = { success: false, message: '批量导入请求失败: ' + (e.response?.data?.message || e.message) }
+        ElMessage.error('批量导入请求失败')
     } finally {
-        batchCrawling.value = false
+        batchImporting.value = false
     }
 }
 
-const startCrawl = async () => {
-    const name = crawlScreenName.value?.trim()
-    if (!name) return
-    crawling.value = true
-    crawlResult.value = null
+const startDatasetImport = async () => {
+    const slug = datasetSlug.value?.trim()
+    if (!slug) return
+    importing.value = true
+    importResult.value = null
     try {
-        const res = await api.post('/admin/crawl-x', { screenName: name })
-        crawlResult.value = res.data
-        crawlHistory.value.unshift(res.data)
-        if (crawlHistory.value.length > 10) crawlHistory.value.pop()
+        const res = await api.post('/admin/import-kaggle', { datasetSlug: slug })
+        importResult.value = res.data
+        importHistory.value.unshift(res.data)
+        if (importHistory.value.length > 10) importHistory.value.pop()
         if (res.data.success) {
-            ElMessage.success(`成功导入 ${res.data.importedCount} 条推文`)
+            ElMessage.success(`成功导入 ${res.data.importedCount} 条帖文`)
             fetchStats()
         } else {
             ElMessage.warning(res.data.message)
         }
     } catch (e) {
-        crawlResult.value = { success: false, message: '请求失败: ' + (e.response?.data?.message || e.message) }
-        ElMessage.error('爬取请求失败')
+        importResult.value = { success: false, message: '请求失败: ' + (e.response?.data?.message || e.message) }
+        ElMessage.error('导入请求失败')
     } finally {
-        crawling.value = false
+        importing.value = false
     }
 }
 

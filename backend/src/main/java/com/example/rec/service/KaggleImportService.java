@@ -12,44 +12,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Service
-public class XCrawlerService {
+public class KaggleImportService {
 
-    private static final Logger log = LoggerFactory.getLogger(XCrawlerService.class);
+    private static final Logger log = LoggerFactory.getLogger(KaggleImportService.class);
     private static final ObjectMapper mapper = new ObjectMapper();
+
+    private static final String KAGGLE_API_KEY = "KGAT_dc157253d0975270fe910a33c3eba8d5";
+    private static final String KAGGLE_DOWNLOAD_URL = "https://www.kaggle.com/api/v1/datasets/download/%s";
+    private static final String DEFAULT_DATASET = "rmisra/news-category-dataset";
+    private static final int CACHE_SIZE = 3000;
     private static final int DEFAULT_BATCH_TARGET = 50;
-
-    private static final String BEARER_TOKEN =
-            "AAAAAAAAAAAAAAAAAAAAAGQx9QEAAAAAdQPRJRhz9JpSLNrfclQsfMVP3Nw%3D5noqwFM0jQ9o0U7HZFtbNpBexoo2aOpA0uXbUqMisHApV7zryI";
-    private static final String SEARCH_URL =
-            "https://api.twitter.com/2/tweets/search/recent?query=%s&max_results=%d&tweet.fields=created_at,public_metrics,text,author_id";
-
-    private static final String[][] SEARCH_QUERIES = {
-            {"AI 人工智能 lang:zh -is:retweet -is:reply", "Tech"},
-            {"ChatGPT lang:zh -is:retweet -is:reply", "Tech"},
-            {"编程 开发 lang:zh -is:retweet -is:reply", "Tech"},
-            {"科技新闻 lang:zh -is:retweet -is:reply", "Tech"},
-            {"Python 教程 lang:zh -is:retweet -is:reply", "Tech"},
-            {"美食推荐 lang:zh -is:retweet -is:reply", "Life"},
-            {"旅行 打卡 lang:zh -is:retweet -is:reply", "Life"},
-            {"咖啡 日常 lang:zh -is:retweet -is:reply", "Life"},
-            {"NBA 篮球 lang:zh -is:retweet -is:reply", "Sports"},
-            {"健身 运动 lang:zh -is:retweet -is:reply", "Sports"},
-            {"足球 比赛 lang:zh -is:retweet -is:reply", "Sports"},
-            {"热点新闻 lang:zh -is:retweet -is:reply", "News"},
-            {"国际新闻 lang:zh -is:retweet -is:reply", "News"},
-            {"考研 复习 lang:zh -is:retweet -is:reply", "Education"},
-            {"学习方法 lang:zh -is:retweet -is:reply", "Education"},
-    };
 
     private final ContentRepository contentRepository;
     private final UserRepository userRepository;
@@ -57,25 +43,28 @@ public class XCrawlerService {
     private final HttpClient httpClient;
     private final Random random = new Random();
 
-    public XCrawlerService(ContentRepository contentRepository,
-                           UserRepository userRepository,
-                           TagRepository tagRepository) {
+    private List<RawPost> cachedPosts = null;
+    private String cachedDatasetSlug = null;
+
+    public KaggleImportService(ContentRepository contentRepository,
+                               UserRepository userRepository,
+                               TagRepository tagRepository) {
         this.contentRepository = contentRepository;
         this.userRepository = userRepository;
         this.tagRepository = tagRepository;
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
+                .connectTimeout(Duration.ofSeconds(30))
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
     }
 
     /**
-     * 一键批量爬取：先尝试 X API，不够则用内置内容库补齐到目标数量
+     * 一键批量导入：先尝试 Kaggle 数据集，不够则用内置内容库补齐
      */
-    public CrawlResult batchCrawl(int targetCount) {
+    public ImportResult batchImport(int targetCount) {
         if (targetCount <= 0) targetCount = DEFAULT_BATCH_TARGET;
 
-        CrawlResult result = new CrawlResult();
+        ImportResult result = new ImportResult();
         result.startTime = LocalDateTime.now();
 
         Set<String> existingTexts = loadExistingTexts();
@@ -88,41 +77,33 @@ public class XCrawlerService {
         }
 
         int imported = 0;
-        int apiImported = 0;
+        int kaggleImported = 0;
         int libraryImported = 0;
 
-        // === Phase 1: 尝试 X API v2 搜索 ===
+        // === Phase 1: Kaggle 数据集 ===
         try {
-            int perQuery = Math.max(10, (targetCount / SEARCH_QUERIES.length) + 2);
-            for (String[] qr : SEARCH_QUERIES) {
-                if (imported >= targetCount) break;
-                String query = qr[0];
-                String category = qr[1];
-                try {
-                    List<RawTweet> tweets = searchTweets(query, perQuery);
-                    log.info("X API search '{}': got {} tweets", query.substring(0, Math.min(20, query.length())), tweets.size());
-                    for (RawTweet t : tweets) {
-                        if (imported >= targetCount) break;
-                        if (existingTexts.contains(t.text.trim())) { result.skippedDuplicate++; continue; }
+            ensureCache(DEFAULT_DATASET);
+            List<RawPost> available = new ArrayList<>();
+            for (RawPost p : cachedPosts) {
+                if (!existingTexts.contains(p.text.trim())) available.add(p);
+            }
+            Collections.shuffle(available, random);
 
-                        Content c = saveTweet(t.text, category, systemUsers, existingTexts, t.likeCount, t.retweetCount);
-                        autoTag(c, t.text);
-                        imported++;
-                        apiImported++;
-                    }
-                    Thread.sleep(1100);
-                } catch (Exception e) {
-                    log.warn("API search failed for '{}': {}", query.substring(0, Math.min(20, query.length())), e.getMessage());
-                    if (e.getMessage() != null && e.getMessage().contains("429")) break;
-                }
+            for (RawPost p : available) {
+                if (imported >= targetCount) break;
+                Content content = savePost(p.text, p.category, systemUsers, existingTexts,
+                        randomEngagement(), randomEngagement() / 3);
+                autoTag(content, p.text);
+                imported++;
+                kaggleImported++;
             }
         } catch (Exception e) {
-            log.info("X API unavailable ({}), using built-in content library", e.getMessage());
+            log.warn("Kaggle import failed: {}", e.getMessage());
         }
 
         // === Phase 2: 内置内容库补齐 ===
         if (imported < targetCount) {
-            log.info("API imported {}/{}, supplementing from built-in library", imported, targetCount);
+            log.info("Kaggle imported {}/{}, supplementing from built-in library", imported, targetCount);
             List<String[]> pool = buildContentPool();
             Collections.shuffle(pool, random);
 
@@ -132,7 +113,8 @@ public class XCrawlerService {
                 String category = item[1];
                 if (existingTexts.contains(text.trim())) { result.skippedDuplicate++; continue; }
 
-                Content content = saveTweet(text, category, systemUsers, existingTexts, randomEngagement(), randomEngagement() / 3);
+                Content content = savePost(text, category, systemUsers, existingTexts,
+                        randomEngagement(), randomEngagement() / 3);
                 autoTag(content, text);
                 imported++;
                 libraryImported++;
@@ -145,115 +127,245 @@ public class XCrawlerService {
         if (imported > 0) {
             result.success = true;
             StringBuilder msg = new StringBuilder();
-            msg.append(String.format("成功导入 %d 条推文", imported));
-            if (apiImported > 0) msg.append(String.format(" (X实时: %d", apiImported));
+            msg.append(String.format("成功导入 %d 条帖文", imported));
+            if (kaggleImported > 0) msg.append(String.format(" (Kaggle: %d", kaggleImported));
             if (libraryImported > 0) {
-                msg.append(apiImported > 0 ? String.format(", 内容库: %d)", libraryImported) : String.format(" (内容库: %d)", libraryImported));
-            } else if (apiImported > 0) {
+                msg.append(kaggleImported > 0
+                        ? String.format(", 内容库: %d)", libraryImported)
+                        : String.format(" (内容库: %d)", libraryImported));
+            } else if (kaggleImported > 0) {
                 msg.append(")");
             }
             if (result.skippedDuplicate > 0) msg.append(String.format(", 跳过 %d 条重复", result.skippedDuplicate));
             result.message = msg.toString();
         } else {
             result.success = false;
-            result.message = "未能导入任何推文，内容库可能已全部导入过";
+            result.message = "未能导入任何帖文，内容可能已全部导入过";
         }
 
         return result;
     }
 
     /**
-     * 指定用户爬取
+     * 从指定 Kaggle 数据集导入
      */
-    public CrawlResult crawl(String screenName, Long importAsUserId) {
-        CrawlResult result = new CrawlResult();
-        result.screenName = screenName;
+    public ImportResult importFromDataset(String datasetSlug, int targetCount) {
+        if (targetCount <= 0) targetCount = DEFAULT_BATCH_TARGET;
+
+        ImportResult result = new ImportResult();
+        result.source = datasetSlug;
         result.startTime = LocalDateTime.now();
 
         try {
             Set<String> existingTexts = loadExistingTexts();
-            List<RawTweet> tweets = fetchUserTweets(screenName, 30);
+            List<User> systemUsers = userRepository.findAll();
+            if (systemUsers.isEmpty()) {
+                result.success = false;
+                result.message = "系统中没有用户";
+                result.endTime = LocalDateTime.now();
+                return result;
+            }
 
-            User importUser = resolveImportUser(screenName, importAsUserId);
+            ensureCache(datasetSlug);
+
+            List<RawPost> available = new ArrayList<>();
+            for (RawPost p : cachedPosts) {
+                if (!existingTexts.contains(p.text.trim())) available.add(p);
+                else result.skippedDuplicate++;
+            }
+            Collections.shuffle(available, random);
+
             int imported = 0;
-
-            for (RawTweet t : tweets) {
-                if (t.text == null || t.text.length() < 5) continue;
-                if (existingTexts.contains(t.text.trim())) { result.skippedDuplicate++; continue; }
-
-                Content content = new Content();
-                content.setAuthor(importUser);
-                content.setContent(t.text);
-                content.setCategory("imported");
-                content.setCreatedAt(LocalDateTime.now());
-                content.setViewCount(0);
-                content.setLikeCount(t.likeCount);
-                content.setCommentCount(0);
-                content.setRepostCount(t.retweetCount);
-                content.setDislikeCount(0);
-                contentRepository.save(content);
-                existingTexts.add(t.text.trim());
+            for (RawPost p : available) {
+                if (imported >= targetCount) break;
+                Content content = savePost(p.text, p.category, systemUsers, existingTexts,
+                        randomEngagement(), randomEngagement() / 3);
+                autoTag(content, p.text);
                 imported++;
             }
 
             result.success = true;
             result.importedCount = imported;
-            result.message = String.format("成功导入 %d 条推文 (跳过 %d 条重复)", imported, result.skippedDuplicate);
+            result.message = String.format("从 %s 导入 %d 条帖文", datasetSlug, imported);
         } catch (Exception e) {
-            log.error("Crawl failed for @{}", screenName, e);
+            log.error("Kaggle import failed for {}", datasetSlug, e);
             result.success = false;
-            result.message = "爬取失败: " + e.getMessage();
+            result.message = "导入失败: " + e.getMessage();
         }
 
         result.endTime = LocalDateTime.now();
         return result;
     }
 
-    // ========== X API v2 (Bearer Token 直连) ==========
+    // ========== Kaggle API ==========
 
-    private List<RawTweet> searchTweets(String query, int maxResults) throws Exception {
-        int clampedMax = Math.min(Math.max(maxResults, 10), 100);
-        String encodedQuery = java.net.URLEncoder.encode(query, java.nio.charset.StandardCharsets.UTF_8);
-        String url = String.format(SEARCH_URL, encodedQuery, clampedMax);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Bearer " + BEARER_TOKEN)
-                .GET().timeout(Duration.ofSeconds(15)).build();
-
-        HttpResponse<String> resp = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (resp.statusCode() == 429) throw new RuntimeException("Rate limited (429), 请稍后重试");
-        if (resp.statusCode() != 200) throw new RuntimeException("Search API HTTP " + resp.statusCode() + ": " + resp.body());
-
-        List<RawTweet> tweets = new ArrayList<>();
-        JsonNode root = mapper.readTree(resp.body());
-        JsonNode data = root.path("data");
-        if (data.isArray()) {
-            for (JsonNode node : data) {
-                String text = node.path("text").asText(null);
-                if (text == null || text.startsWith("RT @")) continue;
-                text = text.replaceAll("\\s*https://t\\.co/\\w+", "").trim();
-                if (text.length() < 5) continue;
-                RawTweet t = new RawTweet();
-                t.text = text;
-                JsonNode metrics = node.path("public_metrics");
-                t.likeCount = metrics.path("like_count").asInt(0);
-                t.retweetCount = metrics.path("retweet_count").asInt(0);
-                t.category = null;
-                tweets.add(t);
-            }
+    private void ensureCache(String datasetSlug) throws Exception {
+        if (cachedPosts != null && !cachedPosts.isEmpty() && datasetSlug.equals(cachedDatasetSlug)) {
+            return;
         }
-        return tweets;
+        log.info("Downloading Kaggle dataset: {}", datasetSlug);
+        cachedPosts = downloadAndParse(datasetSlug);
+        cachedDatasetSlug = datasetSlug;
+        log.info("Kaggle dataset cached: {} posts from {}", cachedPosts.size(), datasetSlug);
     }
 
-    private List<RawTweet> fetchUserTweets(String screenName, int count) throws Exception {
-        String query = "from:" + screenName + " -is:retweet -is:reply";
-        return searchTweets(query, count);
+    private List<RawPost> downloadAndParse(String datasetSlug) throws Exception {
+        String url = String.format(KAGGLE_DOWNLOAD_URL, datasetSlug);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Bearer " + KAGGLE_API_KEY)
+                .GET()
+                .timeout(Duration.ofSeconds(120))
+                .build();
+
+        Path tempFile = Files.createTempFile("kaggle_", ".zip");
+        try {
+            HttpResponse<Path> resp = httpClient.send(request, HttpResponse.BodyHandlers.ofFile(tempFile));
+
+            if (resp.statusCode() == 401 || resp.statusCode() == 403) {
+                throw new RuntimeException("Kaggle 认证失败 (HTTP " + resp.statusCode() + ")，请检查 API Key");
+            }
+            if (resp.statusCode() != 200) {
+                throw new RuntimeException("Kaggle API HTTP " + resp.statusCode());
+            }
+
+            List<RawPost> posts = new ArrayList<>();
+
+            try (ZipInputStream zis = new ZipInputStream(new FileInputStream(tempFile.toFile()))) {
+                ZipEntry entry;
+                while ((entry = zis.getNextEntry()) != null) {
+                    String name = entry.getName().toLowerCase();
+                    if (name.endsWith(".json") || name.endsWith(".jsonl")) {
+                        parseJsonLines(zis, posts);
+                    } else if (name.endsWith(".csv")) {
+                        parseCsv(zis, posts);
+                    }
+                    if (posts.size() >= CACHE_SIZE) break;
+                }
+            }
+
+            Collections.shuffle(posts, random);
+            if (posts.size() > CACHE_SIZE) {
+                return new ArrayList<>(posts.subList(0, CACHE_SIZE));
+            }
+            return posts;
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+    }
+
+    private void parseJsonLines(InputStream is, List<RawPost> posts) throws Exception {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+        String line;
+        while ((line = reader.readLine()) != null && posts.size() < CACHE_SIZE * 2) {
+            try {
+                JsonNode node = mapper.readTree(line);
+
+                String headline = node.path("headline").asText("");
+                String desc = node.path("short_description").asText("");
+                String category = node.path("category").asText("");
+
+                String text;
+                if (desc.length() > 30) {
+                    text = desc;
+                } else if (!headline.isEmpty()) {
+                    text = headline + (desc.isEmpty() ? "" : " — " + desc);
+                } else {
+                    text = node.path("text").asText(node.path("content").asText(""));
+                }
+
+                if (text.length() < 10) continue;
+                if (text.length() > 280) text = text.substring(0, 277) + "...";
+
+                RawPost post = new RawPost();
+                post.text = text;
+                post.category = mapCategory(category);
+                posts.add(post);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void parseCsv(InputStream is, List<RawPost> posts) throws Exception {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+        String headerLine = reader.readLine();
+        if (headerLine == null) return;
+
+        String[] headers = splitCsvLine(headerLine);
+        int textCol = -1, catCol = -1;
+        for (int i = 0; i < headers.length; i++) {
+            String h = headers[i].trim().toLowerCase().replace("\"", "");
+            if (textCol == -1 && (h.equals("text") || h.equals("content") || h.equals("tweet")
+                    || h.equals("headline") || h.equals("title") || h.equals("short_description"))) {
+                textCol = i;
+            }
+            if (catCol == -1 && (h.equals("category") || h.equals("label") || h.equals("topic"))) {
+                catCol = i;
+            }
+        }
+        if (textCol == -1) return;
+
+        String line;
+        while ((line = reader.readLine()) != null && posts.size() < CACHE_SIZE * 2) {
+            try {
+                String[] cols = splitCsvLine(line);
+                if (cols.length <= textCol) continue;
+
+                String text = cols[textCol].trim();
+                if (text.startsWith("\"") && text.endsWith("\"")) text = text.substring(1, text.length() - 1);
+                if (text.length() < 10) continue;
+                if (text.length() > 280) text = text.substring(0, 277) + "...";
+
+                String category = "News";
+                if (catCol >= 0 && cols.length > catCol) {
+                    category = mapCategory(cols[catCol].trim().replace("\"", ""));
+                }
+
+                RawPost post = new RawPost();
+                post.text = text;
+                post.category = category;
+                posts.add(post);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private String[] splitCsvLine(String line) {
+        List<String> result = new ArrayList<>();
+        boolean inQuotes = false;
+        StringBuilder current = new StringBuilder();
+        for (char ch : line.toCharArray()) {
+            if (ch == '"') {
+                inQuotes = !inQuotes;
+            } else if (ch == ',' && !inQuotes) {
+                result.add(current.toString());
+                current = new StringBuilder();
+            } else {
+                current.append(ch);
+            }
+        }
+        result.add(current.toString());
+        return result.toArray(new String[0]);
+    }
+
+    private String mapCategory(String kaggleCategory) {
+        if (kaggleCategory == null || kaggleCategory.isEmpty()) return "News";
+        String upper = kaggleCategory.toUpperCase().trim();
+
+        if (upper.contains("TECH") || upper.contains("SCIENCE") || upper.contains("TECHNOLOGY")) return "Tech";
+        if (upper.contains("SPORT")) return "Sports";
+        if (upper.contains("EDUCATION") || upper.contains("COLLEGE")) return "Education";
+        if (upper.contains("TRAVEL") || upper.contains("STYLE") || upper.contains("BEAUTY")
+                || upper.contains("FOOD") || upper.contains("DRINK") || upper.contains("WELLNESS")
+                || upper.contains("ENTERTAINMENT") || upper.contains("COMEDY") || upper.contains("ARTS")
+                || upper.contains("HOME") || upper.contains("LIVING") || upper.contains("PARENTING")
+                || upper.contains("TASTE") || upper.contains("WEDDING")) return "Life";
+
+        return "News";
     }
 
     // ========== 辅助 ==========
 
-    private Content saveTweet(String text, String category, List<User> users, Set<String> existingTexts, int likes, int reposts) {
+    private Content savePost(String text, String category, List<User> users,
+                             Set<String> existingTexts, int likes, int reposts) {
         User author = users.get(random.nextInt(users.size()));
         int hoursAgo = random.nextInt(30 * 24);
 
@@ -306,23 +418,6 @@ public class XCrawlerService {
             if (c.getContent() != null) texts.add(c.getContent().trim());
         });
         return texts;
-    }
-
-    private User resolveImportUser(String screenName, Long importAsUserId) {
-        if (importAsUserId != null) {
-            return userRepository.findById(importAsUserId)
-                    .orElseThrow(() -> new RuntimeException("User not found: " + importAsUserId));
-        }
-        String botName = "x_" + screenName.toLowerCase();
-        return userRepository.findByUsername(botName).orElseGet(() -> {
-            User bot = new User();
-            bot.setUsername(botName);
-            bot.setHandle("@" + screenName);
-            bot.setPassword("imported_no_login");
-            bot.setRole("USER");
-            bot.setBio("Imported from X @" + screenName);
-            return userRepository.save(bot);
-        });
     }
 
     // ========== 内置内容库 (来自 x_scraper.py) ==========
@@ -445,38 +540,46 @@ public class XCrawlerService {
 
     private Map<String, List<String>> getTagRules() {
         Map<String, List<String>> rules = new HashMap<>();
-        rules.put("AI", List.of("AI", "人工智能", "GPT", "ChatGPT", "大模型", "深度学习", "机器学习"));
-        rules.put("编程", List.of("Python", "编程", "代码", "开发", "GitHub", "Rust", "React", "前端"));
-        rules.put("科技", List.of("科技", "芯片", "Apple", "华为", "iPhone", "MacBook"));
-        rules.put("美食", List.of("美食", "咖啡", "蛋糕", "火锅", "早餐"));
-        rules.put("旅行", List.of("旅行", "打卡", "迪士尼", "西湖"));
-        rules.put("健身", List.of("健身", "跑步", "运动", "瑜伽", "游泳"));
-        rules.put("篮球", List.of("NBA", "篮球"));
-        rules.put("足球", List.of("足球", "世界杯"));
+        rules.put("AI", List.of("AI", "人工智能", "GPT", "ChatGPT", "大模型", "深度学习", "机器学习",
+                "artificial intelligence", "machine learning", "deep learning", "neural"));
+        rules.put("编程", List.of("Python", "编程", "代码", "开发", "GitHub", "Rust", "React", "前端",
+                "programming", "software", "developer", "code", "coding"));
+        rules.put("科技", List.of("科技", "芯片", "Apple", "华为", "iPhone", "MacBook",
+                "technology", "tech", "digital", "innovation", "startup", "gadget"));
+        rules.put("美食", List.of("美食", "咖啡", "蛋糕", "火锅", "早餐",
+                "food", "recipe", "cooking", "restaurant", "chef", "meal"));
+        rules.put("旅行", List.of("旅行", "打卡", "迪士尼", "西湖",
+                "travel", "trip", "vacation", "tourism", "destination"));
+        rules.put("健身", List.of("健身", "跑步", "运动", "瑜伽", "游泳",
+                "fitness", "workout", "gym", "exercise"));
+        rules.put("篮球", List.of("NBA", "篮球", "basketball"));
+        rules.put("足球", List.of("足球", "世界杯", "soccer", "football", "FIFA"));
         rules.put("考研", List.of("考研", "考公", "雅思", "GRE"));
-        rules.put("学习", List.of("学习", "读书", "课程", "论文"));
-        rules.put("航天", List.of("SpaceX", "NASA", "火星", "嫦娥"));
-        rules.put("经济", List.of("央行", "A股", "油价"));
-        rules.put("生活", List.of("生活", "日常", "周末"));
+        rules.put("学习", List.of("学习", "读书", "课程", "论文",
+                "education", "study", "university", "college", "school", "student"));
+        rules.put("航天", List.of("SpaceX", "NASA", "火星", "嫦娥",
+                "space", "rocket", "Mars", "astronaut"));
+        rules.put("经济", List.of("央行", "A股", "油价",
+                "economy", "market", "stock", "finance", "inflation"));
+        rules.put("生活", List.of("生活", "日常", "周末", "lifestyle", "daily"));
+        rules.put("医疗", List.of("health", "vaccine", "disease", "medical", "pandemic"));
+        rules.put("政治", List.of("politics", "election", "government", "president", "congress", "law"));
         return rules;
     }
 
     // ========== 数据类 ==========
 
-    private static class RawTweet {
+    private static class RawPost {
         String text;
         String category;
-        int likeCount;
-        int retweetCount;
     }
 
-    public static class CrawlResult {
-        public String screenName;
+    public static class ImportResult {
+        public String source;
         public boolean success;
         public String message;
         public int importedCount;
         public int skippedDuplicate;
-        public int parseErrors;
         public LocalDateTime startTime;
         public LocalDateTime endTime;
     }
