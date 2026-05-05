@@ -4,6 +4,7 @@ import com.example.rec.model.Behavior;
 import com.example.rec.model.Content;
 import com.example.rec.repository.BehaviorRepository;
 import com.example.rec.repository.ContentRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,11 +16,16 @@ public class BehaviorService {
     private final BehaviorRepository behaviorRepository;
     private final ContentRepository contentRepository;
     private final NotificationService notificationService;
+    private final RecommendationStrategyManager strategyManager;
 
-    public BehaviorService(BehaviorRepository behaviorRepository, ContentRepository contentRepository, NotificationService notificationService) {
+    public BehaviorService(BehaviorRepository behaviorRepository,
+                           ContentRepository contentRepository,
+                           NotificationService notificationService,
+                           @Lazy RecommendationStrategyManager strategyManager) {
         this.behaviorRepository = behaviorRepository;
         this.contentRepository = contentRepository;
         this.notificationService = notificationService;
+        this.strategyManager = strategyManager;
     }
 
     @Transactional
@@ -46,6 +52,7 @@ public class BehaviorService {
         contentRepository.save(content);
 
         notificationService.createNotification(content.getAuthor().getId(), userId, "LIKE", contentId);
+        strategyManager.invalidateAiCache(userId);
     }
 
     @Transactional
@@ -97,6 +104,7 @@ public class BehaviorService {
 
         content.setDislikeCount((content.getDislikeCount() != null ? content.getDislikeCount() : 0) + 1);
         contentRepository.save(content);
+        strategyManager.invalidateAiCache(userId);
     }
 
     @Transactional
