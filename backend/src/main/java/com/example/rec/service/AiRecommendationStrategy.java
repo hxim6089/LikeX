@@ -270,7 +270,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
             }
         }
 
-        return result.stream().limit(50).collect(Collectors.toList());
+        return result;
     }
 
     private List<ContentWithScore> buildScoredResult(List<Content> allCandidates,
@@ -299,6 +299,14 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         for (Content c : topCandidates) {
             if (!added.contains(c.getId())) {
                 ScoreBreakdown bd = buildAiScoreBreakdown(c, profile, "候选补充", rank, totalRanked);
+                result.add(new ContentWithScore(c, bd, rank++));
+                added.add(c.getId());
+            }
+        }
+
+        for (Content c : allCandidates) {
+            if (!added.contains(c.getId())) {
+                ScoreBreakdown bd = buildAiScoreBreakdown(c, profile, "常规补充", rank, totalRanked);
                 result.add(new ContentWithScore(c, bd, rank++));
                 added.add(c.getId());
             }
@@ -338,7 +346,6 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
     private List<Content> fallbackSort(List<Content> candidates) {
         return candidates.stream()
                 .sorted((a, b) -> Double.compare(basicEngagement(b), basicEngagement(a)))
-                .limit(50)
                 .collect(Collectors.toList());
     }
 
