@@ -371,6 +371,7 @@ public class KaggleImportService {
 
         Content content = new Content();
         content.setAuthor(author);
+        content.setTitle(text.length() > 20 ? text.substring(0, 20) + "..." : text);
         content.setContent(text);
         content.setCategory(category);
         content.setCreatedAt(LocalDateTime.now().minusHours(hoursAgo));

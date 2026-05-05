@@ -48,7 +48,7 @@
         <div class="trend-name">#{{ topic.name }}</div>
         <div class="trend-count">{{ formatCount(topic.postCount) }} 帖子</div>
       </div>
-      <div v-if="trendingTopics.length > 0" class="show-more" @click="router.push('/search?q=%23')">
+      <div v-if="trendingTopics.length > 0" class="show-more" @click="router.push('/search?q=%23&type=topics')">
         查看更多
       </div>
     </div>
@@ -142,7 +142,7 @@ const fetchTrending = async () => {
 }
 
 const goToTopic = (name) => {
-  router.push(`/search?q=${encodeURIComponent('#' + name)}`)
+  router.push(`/topic/${encodeURIComponent(name)}`)
 }
 
 const formatCount = (count) => {

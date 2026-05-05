@@ -27,7 +27,7 @@ const props = defineProps({
 const router = useRouter()
 
 const goToTopic = () => {
-  router.push(`/search?q=%23${encodeURIComponent(props.topic.name)}`)
+  router.push(`/topic/${encodeURIComponent(props.topic.name)}`)
 }
 
 const formatCount = (count) => {

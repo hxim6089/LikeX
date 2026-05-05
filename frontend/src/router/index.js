@@ -11,6 +11,7 @@ import AdminView from '../views/AdminView.vue'
 import GrokView from '../views/GrokView.vue'
 import CompareView from '../views/CompareView.vue'
 import AdDashboard from '../views/AdDashboard.vue'
+import TopicView from '../views/TopicView.vue'
 
 const routes = [
     { path: '/', component: HomeView },
@@ -19,6 +20,7 @@ const routes = [
     { path: '/ad-dashboard', component: AdDashboard },
     { path: '/profile', component: ProfileView },
     { path: '/tweet/:id', component: TweetDetailView },
+    { path: '/topic/:name', component: TopicView },
     { path: '/search', component: SearchView },
     { path: '/notifications', component: NotificationView },
     { path: '/messages', component: MessagesView },
