@@ -39,7 +39,7 @@
       <div v-else-if="trendingTopics.length === 0" class="empty-text">暂无热门话题</div>
       <div 
         v-else
-        v-for="(topic, index) in trendingTopics" 
+        v-for="(topic, index) in displayedTopics" 
         :key="topic.name" 
         class="trend-item"
         @click="goToTopic(topic.name)"
@@ -48,8 +48,11 @@
         <div class="trend-name">#{{ topic.name }}</div>
         <div class="trend-count">{{ formatCount(topic.postCount) }} 帖子</div>
       </div>
-      <div v-if="trendingTopics.length > 0" class="show-more" @click="router.push('/search?q=%23&type=topics')">
+      <div v-if="!expanded && trendingTopics.length > 5" class="show-more" @click="expanded = true">
         查看更多
+      </div>
+      <div v-if="expanded && trendingTopics.length > 5" class="show-more" @click="expanded = false">
+        收起
       </div>
     </div>
 
@@ -70,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
 import api from '../api'
@@ -82,6 +85,11 @@ const showSuggestions = ref(false)
 const searchSuggestions = ref([])
 const trendingTopics = ref([])
 const loadingTrending = ref(false)
+const expanded = ref(false)
+
+const displayedTopics = computed(() => {
+  return expanded.value ? trendingTopics.value : trendingTopics.value.slice(0, 5)
+})
 
 const userStr = localStorage.getItem('user')
 const currentUser = userStr ? JSON.parse(userStr) : { id: 1 }
@@ -132,7 +140,7 @@ const selectSuggestion = (item) => {
 const fetchTrending = async () => {
   loadingTrending.value = true
   try {
-    const res = await api.get('/trending', { params: { limit: 5 } })
+    const res = await api.get('/trending', { params: { limit: 20 } })
     trendingTopics.value = res.data
   } catch (e) {
     console.error('Failed to fetch trending:', e)

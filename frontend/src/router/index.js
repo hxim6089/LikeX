@@ -19,6 +19,7 @@ const routes = [
     { path: '/compare', component: CompareView },
     { path: '/ad-dashboard', component: AdDashboard },
     { path: '/profile', component: ProfileView },
+    { path: '/profile/:id', component: ProfileView },
     { path: '/tweet/:id', component: TweetDetailView },
     { path: '/topic/:name', component: TopicView },
     { path: '/search', component: SearchView },

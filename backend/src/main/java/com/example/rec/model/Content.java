@@ -7,6 +7,20 @@ import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.HashSet;
 
+/**
+ * 帖子/内容实体
+ *
+ * 系统核心数据模型，存储用户发布的所有内容（帖子、评论、转发、引用）。
+ * 推荐算法基于 Content 的互动数据（likeCount、commentCount、viewCount、repostCount）
+ * 和元数据（category、tags、createdAt、author）进行打分排序。
+ *
+ * 特殊字段说明：
+ * - parentContent: 不为 null 时表示这是一条评论/回复
+ * - repostOf: 不为 null 时表示这是一条转发
+ * - quoteOf: 不为 null 时表示这是一条引用
+ * - networkSource: @Transient 字段，标记来源（IN_NETWORK / OUT_OF_NETWORK）
+ * - isLiked/isDisliked: @Transient 字段，当前请求用户的点赞/点踩状态
+ */
 @Data
 @Entity
 @Table(name = "contents")

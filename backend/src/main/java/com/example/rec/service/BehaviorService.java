@@ -10,6 +10,25 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * 用户行为记录服务
+ *
+ * 【职责】
+ * 负责记录用户的各类行为事件（点赞、点踩、浏览、跳过），
+ * 这些行为数据是推荐算法的核心输入，用于：
+ * 1. 构建用户行为画像（UserBehaviorProfileService）
+ * 2. 计算协同过滤相似度（CollaborativeFilteringService）
+ * 3. 计算 TF-IDF 用户兴趣向量（TfIdfService）
+ * 4. 交互惩罚（已赞/已踩/已浏览的内容降权）
+ *
+ * 【互斥逻辑】
+ * - 点赞和点踩互斥：点赞时自动取消点踩，反之亦然
+ * - 浏览去重：同一用户对同一帖子只记录一次浏览，但会更新最长停留时间
+ *
+ * 【缓存联动】
+ * 点赞/点踩操作会触发 AI 推荐缓存失效（invalidateAiCache），
+ * 确保下次请求能基于最新行为重新计算推荐。
+ */
 @Service
 public class BehaviorService {
 

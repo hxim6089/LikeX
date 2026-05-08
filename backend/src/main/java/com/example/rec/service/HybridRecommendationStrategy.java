@@ -15,32 +15,74 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 基于用户行为画像的个性化混合推荐策略
+ * 基于用户行为画像的个性化混合推荐策略（传统算法）
  *
- * 核心改进（相比固定权重版本）：
- * 1. 每个用户拥有独立的动态权重，由 UserBehaviorProfileService 根据行为自动计算
- * 2. 新增打分因子：话题亲和度、作者亲密度、内容深度匹配、新鲜度偏好
- * 3. 每条推荐附带可解释的推荐理由
- * 4. 冷启动 / 初级 / 活跃用户采用不同策略
+ * 【算法概述】
+ * 本类实现了系统的核心推荐排序逻辑，采用多因子加权打分模型，
+ * 综合考虑内容热度、用户兴趣匹配、社交关系、时间衰减等维度，
+ * 为每位用户生成个性化的信息流排序。
+ *
+ * 【设计模式】
+ * 实现 RecommendationStrategy 接口（策略模式），可通过 RecommendationStrategyManager
+ * 在运行时与 AiRecommendationStrategy 进行切换。
+ *
+ * 【打分因子说明】
+ *   1. 基础互动分：点赞×wLike + 评论×wReply + 转发×wRepost + 浏览×0.05
+ *   2. 互动率加成：(点赞+评论+转发)/浏览量，反映内容质量
+ *   3. 社交网络加成：关注用户发布的内容额外 ×1.5
+ *   4. 话题亲和度：基于用户历史行为统计的话题偏好得分
+ *   5. 作者亲密度：用户与特定作者的互动强度
+ *   6. TF-IDF 内容相似度：用户兴趣向量与帖子内容向量的余弦相似度
+ *   7. 热门话题加成：包含当前热门标签的帖子额外加分
+ *   8. 内容深度匹配：根据用户偏好的内容长度（短/中/长）调节分数
+ *   9. 新鲜度匹配：根据用户对时效性的偏好调节分数
+ *  10. 协同过滤加成：相似用户喜欢但当前用户未看过的内容额外加分
+ *  11. 时间衰减：越旧的内容分数衰减越多，采用分段衰减策略
+ *  12. 交互惩罚：已踩(×0.02)、已赞(×0.15)、已浏览(×0.5)
+ *  13. 作者多样性惩罚：同一作者的帖子出现越多，后续帖子得分衰减
+ *  14. 加权随机采样：最终排序引入可控随机性，避免固化（探索-利用平衡）
+ *
+ * 【动态权重机制】
+ * 权重不是写死的，而是由 UserBehaviorProfileService 根据每位用户的：
+ *   - 用户阶段（冷启动/初级/活跃）
+ *   - 互动风格（点赞达人/评论活跃者/安静阅读者）
+ *   - 内容深度偏好
+ *   - 新鲜度偏好
+ *   - 探索率
+ * 自动计算得出，实现"千人千面"的个性化推荐。
+ *
+ * 【参考论文/平台】
+ * 设计灵感参考 X (Twitter) 开源推荐算法中的 In-Network/Out-of-Network
+ * 双源架构和 Heavy Ranker 多因子打分思路。
  */
 @Component
 public class HybridRecommendationStrategy implements RecommendationStrategy {
 
-    private final PersonaService personaService;
-    private final TrendingService trendingService;
-    private final TfIdfService tfIdfService;
-    private final UserBehaviorProfileService behaviorProfileService;
-    private final CollaborativeFilteringService collaborativeFilteringService;
-    private final BehaviorRepository behaviorRepository;
+    private final PersonaService personaService;            // 用户画像服务（获取兴趣标签）
+    private final TrendingService trendingService;          // 热门话题服务
+    private final TfIdfService tfIdfService;                // TF-IDF 内容相似度服务
+    private final UserBehaviorProfileService behaviorProfileService;  // 用户行为画像与动态权重
+    private final CollaborativeFilteringService collaborativeFilteringService; // 协同过滤服务
+    private final BehaviorRepository behaviorRepository;    // 行为数据访问层
 
+    // ==================== 算法超参数 ====================
+    // 浏览行为基础权重（相比点赞/评论/转发，浏览的信号较弱）
     private static final double WEIGHT_VIEW = 0.05;
+    // 关注用户（In-Network）内容的加成倍数
     private static final double WEIGHT_IN_NETWORK_BOOST = 1.5;
+    // 同一作者多次出现时的衰减系数（第 n 次出现时 score × 0.7^n）
     private static final double AUTHOR_DIVERSITY_DECAY = 0.7;
+    // 互动率（engagement rate）对基础分的加成系数
     private static final double ENGAGEMENT_RATE_WEIGHT = 0.3;
+    // 协同过滤最多取多少条推荐候选
     private static final int CF_CANDIDATE_LIMIT = 50;
-    private static final double DISLIKE_PENALTY_FACTOR = 0.1;
-    private static final double LIKE_PENALTY_FACTOR = 0.5;
-    private static final double VIEWED_PENALTY_FACTOR = 0.7;
+    // 已踩内容的分数保留比例（几乎不再出现）
+    private static final double DISLIKE_PENALTY_FACTOR = 0.02;
+    // 已赞内容的分数保留比例（大幅降权，让新内容优先）
+    private static final double LIKE_PENALTY_FACTOR = 0.15;
+    // 已深度浏览内容的分数保留比例
+    private static final double VIEWED_PENALTY_FACTOR = 0.5;
+    // 判定为"深度浏览"的最低停留秒数
     private static final int VIEW_THRESHOLD_SECONDS = 5;
 
     public HybridRecommendationStrategy(PersonaService personaService,
@@ -57,6 +99,22 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         this.behaviorRepository = behaviorRepository;
     }
 
+    /**
+     * 推荐主入口（无评分详情版本）
+     *
+     * 流程：
+     * 1. 构建用户行为画像（BehaviorProfile）
+     * 2. 计算该用户的动态权重（DynamicWeights）
+     * 3. 获取用户兴趣标签、TF-IDF 向量、协同过滤候选
+     * 4. 对每条候选内容进行多因子打分
+     * 5. 应用交互惩罚（已赞/已踩/已浏览降权）
+     * 6. 应用作者多样性惩罚
+     * 7. 按分数排序后进行加权随机采样（探索-利用平衡）
+     *
+     * @param userId     当前用户 ID（可为 null，则使用默认权重）
+     * @param candidates 候选内容池（由 RecommendationService 构建）
+     * @return 排序后的推荐内容列表
+     */
     @Override
     public List<Content> recommend(Long userId, List<Content> candidates) {
         BehaviorProfile profile = userId != null
@@ -155,8 +213,17 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         return result;
     }
 
-    // ========== 核心打分（简洁版，用于 recommend()） ==========
+    // ==================== 核心打分函数（简洁版） ====================
+    // 用于 recommend() 方法，只计算最终得分，不记录各因子详情
 
+    /**
+     * 多因子综合打分
+     *
+     * 最终分数 = (基础互动分 × 互动率修正 × 社交加成) / 时间衰减
+     *           + 话题亲和度 + 作者亲密度 + 标签匹配
+     *           + TF-IDF相似度 + 热门话题 + 深度匹配
+     *           + 新鲜度匹配 + 协同过滤加成 + 探索抖动
+     */
     private double calculateScore(Content content, List<String> userInterests,
                                    Map<String, Double> userTfIdf, Map<String, Double> idf,
                                    BehaviorProfile profile, DynamicWeights dw,
@@ -327,13 +394,13 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         if (dislikedIds.contains(cId)) {
             finalScore *= DISLIKE_PENALTY_FACTOR;
             reasons.clear();
-            reasons.add("你已踩过此内容 (×0.1)");
+            reasons.add("你已踩过此内容 (×0.02)");
         } else if (likedIds.contains(cId)) {
             finalScore *= LIKE_PENALTY_FACTOR;
-            reasons.add("已赞过，降低优先级 (×0.5)");
+            reasons.add("已赞过，降低优先级 (×0.15)");
         } else if (viewedIds.contains(cId)) {
             finalScore *= VIEWED_PENALTY_FACTOR;
-            reasons.add("已浏览过 (×0.7)");
+            reasons.add("已浏览过 (×0.5)");
         }
 
         bd.setFinalScore(round(finalScore));
@@ -348,8 +415,13 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         return new ScoredContentWithDetails(content, bd);
     }
 
-    // ========== 新增打分因子计算 ==========
+    // ==================== 个性化打分因子 ====================
 
+    /**
+     * 话题亲和度计算
+     * 遍历帖子的标签，查找用户画像中对应话题的偏好分数。
+     * 归一化到 [0, 1] 区间，再乘以动态权重 wTopicAffinity。
+     */
     private double computeTopicAffinity(Content content, BehaviorProfile profile) {
         if (profile.topicPreferences.isEmpty()) return 0;
         double score = 0;
@@ -378,6 +450,11 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         return matched.stream().limit(3).collect(Collectors.toList());
     }
 
+    /**
+     * 作者亲密度计算
+     * 查找用户与该帖子作者的历史互动强度（点赞、评论、转发等加权累计）。
+     * 归一化后乘以动态权重 wAuthorAffinity。
+     */
     private double computeAuthorAffinity(Content content, BehaviorProfile profile) {
         if (content.getAuthor() == null || profile.authorPreferences.isEmpty()) return 0;
         Double affinity = profile.authorPreferences.get(content.getAuthor().getId());
@@ -387,6 +464,12 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         return Math.min(1.0, affinity / Math.max(maxAffinity, 1));
     }
 
+    /**
+     * 内容深度匹配度
+     * 根据用户偏好的阅读长度（short/medium/long），
+     * 对帖子内容字数进行匹配评分 [0, 1]。
+     * 偏好短内容的用户看到长文会被降权，反之亦然。
+     */
     private double computeDepthMatch(Content content, BehaviorProfile profile) {
         if (content.getContent() == null) return 0;
         int len = content.getContent().length();
@@ -397,6 +480,12 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         }
     }
 
+    /**
+     * 新鲜度匹配度
+     * 将帖子发布时间映射为新鲜度分值 (6h内=1.0, 24h=0.7, 72h=0.4, 更久=0.1)，
+     * 再与用户的新鲜度偏好做差值计算，差距越小分数越高。
+     * 追求时效性的用户更倾向看到新帖子。
+     */
     private double computeFreshnessMatch(Content content, BehaviorProfile profile) {
         if (content.getCreatedAt() == null) return 0;
         long hours = Duration.between(content.getCreatedAt(), LocalDateTime.now()).toHours();
@@ -410,8 +499,18 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         return Math.max(0, diff);
     }
 
-    // ========== 时间衰减（沿用分段策略） ==========
+    // ==================== 时间衰减 ====================
 
+    /**
+     * 分段时间衰减函数
+     * 返回值越大表示衰减越严重（用作分母）：
+     *   - 0~6h:   轻微衰减（1.0 ~ 1.12）
+     *   - 6~24h:  中等衰减（1.12 ~ 2.02）
+     *   - 24~72h: 明显衰减（2.02 ~ 5.86）
+     *   - 72h+:   对数衰减，避免老帖子完全消失
+     *
+     * 设计意图：近期内容优先展示，但不完全丢弃历史优质内容。
+     */
     private double calculateTimeDecay(Content content) {
         long hoursDiff = 1;
         if (content.getCreatedAt() != null) {
@@ -423,8 +522,14 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         return 5.86 + Math.log(hoursDiff - 72 + 1) * 2.0;
     }
 
-    // ========== 多样性控制 ==========
+    // ==================== 多样性控制（作者去重） ====================
 
+    /**
+     * 作者多样性惩罚
+     * 防止同一作者的帖子连续霸占 Feed 前列。
+     * 同一作者第 2 次出现时分数 ×0.7，第 3 次 ×0.49，第 4 次 ×0.343...
+     * 这是 X/Twitter 推荐系统中 Author Diversity 策略的简化实现。
+     */
     private void applyAuthorDiversityPenalty(List<ScoredContent> scoredList) {
         scoredList.sort(Comparator.comparingDouble(ScoredContent::getScore).reversed());
         Map<Long, Integer> authorCount = new HashMap<>();
@@ -450,6 +555,15 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         }
     }
 
+    /**
+     * 加权随机采样（Exploration-Exploitation 平衡）
+     *
+     * 不是简单地按分数排序输出，而是按分数作为权重进行随机抽样。
+     * 分数高的帖子被选中概率大，但低分帖子也有机会出现。
+     * explorationFactor 越大，随机性越强（新用户探索更多，活跃用户更精准）。
+     *
+     * 这避免了推荐系统的"信息茧房"问题，保证用户能发现新内容。
+     */
     private List<Content> weightedShuffle(List<ScoredContent> sortedList, double explorationFactor) {
         if (sortedList.size() <= 5) {
             Collections.shuffle(sortedList);
@@ -501,6 +615,13 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         return Collections.emptyList();
     }
 
+    /**
+     * 交互惩罚：对用户已经互动过的内容进行降权
+     * - 已踩：保留 2% 分数（几乎不再出现）
+     * - 已赞：保留 15% 分数（用户已消费，优先展示新内容）
+     * - 已深度浏览（>5秒）：保留 50% 分数
+     * 优先级：踩 > 赞 > 浏览（互斥判断）
+     */
     private double applyInteractionPenalty(Long contentId, double score,
                                              Set<Long> dislikedIds, Set<Long> likedIds, Set<Long> viewedIds) {
         if (dislikedIds.contains(contentId)) return score * DISLIKE_PENALTY_FACTOR;
@@ -543,6 +664,10 @@ public class HybridRecommendationStrategy implements RecommendationStrategy {
         }
     }
 
+    /**
+     * 获取协同过滤推荐的内容 ID 集合
+     * 通过 CollaborativeFilteringService 找到相似用户喜欢但当前用户未看过的内容
+     */
     private Set<Long> getCfRecommendedIds(Long userId) {
         if (userId == null) return Collections.emptySet();
         try {

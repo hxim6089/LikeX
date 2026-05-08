@@ -9,7 +9,6 @@
       <a href="#" @click.prevent="goHome" class="nav-item" :class="{ active: route.path === '/' }">
         <el-icon><HomeFilled /></el-icon> <span>首页</span>
       </a>
-      <a href="#" class="nav-item"><el-icon><Search /></el-icon> <span>发现</span></a>
       <router-link to="/grok" class="nav-item"><el-icon><Cpu /></el-icon> <span>Grok</span></router-link>
       <router-link to="/compare" class="nav-item"><el-icon><DataAnalysis /></el-icon> <span>算法验证</span></router-link>
       <router-link to="/ad-dashboard" class="nav-item"><el-icon><Coin /></el-icon> <span>广告报表</span></router-link>
@@ -42,7 +41,7 @@
 </template>
 
 <script setup>
-import { HomeFilled, Search, Bell, Message, User, More, Cpu, DataAnalysis, Coin, Setting } from '@element-plus/icons-vue'
+import { HomeFilled, Bell, Message, User, More, Cpu, DataAnalysis, Coin, Setting } from '@element-plus/icons-vue'
 import { useRouter, useRoute } from 'vue-router'
 import { toggleCompose, uiState } from '../store'
 

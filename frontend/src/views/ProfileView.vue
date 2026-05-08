@@ -231,7 +231,7 @@ const formatJoinDate = (dateStr) => {
 }
 
 const loadData = async () => {
-    const queryId = route.query.userId;
+    const queryId = route.params.id || route.query.userId;
     const targetId = queryId || (currentUser ? currentUser.id : null);
     
     if (!targetId) return;
@@ -279,9 +279,7 @@ const fetchTabContent = async (targetId) => {
 
 const switchTab = (tab) => {
     activeTab.value = tab;
-    // Reload content for target user
-    const queryId = route.query.userId;
-    const targetId = queryId || (currentUser ? currentUser.id : null);
+    const targetId = route.params.id || route.query.userId || (currentUser ? currentUser.id : null);
     if(targetId) fetchTabContent(targetId);
 }
 
@@ -376,7 +374,8 @@ const handlePostDeleted = (postId) => {
 }
 
 onMounted(loadData);
-watch(() => route.query.userId, loadData); // reload on route change
+watch(() => route.params.id, loadData);
+watch(() => route.query.userId, loadData);
 </script>
 
 <style scoped>

@@ -15,13 +15,33 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * AI 驱动的推荐策略
+ * AI 大模型驱动的推荐策略
  *
- * 使用本地 Ollama（Qwen 8B）大语言模型，根据用户行为画像
- * 对候选帖子进行智能排序并生成个性化推荐理由。
+ * 【算法概述】
+ * 使用本地部署的 Ollama（Qwen 8B）大语言模型，
+ * 根据用户行为画像对候选帖子进行语义理解和智能排序，
+ * 并为每条推荐生成自然语言推荐理由。
  *
- * 与 HybridRecommendationStrategy 形成两套独立算法，
- * 通过 Admin 管理面板全局切换。
+ * 【与传统算法的区别】
+ * - 传统算法（HybridRecommendationStrategy）：基于数值公式打分，可解释性强，速度快
+ * - AI 算法（本类）：基于语言模型的语义理解，能捕捉公式难以表达的深层兴趣，但推理较慢
+ *
+ * 【执行流程】
+ * 1. 构建用户行为画像（复用 UserBehaviorProfileService）
+ * 2. 对候选帖子按基础互动量预排序，取 Top 25 作为 AI 输入
+ * 3. 构造 Prompt：将用户画像 + 候选帖子信息输入给大模型
+ * 4. 调用 Ollama /api/generate 接口获取排序结果
+ * 5. 解析 AI 返回的 JSON（ranking + reasons）
+ * 6. 将 AI 排序结果与剩余候选帖子合并输出
+ * 7. 若 AI 调用失败，自动降级到按互动量排序
+ *
+ * 【性能优化】
+ * 通过 AiRecCacheService 实现异步预计算 + 缓存，
+ * 首次请求降级返回传统结果，后台触发 AI 计算，
+ * 后续请求直接读取缓存（毫秒级响应）。
+ *
+ * 【设计模式】
+ * 策略模式（Strategy Pattern），通过 Admin 面板全局切换。
  */
 @Component
 public class AiRecommendationStrategy implements RecommendationStrategy {
@@ -30,17 +50,18 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
     private final RestTemplate restTemplate;
 
     @Value("${ollama.url:http://localhost:11434}")
-    private String ollamaUrl;
+    private String ollamaUrl;               // Ollama 服务地址（本地部署）
 
     @Value("${ollama.rec.model:qwen3:8b}")
-    private String recModel;
+    private String recModel;                // 推荐使用的模型名称
 
     @Value("${ollama.rec.temperature:0.3}")
-    private double temperature;
+    private double temperature;             // 生成温度（越低越确定性，推荐任务用低温）
 
     @Value("${ollama.rec.num-predict:500}")
-    private int numPredict;
+    private int numPredict;                 // 最大生成 token 数
 
+    // 送入 AI 的最大候选帖子数（控制 Prompt 长度和推理时间）
     private static final int MAX_CANDIDATES_FOR_AI = 25;
 
     public AiRecommendationStrategy(UserBehaviorProfileService behaviorProfileService,
@@ -82,7 +103,9 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         return buildScoredResult(candidates, topCandidates, aiResult, profile);
     }
 
-    // ========== 预排序：按基础互动分取 Top N ==========
+    // ==================== 预排序：按基础互动分取 Top N ====================
+    // AI 模型的上下文窗口有限，不能把所有帖子都塞进 Prompt，
+    // 所以先用简单的互动分公式筛选出最有潜力的 25 条送入 AI。
 
     private List<Content> presortByEngagement(List<Content> candidates, int limit) {
         return candidates.stream()
@@ -103,8 +126,14 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         return likes * 2.0 + comments * 3.0 + reposts * 4.0 + views * 0.1;
     }
 
-    // ========== Prompt 构造 ==========
+    // ==================== Prompt 构造 ====================
+    // 将用户画像和候选帖子结构化为自然语言，要求 AI 返回 JSON 排序结果
 
+    /**
+     * 构造发送给大模型的 Prompt
+     * 包含：用户画像摘要 + 候选帖子列表 + 输出格式要求
+     * AI 需要返回 {"ranking": [id1, id2, ...], "reasons": {"id1": "理由", ...}}
+     */
     private String buildPrompt(BehaviorProfile profile, List<Content> candidates) {
         StringBuilder sb = new StringBuilder();
         sb.append("你是社交媒体推荐系统的 AI 推荐引擎。根据用户画像，从候选帖子中选出最适合该用户的内容并排序。\n\n");
@@ -146,7 +175,8 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         return sb.toString();
     }
 
-    // ========== Ollama 调用 ==========
+    // ==================== Ollama HTTP API 调用 ====================
+    // 通过 POST /api/generate 接口调用本地大模型，stream=false 等待完整响应
 
     private Map<Long, String> callAiRanking(BehaviorProfile profile, List<Content> candidates) {
         AiRankingResult result = callAiRankingFull(profile, candidates);
@@ -186,7 +216,8 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         return null;
     }
 
-    // ========== 响应解析 ==========
+    // ==================== AI 响应 JSON 解析 ====================
+    // 从 AI 返回文本中提取 JSON，解析 ranking 数组和 reasons 字典
 
     @SuppressWarnings("unchecked")
     private AiRankingResult parseAiResponse(String text, List<Content> candidates) {
@@ -238,7 +269,8 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         }
     }
 
-    // ========== 排序合并 ==========
+    // ==================== 排序合并 ====================
+    // 将 AI 排序结果 + 预排序补充 + 剩余候选合并为最终列表
 
     private List<Content> applyAiRanking(List<Content> allCandidates, List<Content> topCandidates,
                                           Map<Long, String> aiReasons) {
@@ -341,7 +373,8 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         return bd;
     }
 
-    // ========== 降级排序 ==========
+    // ==================== 降级排序（Fallback） ====================
+    // 当 Ollama 服务不可用或响应解析失败时，回退到按互动量排序
 
     private List<Content> fallbackSort(List<Content> candidates) {
         return candidates.stream()
@@ -360,7 +393,8 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         return result;
     }
 
-    // ========== Ollama 健康检测 ==========
+    // ==================== Ollama 健康检测 ====================
+    // 通过 GET /api/tags 检测 Ollama 服务是否在线
 
     public boolean isOllamaAvailable() {
         try {

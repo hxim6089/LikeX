@@ -12,12 +12,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 协同过滤服务 (Phase 28 增强版)
- * 
- * 改进内容：
- * - 多行为加权（LIKE/COMMENT/REPOST/VIEW 不同权重）
- * - 行为时间衰减（近期行为权重更高）
- * - 加权余弦相似度
+ * 基于用户的协同过滤推荐服务 (User-Based Collaborative Filtering)
+ *
+ * 【算法原理】
+ * "和你相似的用户也喜欢这些内容"——找到与目标用户行为模式相似的用户，
+ * 将他们喜欢但目标用户未看过的内容推荐出来。
+ *
+ * 【实现细节】
+ * 1. 构建用户行为向量：每个用户对每条内容的加权行为分数
+ *    - 行为权重：REPOST(3.0) > COMMENT(2.0) > LIKE(1.0) > VIEW(0.1)
+ *    - 时间衰减：e^(-0.05 × 天数)，近期行为权重更高
+ * 2. 计算用户间的加权余弦相似度，找到 Top-K 相似用户
+ * 3. 从相似用户的行为中提取目标用户未互动过的内容
+ * 4. 按 "相似度 × 行为强度" 加权打分，排序输出
+ *
+ * 【在推荐管道中的位置】
+ * 协同过滤的输出作为 HybridRecommendationStrategy 的一个加分因子，
+ * 当帖子被协同过滤推荐时，会获得额外的 wCollaborative 加成分。
  */
 @Service
 public class CollaborativeFilteringService {

@@ -10,6 +10,20 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 推荐服务（推荐管道的入口）
+ *
+ * 【职责】
+ * 1. 构建候选内容池：In-Network（关注用户发布） + Out-of-Network（全站内容）
+ * 2. 负反馈过滤：排除被屏蔽的作者和被隐藏的帖子
+ * 3. 调用推荐策略（传统/AI）进行排序
+ * 4. 填充用户对帖子的点赞/点踩状态
+ *
+ * 【候选池双源架构（参考 X/Twitter）】
+ * - In-Network (Thunder)：用户关注的人发布的内容，标记为 "IN_NETWORK"
+ * - Out-of-Network (Phoenix)：全站其他用户发布的内容，标记为 "OUT_OF_NETWORK"
+ * 两类内容混合后统一送入推荐策略排序。
+ */
 @Service
 public class RecommendationService {
 
@@ -85,12 +99,21 @@ public class RecommendationService {
     public List<com.example.rec.dto.ContentWithScore> getRecommendedFeedWithScore(Long userId) {
         List<Content> finalCandidates = buildCandidatePool(userId);
 
-        // 检查用户是否有自定义权重
+        List<com.example.rec.dto.ContentWithScore> result;
         Map<String, Double> customWeights = loadUserCustomWeights(userId);
         if (customWeights != null) {
-            return strategyManager.recommendWithScore(userId, finalCandidates, customWeights);
+            result = strategyManager.recommendWithScore(userId, finalCandidates, customWeights);
+        } else {
+            result = strategyManager.recommendWithScore(userId, finalCandidates);
         }
-        return strategyManager.recommendWithScore(userId, finalCandidates);
+
+        if (userId != null && result != null && !result.isEmpty()) {
+            List<Content> contents = result.stream()
+                    .map(com.example.rec.dto.ContentWithScore::getContent)
+                    .collect(Collectors.toList());
+            fillIsLiked(contents, userId);
+        }
+        return result;
     }
 
     /**
