@@ -11,6 +11,7 @@
       </a>
       <router-link to="/grok" class="nav-item"><el-icon><Cpu /></el-icon> <span>Grok</span></router-link>
       <router-link to="/compare" class="nav-item"><el-icon><DataAnalysis /></el-icon> <span>算法验证</span></router-link>
+      <router-link v-if="isAdmin" to="/analytics" class="nav-item admin-nav"><el-icon><DataAnalysis /></el-icon> <span>数据统计</span></router-link>
       <router-link to="/ad-dashboard" class="nav-item"><el-icon><Coin /></el-icon> <span>广告报表</span></router-link>
       <router-link to="/notifications" class="nav-item">
         <el-icon><Bell /></el-icon> <span>通知</span>
@@ -48,6 +49,7 @@ import { toggleCompose, uiState } from '../store'
 const router = useRouter()
 const userStr = localStorage.getItem('user');
 const currentUser = userStr ? JSON.parse(userStr) : null;
+const isAdmin = currentUser?.role?.toUpperCase() === 'ADMIN';
 
 const route = useRoute() // Ensure useRoute is imported if not already, wait it calls useRouter.
 // I need `useRoute` for the class binding in template

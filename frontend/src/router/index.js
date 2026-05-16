@@ -11,12 +11,20 @@ import AdminView from '../views/AdminView.vue'
 import GrokView from '../views/GrokView.vue'
 import CompareView from '../views/CompareView.vue'
 import AdDashboard from '../views/AdDashboard.vue'
+import AnalyticsView from '../views/AnalyticsView.vue'
 import TopicView from '../views/TopicView.vue'
 
 const routes = [
     { path: '/', component: HomeView },
     { path: '/grok', component: GrokView },
     { path: '/compare', component: CompareView },
+    {
+        path: '/analytics',
+        component: AnalyticsView,
+        beforeEnter: (to, from, next) => {
+            isAdminUser() ? next() : next('/');
+        }
+    },
     { path: '/ad-dashboard', component: AdDashboard },
     { path: '/profile', component: ProfileView },
     { path: '/profile/:id', component: ProfileView },
@@ -31,11 +39,15 @@ const routes = [
         path: '/admin',
         component: AdminView,
         beforeEnter: (to, from, next) => {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            user.role === 'ADMIN' ? next() : next('/');
+            isAdminUser() ? next() : next('/');
         }
     },
 ]
+
+const isAdminUser = () => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user.role?.toUpperCase() === 'ADMIN';
+}
 
 const router = createRouter({
     history: createWebHistory(),

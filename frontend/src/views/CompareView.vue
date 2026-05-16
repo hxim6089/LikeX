@@ -315,7 +315,7 @@ const applyTunedWeights = async (weights) => {
   if (!userId) return
   feedLoading.value = true
   try {
-    const res = await api.get('/compare/feed', { params: { userId, ...weights } })
+    const res = await api.get('/compare/tuned', { params: { userId, ...weights } })
     personalizedFeed.value = res.data.personalized || []
     chronologicalFeed.value = res.data.chronological || []
     stats.value = res.data.stats || {}

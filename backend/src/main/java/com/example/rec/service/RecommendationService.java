@@ -141,6 +141,13 @@ public class RecommendationService {
      * Phase 28: 带管道统计的推荐（用于漏斗图）
      */
     public Map<String, Object> getRecommendedFeedWithPipeline(Long userId) {
+        return getRecommendedFeedWithPipeline(userId, null);
+    }
+
+    /**
+     * 带管道统计的推荐，可传入临时权重用于算法验证页的参数调节演示。
+     */
+    public Map<String, Object> getRecommendedFeedWithPipeline(Long userId, Map<String, Double> weights) {
         PipelineStats stats = new PipelineStats();
         
         // 统计全量候选
@@ -152,11 +159,14 @@ public class RecommendationService {
         stats.setAfterNegativeFilter(candidates.size());
 
         // 获取带评分的结果（对比页面始终使用传统策略）
-        List<com.example.rec.dto.ContentWithScore> scored = strategyManager.getTraditionalStrategy().recommendWithScore(userId, candidates);
-        stats.setAfterScoring(scored.size());
+        List<com.example.rec.dto.ContentWithScore> scored =
+                weights != null && !weights.isEmpty()
+                        ? strategyManager.getTraditionalStrategy().recommendWithScore(userId, candidates, weights)
+                        : strategyManager.getTraditionalStrategy().recommendWithScore(userId, candidates);
         
         // 最终返回数量
         int finalCount = Math.min(scored.size(), 50);
+        stats.setAfterScoring(calculateRankingCutoffCount(scored, finalCount));
         stats.setAfterDiversity(finalCount);
 
         Map<String, Object> result = new HashMap<>();
@@ -169,6 +179,13 @@ public class RecommendationService {
      * Phase 28: 时间倒序 Feed（带评分详情，用于对比实验）
      */
     public List<com.example.rec.dto.ContentWithScore> getChronologicalFeedWithScore(Long userId) {
+        return getChronologicalFeedWithScore(userId, null);
+    }
+
+    /**
+     * 时间倒序 Feed（带评分详情），可传入临时权重用于调参对比。
+     */
+    public List<com.example.rec.dto.ContentWithScore> getChronologicalFeedWithScore(Long userId, Map<String, Double> weights) {
         List<Content> candidates = buildCandidatePool(userId);
         
         // 按时间倒序排列
@@ -180,7 +197,10 @@ public class RecommendationService {
         });
 
         // 仍然计算评分（但不改变排序），用于对比展示（始终使用传统策略）
-        List<com.example.rec.dto.ContentWithScore> result = strategyManager.getTraditionalStrategy().recommendWithScore(userId, candidates);
+        List<com.example.rec.dto.ContentWithScore> result =
+                weights != null && !weights.isEmpty()
+                        ? strategyManager.getTraditionalStrategy().recommendWithScore(userId, candidates, weights)
+                        : strategyManager.getTraditionalStrategy().recommendWithScore(userId, candidates);
         
         // 重新按时间排序（recommendWithScore 会改变顺序）
         result.sort((a, b) -> {
@@ -204,6 +224,32 @@ public class RecommendationService {
     public List<com.example.rec.dto.ContentWithScore> getRecommendedFeedWithWeights(Long userId, Map<String, Double> weights) {
         List<Content> candidates = buildCandidatePool(userId);
         return strategyManager.getTraditionalStrategy().recommendWithScore(userId, candidates, weights);
+    }
+
+    /**
+     * 排序截断统计：按当前权重打分后，保留超过动态质量线的候选数量。
+     * 这样调参会影响漏斗中的“排序截断”阶段，但不改变最终推荐主流程。
+     */
+    private int calculateRankingCutoffCount(List<com.example.rec.dto.ContentWithScore> scored, int minimumCount) {
+        if (scored == null || scored.isEmpty()) return 0;
+
+        double topScore = finalScore(scored.get(0));
+        double averageScore = scored.stream()
+                .mapToDouble(this::finalScore)
+                .average()
+                .orElse(0.0);
+        double threshold = Math.max(averageScore, topScore * 0.2);
+
+        int qualified = (int) scored.stream()
+                .filter(item -> finalScore(item) >= threshold)
+                .count();
+
+        return Math.min(scored.size(), Math.max(minimumCount, qualified));
+    }
+
+    private double finalScore(com.example.rec.dto.ContentWithScore item) {
+        if (item == null || item.getScoreBreakdown() == null) return 0.0;
+        return item.getScoreBreakdown().getFinalScore();
     }
 
     public String getCurrentStrategyType() {
@@ -245,15 +291,18 @@ public class RecommendationService {
             }
         }
         
+        Set<Long> sourceSeenIds = new HashSet<>();
         int inNetworkCount = 0;
         for (Content c : inNetworkCandidates) {
             if (c.getParentContent() != null) continue; // 跳过回复
+            if (sourceSeenIds.add(c.getId())) {
+                inNetworkCount++;
+            }
             if (!seenIds.contains(c.getId()) && !hiddenContentIds.contains(c.getId())) {
                 if (c.getAuthor() == null || !blockedAuthorIds.contains(c.getAuthor().getId())) {
                     c.setNetworkSource("IN_NETWORK");
                     finalCandidates.add(c);
                     seenIds.add(c.getId());
-                    inNetworkCount++;
                 }
             }
         }
@@ -269,12 +318,13 @@ public class RecommendationService {
         int outNetworkCount = 0;
         for (Content c : outOfNetworkCandidates) {
             if (c.getParentContent() != null) continue; // 跳过回复
+            if (!sourceSeenIds.add(c.getId())) continue;
+            outNetworkCount++;
             if (!seenIds.contains(c.getId()) && !hiddenContentIds.contains(c.getId())) {
                 if (c.getAuthor() == null || !blockedAuthorIds.contains(c.getAuthor().getId())) {
                     c.setNetworkSource("OUT_OF_NETWORK");
                     finalCandidates.add(c);
                     seenIds.add(c.getId());
-                    outNetworkCount++;
                 }
             }
         }

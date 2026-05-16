@@ -27,11 +27,16 @@ const renderChart = () => {
   }
 
   const { totalCandidates, afterNegativeFilter, inNetworkCount, outNetworkCount, afterScoring, afterDiversity } = props.stats
+  const sourceSplitCount = (inNetworkCount || 0) + (outNetworkCount || 0)
+  const sourceSplitDetail = `关注作者 ${inNetworkCount || 0} 条，其他作者 ${outNetworkCount || 0} 条`
 
   const option = {
     tooltip: {
       trigger: 'item',
-      formatter: '{b}: {c} 条'
+      formatter: (params) => {
+        const detail = params.data?.detail
+        return detail ? `${params.name}: ${params.value} 条<br/>${detail}` : `${params.name}: ${params.value} 条`
+      }
     },
     color: ['#1DA1F2', '#17BF63', '#FFAD1F', '#F45D22', '#794BC4', '#E0245E'],
     series: [{
@@ -45,7 +50,7 @@ const renderChart = () => {
       max: totalCandidates || 100,
       minSize: '15%',
       maxSize: '100%',
-      sort: 'descending',
+      sort: 'none',
       gap: 4,
       label: {
         show: true,
@@ -65,11 +70,11 @@ const renderChart = () => {
         label: { fontSize: 15 }
       },
       data: [
-        { value: totalCandidates || 0, name: '全部候选' },
-        { value: afterNegativeFilter || 0, name: '负信号过滤后' },
-        { value: (inNetworkCount || 0) + (outNetworkCount || 0), name: 'In+Out Network' },
-        { value: afterScoring || 0, name: '评分排序后' },
-        { value: afterDiversity || 0, name: '最终推荐' }
+        { value: totalCandidates || 0, name: '全部帖子候选' },
+        { value: sourceSplitCount, name: '关注/其他作者候选', detail: sourceSplitDetail },
+        { value: afterNegativeFilter || 0, name: '过滤不感兴趣内容' },
+        { value: afterScoring || 0, name: '按评分截取候选' },
+        { value: afterDiversity || 0, name: '最终推荐给用户' }
       ]
     }]
   }

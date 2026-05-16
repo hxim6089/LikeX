@@ -95,11 +95,13 @@ public class CompareController {
         weights.put("wTrending", wTrending);
         weights.put("wSimilarity", wSimilarity);
 
-        // 使用自定义权重的推荐
-        List<ContentWithScore> personalized = recommendationService.getRecommendedFeedWithWeights(userId, weights);
+        // 使用自定义权重的推荐，并同步计算管道漏斗数据
+        Map<String, Object> recResult = recommendationService.getRecommendedFeedWithPipeline(userId, weights);
+        List<ContentWithScore> personalized = (List<ContentWithScore>) recResult.get("contents");
+        PipelineStats pipelineStats = (PipelineStats) recResult.get("pipelineStats");
         
         // 时间倒序对比组 (同样使用自定义权重计算评分，但按时间排序)
-        List<ContentWithScore> chronological = recommendationService.getChronologicalFeedWithScore(userId);
+        List<ContentWithScore> chronological = recommendationService.getChronologicalFeedWithScore(userId, weights);
 
         // 计算统计数据
         Map<String, Object> stats = calculateCompareStats(personalized, chronological, userId);
@@ -109,6 +111,7 @@ public class CompareController {
         response.put("chronological", chronological.stream().limit(20).collect(Collectors.toList()));
         response.put("stats", stats);
         response.put("weights", weights);
+        response.put("pipelineStats", pipelineStats);
         return response;
     }
 
