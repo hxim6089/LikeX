@@ -1,0 +1,572 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>基于用户行为分析的实时信息流排序与分发系统的设计与开发</title>
+<style>
+@page Section1 { size: 21cm 29.7cm; margin: 2.5cm 2.0cm 2.5cm 2.5cm; }
+div.Section1 { page: Section1; }
+body { font-family: 宋体, SimSun; font-size: 12pt; line-height: 22pt; color: #000000; }
+p { margin: 0 0 6pt 0; text-indent: 2em; line-height: 22pt; }
+h1 { font-family: 宋体, SimSun; font-size: 16pt; font-weight: bold; text-align: center; margin: 18pt 0 9pt 0; line-height: 1.5; }
+h2 { font-family: 宋体, SimSun; font-size: 14pt; font-weight: bold; margin: 12pt 0 8pt 0; line-height: 22pt; }
+h3 { font-family: 宋体, SimSun; font-size: 12pt; font-weight: bold; margin: 8pt 0 4pt 0; line-height: 22pt; }
+table { border-collapse: collapse; width: 100%; margin: 6pt 0 10pt 0; font-family: 宋体, SimSun; font-size: 10.5pt; }
+td, th { border: 1px solid #000000; padding: 4pt; line-height: 18pt; vertical-align: top; }
+th { font-weight: bold; text-align: center; }
+.caption { font-family: 楷体, KaiTi; font-size: 10.5pt; text-align: center; text-indent: 0; margin: 4pt 0 8pt 0; }
+.table-title { font-family: 楷体, KaiTi; font-size: 10.5pt; text-align: center; text-indent: 0; margin: 8pt 0 4pt 0; }
+.formula { font-family: "Times New Roman", serif; text-indent: 0; text-align: center; margin: 6pt 0; }
+.ref { font-size: 10.5pt; text-indent: 0; line-height: 18pt; margin-bottom: 3pt; }
+.code { font-family: Consolas, "Courier New", monospace; text-indent: 0; white-space: pre-wrap; border: 1px solid #999; padding: 6pt; margin: 6pt 0; }
+</style>
+</head>
+<body>
+<div class="Section1">
+
+<h1>摘要</h1>
+<p>随着社交媒体内容规模持续增长，单纯按发布时间倒序展示的信息流已难以满足用户的个性化阅读需求。本文围绕“基于用户行为分析的实时信息流排序与分发系统”这一课题，设计并实现了一套类 X/Twitter 的社交媒体推荐原型系统。系统采用前后端分离架构，后端基于 Spring Boot 提供 RESTful API 与 WebSocket 服务，前端基于 Vue 3 构建单页应用，数据库采用 MySQL 存储用户、内容、行为、关注、通知、私信、广告等业务数据。系统实现了注册登录、内容发布、评论、点赞、点踩、转发、引用、关注、搜索、实时通知、私信、用户画像、广告投放和后台管理等功能。</p>
+<p>在推荐算法方面，系统通过 Behavior 统一记录浏览、点赞、评论、转发、搜索、点踩和快速滑过等行为事件，结合停留时长、内容标签与社交关系构建用户画像。在排序阶段，系统融合多行为加权评分、TF-IDF 内容相似度、协同过滤、时间衰减、热门话题加成、负反馈过滤、作者多样性惩罚和随机探索等策略，形成可解释的混合推荐结果。同时，系统接入 Ollama 本地大模型作为 AI 推荐策略，并通过策略管理器支持管理员在传统多因子推荐与 AI 推荐之间切换。为便于验证算法效果，系统还提供推荐流与时间流对比、权重调节、排序管道漏斗图和用户画像可视化等功能。</p>
+<p style="text-indent:0"><strong>关键词：</strong>信息流推荐；用户行为分析；用户画像；混合排序；Spring Boot</p>
+
+<h1>Abstract</h1>
+<p>With the rapid growth of social media content, traditional chronological feeds can no longer satisfy users' personalized reading needs. This project designs and implements a real-time feed ranking and distribution system based on user behavior analysis. The system adopts a front-end and back-end separated architecture. The back end is built with Spring Boot and provides RESTful APIs, while the front end is implemented as a Vue 3 single-page application. MySQL is used to store users, posts, behaviors, relationships, notifications, advertisements and other business data.</p>
+<p>The system supports user authentication, post publishing, comments, likes, dislikes, reposts, quotes, following, search, real-time notifications, private messages, user personas, advertisement delivery and administrator management. For recommendation, the system records behavior events such as views, likes, comments, reposts, searches, dislikes and quick skips, builds user interest profiles, and combines multi-behavior weighted scoring, TF-IDF content similarity, collaborative filtering, time decay, trending topic boosting, negative feedback filtering, author diversity penalty and controlled exploration. In addition, an Ollama-based AI recommendation strategy is integrated, and administrators can switch between the traditional hybrid strategy and the AI strategy. The system also provides recommendation comparison, parameter tuning, pipeline funnel visualization and user persona visualization for demonstration and evaluation.</p>
+<p style="text-indent:0"><strong>Key Words: </strong>feed recommendation; user behavior analysis; user persona; hybrid ranking; Spring Boot</p>
+
+<h1>第1章 前言（绪论）</h1>
+
+<h2>1.1 研究背景及意义</h2>
+<p>随着移动互联网和社交媒体平台的快速发展，用户每天面对的信息规模持续扩大。以微博、X、抖音、B站等平台为代表的内容社区，已经从单纯的信息发布工具发展为内容消费、社交互动、广告分发和智能服务的综合平台。在这样的场景下，平台内容供给远远超过用户能够主动浏览和筛选的范围，信息过载成为影响用户体验的重要问题。</p>
+<p>信息过载不仅意味着“看不完”，还会导致注意力资源的稀缺分配：用户在同一停留时间内只能消费有限条内容，平台必须在海量候选中做出取舍。传统时间流假设“越新越重要”，隐含前提是用户对所有发布者具有均匀关注度，这与真实社交网络中的兴趣差异和信任结构不符。推荐排序试图用数据推断用户偏好，使每一次刷新更具针对性，从而提升用户满意度与平台粘性，这在商业上对应更高的活跃时长与广告库存价值[2][11]。</p>
+<p>传统信息流通常采用发布时间倒序排列方式，即最新发布的内容排在最前面。这种方式实现简单，能够保证时效性，但缺少对用户兴趣、内容质量、社交关系和行为反馈的综合考虑。当平台内容数量增加后，用户需要花费大量时间从时间流中寻找有价值内容，容易错过真正感兴趣的帖子。同时，优质内容也可能因为发布时间较早而快速失去曝光机会，平台内容分发效率受到限制。</p>
+<p>推荐排序技术为解决上述问题提供了有效途径。系统可以通过采集用户浏览、点赞、评论、转发、搜索、关注、点踩、快速滑过等多维行为，分析用户兴趣偏好和互动习惯，并结合内容标签、文本相似度、热门话题、社交关系和时间衰减等因素，对信息流进行个性化排序。相比单一时间倒序，个性化推荐能够在保持内容新鲜度的同时提高兴趣命中率，使用户更快获得符合自身需求的信息。</p>
+<p>本课题以类 X/Twitter 社交媒体平台为业务背景，设计并实现一套基于用户行为分析的实时信息流排序与分发系统。系统既包含注册登录、发帖、评论、点赞、转发、引用、关注、搜索、通知、私信等社交媒体基础功能，也重点实现用户画像、混合多因子推荐、协同过滤、TF-IDF 内容相似度、AI 推荐策略、算法效果对比和信息流广告智能分发等核心模块。通过该课题的设计与实现，可以综合训练 Web 系统开发、数据库建模、推荐算法工程化、实时通信、数据可视化和 AI 服务集成等能力。</p>
+
+<h2>1.2 设计目的及主要内容</h2>
+<p>本设计的主要目的是构建一个具备完整业务链路和推荐排序能力的社交媒体信息流系统。系统需要在前后端分离架构下实现用户端、管理员端和算法验证端，并通过统一的数据模型将用户行为、内容特征、社交关系和推荐结果连接起来，形成可验证、可测试、可扩展的软件系统。</p>
+<p>本设计的总体目标是在项目周期内交付一套可运行、可演示、可验证的社交媒体信息流推荐系统，并形成覆盖需求分析、系统设计、编码实现和测试验证的技术文档。功能层面，系统需要贯通用户认证、内容生产、社交互动、实时通知、私信、搜索、广告与后台治理等链路；算法层面，需要实现以用户行为画像为核心的混合排序，并结合 TF-IDF、协同过滤和 AI 推荐策略进行对照；工程层面，需要保持后端分层清晰、前端组件职责明确、接口命名稳定，并在 AI 推理、数据导入等长耗时场景中提供降级或补齐机制；评测层面，需要通过对比实验、评分明细、漏斗图和参数调节面板展示推荐策略的有效性。</p>
+<p>本文所称“实时”主要指交互层面的及时反馈，例如通知推送、私信到达、信息流刷新和策略切换后的结果更新，而非面向超高并发生产环境的极限吞吐指标。传统混合推荐路径以毫秒级到秒级响应为目标；AI 推荐路径由于依赖本地大模型推理，采用缓存优先与异步预计算思路，在缓存未命中时先返回传统推荐结果，同时后台触发 AI 排序计算，以保证信息流主链路可用。</p>
+<p>本课题的主要内容包括以下几个方面。第一，设计并实现系统基础平台，包括用户注册登录、角色管理、内容发布、图片上传、评论与多级回复、点赞、点踩、转发、引用、关注、搜索、热门话题、通知和私信等功能。第二，设计统一的用户行为数据模型，记录浏览、点赞、评论、转发、搜索、点踩、快速滑过等行为，为用户画像和推荐算法提供数据基础。第三，构建用户画像模块，从兴趣标签、作者偏好、行为强度、互动风格、内容深度偏好和新鲜度偏好等维度描述用户。第四，实现混合多因子推荐排序算法，将多行为加权评分、互动率、关注来源加成、标签匹配、TF-IDF 相似度、协同过滤、热门话题加成、时间衰减、负反馈过滤、作者多样性惩罚和随机探索机制结合起来。第五，集成 AI 大语言模型，提供 AI 自动打标、AI 推荐和智能问答能力。第六，实现广告智能分发模块，根据用户兴趣标签、广告标签、出价和历史点击率计算广告匹配分，并按配置在信息流中插入原生广告。第七，实现算法效果可视化对比，包括推荐流与时间流对比、多用户画像对比、推荐评分详情、参数调节面板和排序管道漏斗图。</p>
+<p>通过上述设计，系统能够较完整地覆盖从内容产生、行为采集、画像构建、候选召回、排序分发到效果验证的推荐链路。该系统在软件工程完整性与推荐算法应用价值之间形成相互支撑的整体。</p>
+
+<h2>1.3 开发技术介绍</h2>
+
+<h3>1.3.1 Spring Boot 技术</h3>
+<p>Spring Boot 是基于 Spring 生态的快速开发框架，具有自动配置、依赖管理、嵌入式服务器和工程结构清晰等特点。后端系统采用 Spring Boot 3.2.1 构建 RESTful API，按 controller、service、repository、model、dto 和 config 等层次组织代码。控制层负责接收前端请求并返回统一响应，业务层负责处理推荐、画像、广告、通知和内容互动逻辑，数据访问层基于 Spring Data JPA 操作 MySQL 数据库。</p>
+<p>在本系统中，Spring Boot 还承担 WebSocket 通信、文件上传映射、跨域配置、AI 服务调用和管理员接口管理等任务。通过框架提供的注解机制和依赖注入机制，系统各模块之间保持较低耦合，便于后续扩展新的推荐策略或业务功能。</p>
+
+<h3>1.3.2 Vue 3 技术</h3>
+<p>Vue 3 是渐进式 JavaScript 前端框架，适合构建单页应用。系统前端使用 Vue 3 与 Vite 搭建，结合 Element Plus 实现页面组件，使用 Axios 与后端进行 REST API 通信，使用 ECharts 展示用户画像、广告报表和推荐效果对比等图表。前端页面主要包括首页信息流、登录注册、个人主页、搜索页、通知页、私信页、管理后台、算法验证页、广告报表页和 AI 助手页。</p>
+<p>Vue 组件化开发方式使页面结构清晰，FeedList、TweetCard、RightPanel、WeightTuner 等组件可以复用在不同场景中。对于推荐系统而言，前端不仅负责展示帖子列表，还需要呈现推荐理由、评分详情、当前推荐策略、广告卡片和算法对比指标，因此数据交互和可视化能力尤为重要。</p>
+
+<h3>1.3.3 MySQL、Redis 与 WebSocket 技术</h3>
+<p>MySQL 是本系统的主要持久化数据库，用于存储用户、帖子、行为、关注关系、标签、通知、私信、广告和广告配置等数据。关系型数据库适合表达系统中的实体关系，例如用户与内容、用户与关注、内容与标签、内容与评论之间的关联。系统通过 JPA 实体和 Repository 层完成数据访问，减少手写 SQL 的工作量。</p>
+<p>Redis 可用于缓存和临时状态管理，在推荐系统中可扩展用于热门话题缓存、用户画像缓存和接口限流等场景。WebSocket 用于实现通知和私信的实时推送。后端通过 STOMP 用户队列向指定用户推送消息，前端建立连接后订阅相应通道，使点赞、评论、关注和私信等事件能够及时展示。</p>
+
+<h3>1.3.4 推荐算法与 AI 技术</h3>
+<p>推荐排序是本系统的核心技术。系统采用混合多因子推荐策略，将内容互动分、用户画像匹配、文本相似度、协同过滤、热门话题、新鲜度、负反馈和随机探索等因素组合为综合得分。TF-IDF 用于衡量用户历史兴趣文本与候选内容之间的相似度，协同过滤用于根据相似用户行为发现潜在兴趣内容，时间衰减用于平衡新鲜内容和长尾内容的曝光机会。</p>
+<p>在 AI 集成方面，系统使用 Ollama 本地模型完成内容打标和 AI 推荐，并使用 DeepSeek API 支持智能问答助手。AI 推荐策略通过用户画像和候选帖子摘要构造提示词，由大语言模型输出排序结果与推荐理由；策略管理器在此基础上加入缓存和异步预计算机制，使 AI 能力在不阻塞主信息流的前提下参与排序。管理员可在后台切换传统多因子推荐与 AI 推荐策略，以便对比两种排序机制的差异。</p>
+
+<h3>1.3.5 技术选型理由与替代方案</h3>
+<p>后端选用 Spring Boot 而非 Quarkus/Micronaut，主要考虑生态成熟度、文档完备性与维护成本；若未来更强调冷启动速度与内存占用，可评估 Quarkus 原生镜像部署，但需承担部分依赖适配成本[9]。前端选用 Vue 3 而非 React，因其模板语法与渐进式迁移路径更适合管理后台与表单密集型页面；React 在大规模组件状态管理上亦有优势，可作为重构备选[10]。持久层选用 MySQL 而非 PostgreSQL，因课题环境与部署约定以 MySQL 为主且足以支撑本文数据规模；若引入全文检索与复杂 JSON 查询，可迁移至 PostgreSQL 或外挂 Elasticsearch[21]。本地推理选用 Ollama 而非纯云端大模型，可降低调用成本并减少对外网依赖；若 SLA 要求更高，可采用托管推理服务并保留 Hybrid 策略作为降级路径[8][20]。</p>
+
+<h2>1.4 国内外研究现状</h2>
+<p>工业界推荐系统已从早期协同过滤与矩阵分解，演进为融合深度模型、多任务学习与海量日志训练的排序架构。YouTube 等工作表明深度神经网络可以直接建模用户序列与候选分布，从而显著提升点击率与观看时长[1]。学术界与开源社区亦公开大型社交平台的部分排序思想，例如 X 平台开源仓库使人们得以讨论双源候选、过滤与重排序流水线，为本课题“关注源 + 全站源”提供了工程参照[3]。</p>
+<p>在国内学术语境下，中文社交媒体的信息过载与算法治理同样是研究热点。硕士与工程文献普遍强调：一方面需要混合策略缓解冷启动与兴趣漂移；另一方面需要可解释性与多样性约束以避免信息茧房。项亮《推荐系统实践》总结了召回、排序与评估指标的系统方法论，对本文算法设计与实验组织具有参考价值[2]。Aggarwal、Ricci 等人的手册类著作则从协同过滤、基于内容、上下文感知与评估协议多角度给出理论框架[5][17]。</p>
+<p>近年来大语言模型被尝试用于候选理解、查询重写与生成式解释，Brown 等提出的少样本学习能力表明通用模型可在下游任务上快速适配[8]。工程实践中仍普遍保留传统打分作为基线与降级路径，这一点与本系统“AI 策略 + Hybrid 策略”双轨设计一致。</p>
+<p>神经网络协同过滤将用户与物品的交互建模为低维嵌入并结合多层非线性变换，He 等在 WWW 2017 提出的 Neural Collaborative Filtering 为点击率预估与排序学习的神经网络化提供了可复现范式[30]，与本课题当前的多因子启发式形成对照：前者依赖大规模标注或隐式反馈日志训练，后者在中等规模数据上依赖可解释分项即可获得可运行效果。</p>
+<p>在国内工程语境中，Spring Boot 与 Vue 已成为中小型信息系统的主流组合，配套文档与社区资源丰富，有利于缩短迭代周期[9][10]。数据库层面，关系型模型仍是事务型业务的首选，结合规范化理论与索引优化可在一致性与查询性能之间取得平衡[21]。机器学习基础理论则为理解矩阵分解、Embedding 与深度学习推荐模型提供数学支撑[22][6]；本文实现侧重混合启发式与可解释分项，并与上述理论脉络相互对照。</p>
+<p>HTTP 语义与 REST 资源划分方面，可参照 Richardson 与 Fielding 对资源抽象与状态转移的论述，使控制器命名与路由遵循统一约束[25][23]；实时推送场景则涉及 WebSocket 协议握手与帧格式，工程上常配合 STOMP 简化订阅模型[24]。这些文献为前后端接口分层与实时通道设计提供架构层面的参照。</p>
+
+<h2>1.5 本文组织结构</h2>
+<p>全文包含中文摘要与关键词、英文 Abstract 与 Key Words。正文依照软件工程生命周期组织：第 2 章给出需求、可行性、业务流程与数据字典；第 3 章给出总体架构、模块设计、数据库与核心算法（混合推荐、画像、广告与可视化），并在章末给出术语与符号说明及推荐流水线与复杂度分析（3.10、3.11 节）；第 4 章描述开发环境、部署运维、关键模块实现、测试用例、测试结果分析及测试数据构造（含 4.2、4.9 节）；第 5 章总结工作、分析不足与展望，并给出系统功能验证流程概要（5.4 节）。文后为参考文献与致谢。</p>
+
+<h1>第2章 系统分析</h1>
+
+<h2>2.1 需求分析</h2>
+<p>根据课题任务要求和系统业务场景，系统面向两类主要角色：普通用户和管理员。普通用户主要完成内容消费与社交互动，包括注册登录、浏览推荐信息流、发布帖子、上传图片、评论、点赞、点踩、转发、引用、关注、取关、搜索内容、查看通知、发送私信和查看个人画像等操作。管理员主要完成平台治理与运维配置，包括用户管理、角色切换、封禁用户、平台统计、推荐策略切换、AI 批量打标、Kaggle 数据导入、广告管理和算法验证等操作。</p>
+<p class="table-title">表2-1 系统功能需求表</p>
+<table>
+<tr><th>功能模块</th><th>主要需求</th></tr>
+<tr><td>用户模块</td><td>注册、登录、用户资料查看与编辑、头像上传、角色管理、封禁管理。</td></tr>
+<tr><td>内容模块</td><td>发帖、图片上传、评论、多级回复、转发、引用、删除、帖子详情查看。</td></tr>
+<tr><td>社交模块</td><td>关注、取关、关注状态查询、关注列表、粉丝列表和推荐关注。</td></tr>
+<tr><td>行为模块</td><td>记录浏览、点赞、评论、转发、搜索、点踩、跳过等行为事件。</td></tr>
+<tr><td>推荐模块</td><td>个性化推荐、关注流、传统推荐策略、AI 推荐策略和策略热切换。</td></tr>
+<tr><td>画像模块</td><td>兴趣标签、行为统计、活跃时段、用户类型、内容偏好、词云和雷达图。</td></tr>
+<tr><td>搜索模块</td><td>综合搜索、帖子搜索、用户搜索、话题搜索和搜索建议。</td></tr>
+<tr><td>通知私信模块</td><td>点赞、评论、关注、转发、引用通知，未读数管理和实时私信。</td></tr>
+<tr><td>广告模块</td><td>信息流广告插入、广告匹配、广告创建编辑、展示点击统计。</td></tr>
+<tr><td>管理模块</td><td>用户管理、平台统计、推荐策略管理、Kaggle 数据导入、AI 打标和广告管理。</td></tr>
+</table>
+<p>上表按模块聚合需求，可与课题需求条目逐项对照；实际实现时仍存在跨模块耦合点需要注意。例如推荐模块依赖行为模块的完备性——若 SEARCH 未记录则画像缺少主动意图信号；广告模块依赖画像模块的标签质量——若 AI 打标失败则匹配度下降；通知模块依赖内容模块的评论层级正确性——若 parentContent 关联错误将导致通知定位失败。职责划分并不能取代集成测试，第 4 章据此给出端到端场景用例。</p>
+<p>系统的非功能需求主要包括可用性、可维护性、可扩展性、实时性、安全性和可视化能力。可用性要求普通用户能够按照常见社交媒体操作习惯完成浏览与互动；可维护性要求后端分层清晰、前端组件职责明确；可扩展性要求推荐策略可替换、广告策略可扩展；实时性要求通知和私信能够及时推送；安全性要求登录状态与角色权限具备基本控制；可视化能力要求推荐效果和用户画像能够通过图表进行展示。</p>
+<p><strong>普通用户视角：</strong>需要稳定登录与会话保持、清晰的信息流切换（For You / Following）、可靠的互动反馈（计数与通知）。<strong>管理员视角：</strong>需要便捷的用户治理、策略切换与外部数据导入能力。<strong>推荐与画像视角：</strong>需要统一 behavior 模型与足够的日志字段支撑离线分析与在线排序。<strong>广告视角：</strong>需要定向字段与统计闭环。<strong>AI 视角：</strong>需要可配置模型地址与超时降级。</p>
+<p><strong>普通用户侧细化：</strong>除发帖与互动外，需保证会话失效后可重新登录且不丢失历史行为沉淀；推荐流与关注流切换时应维持分页或刷新策略一致，避免误跳。私信侧需支持未读状态与送达感知。</p>
+<p><strong>管理员侧细化：</strong>后台操作应具备明确反馈与列表刷新；批量导入与批量打标属于长耗时任务，理想情况下可进一步异步化并以任务 ID 查询进度；当前实现通过限制单次导入规模和失败时使用内置内容库补齐，保证演示数据可以稳定生成。</p>
+<p><strong>推荐子系统：</strong>需暴露策略类型与评分明细字段以便算法验证页展示；候选为空时应返回空列表而非错误码，以便前端区分“无内容”与“接口故障”。</p>
+<p><strong>广告子系统：</strong>需区分广告启用与全局插入开关；无可用广告时不应阻断信息流主体加载。</p>
+<p><strong>AI 子系统：</strong>需区分打标模型与推荐模型的配置键；云端对话与本地推理失败时应互不牵连。</p>
+
+<h2>2.2 可行性分析</h2>
+<p>从技术可行性看，系统采用的技术均较成熟。Spring Boot 能够支撑后端 REST API 开发和业务模块组织；Vue 3 能够完成前端单页应用开发；MySQL 能够满足本文数据规模下的存储要求；WebSocket 能够实现实时通知和私信；ECharts 能够完成算法效果、画像和广告报表可视化；Ollama 和 DeepSeek API 能够为 AI 推荐、AI 打标和智能助手提供模型能力。因此，系统在技术上具有可实现性。</p>
+<p>从经济可行性看，系统主要依赖开源框架和本地开发环境。Spring Boot、Vue、MySQL、ECharts、Maven、Node.js 等工具均可免费使用，AI 推荐可以通过本地 Ollama 模型运行，降低外部接口调用成本。在本项目约束下，开发与部署成本可控。</p>
+<p>从操作可行性看，系统界面参照主流社交媒体交互方式设计。普通用户能够通过首页信息流完成浏览、发帖、点赞、评论和关注等常见操作，管理员能够在后台完成用户管理、推荐策略切换、AI 打标和广告管理。系统操作流程符合常见 Web 应用习惯，具备可操作性。</p>
+<p><strong>数据可行性：</strong>系统可通过 DataSeeder、Kaggle 公开数据集导入和内置内容库补齐构造多标签、多用户、多行为样本，满足算法验证所需的最小数据规模。<strong>风险可行性：</strong>主要风险包括外部数据源不可用、本地模型资源占用与推理延迟；对策包括本地缓存、内置数据兜底、超时降级与切换传统算法。综上，项目在既定资源约束下可完成开发与验证。</p>
+
+<h2>2.3 业务流程分析</h2>
+<p>系统的核心业务流程围绕用户访问、内容分发和行为反馈展开。用户进入系统后首先进行注册或登录，登录成功后进入首页。首页包含推荐流和关注流两种信息流类型。推荐流由系统根据用户画像和候选内容进行个性化排序，关注流则展示用户关注对象发布的内容。用户在浏览过程中产生点赞、点踩、评论、转发、搜索、跳过等行为，这些行为被写入行为表，并在后续画像构建和推荐排序中发挥作用。</p>
+<p class="caption">图2-1 系统总体业务流程图：用户登录后进入首页，系统构建候选池并生成推荐信息流，用户互动行为被记录后反哺用户画像和后续排序。</p>
+<p>内容发布流程包括输入文本、选择图片、上传图片、调用发帖接口、保存内容、解析话题标签和异步 AI 打标等步骤。若用户输入正文中包含显式话题标签，系统会将标签保存到内容标签关联表；若没有显式标签，系统也可以通过 AI 打标服务生成语义标签。这样既满足用户主动标注需求，也能提高推荐算法可用的内容特征数量。</p>
+<p>推荐信息流流程包括候选池构建、负反馈过滤、用户画像读取、协同过滤召回、多因子评分、作者多样性惩罚和加权随机采样。候选池包含网内来源和网外来源，网内来源来自用户关注对象发布的内容，网外来源来自全站公开内容。系统先过滤用户明确屏蔽或不感兴趣的内容，再对候选内容计算综合推荐分，最后通过加权随机采样生成具有一定差异性的结果列表。</p>
+<p><strong>登录与鉴权子流程：</strong>用户提交凭证→服务端校验→签发 JWT→前端持久化→后续请求携带头。<strong>发帖子流程：</strong>可选上传→发布→标签解析→异步打标。<strong>广告子流程：</strong>读取配置→算分→插入列表→回写展示点击。<strong>通知子流程：</strong>互动事件→写通知表→WS 推送→前端更新未读。</p>
+<p><strong>异常与分支说明：</strong>登录失败包括账号不存在、密码错误、账号封禁三类，应在前端区分提示文案以降低用户枚举风险。发帖失败可能源于上传超时或正文为空，应先校验前端表单再调用接口。推荐流在候选为空时返回空数组并提示用户关注更多作者或等待数据导入。广告插入若 interval 大于列表长度则本轮可能无广告位，属正常边界。通知推送若 WebSocket 未连接，仍依赖通知列表接口补偿；私信同理。</p>
+
+<h2>2.4 数据流与数据字典</h2>
+<p>系统数据主要在前端页面、后端服务、数据库、AI 服务和外部数据源之间流动。前端通过 Axios 调用后端接口，通过 WebSocket 接收通知和私信；后端通过 Repository 层读写 MySQL 数据库，通过 AI 服务调用 Ollama 或 DeepSeek，通过 KaggleImportService 接入 Kaggle 公开数据集，并在外部数据源不可用或数据不足时使用内置内容库补齐。</p>
+<p class="caption">图2-2 系统一层数据流图：用户与管理员通过 Vue 前端访问后端 API，后端读写业务数据库，并调用推荐服务、AI 服务、WebSocket 服务和外部数据导入服务。</p>
+<p class="table-title">表2-2 核心数据字典</p>
+<table>
+<tr><th>数据项</th><th>含义</th><th>来源</th><th>去向</th></tr>
+<tr><td>userId</td><td>用户唯一标识</td><td>登录用户、请求参数</td><td>内容、行为、关注、通知、推荐服务</td></tr>
+<tr><td>contentId</td><td>帖子唯一标识</td><td>内容表</td><td>行为记录、评论、通知、推荐候选池</td></tr>
+<tr><td>behaviorType</td><td>行为类型，如 VIEW、LIKE、COMMENT、REPOST、SEARCH</td><td>用户操作</td><td>用户画像、推荐算法、统计分析</td></tr>
+<tr><td>tagName</td><td>标签名称</td><td>发帖解析、AI 打标</td><td>搜索、热门话题、标签匹配推荐</td></tr>
+<tr><td>scoreBreakdown</td><td>推荐得分详情</td><td>推荐算法</td><td>前端评分面板、算法对比页面</td></tr>
+<tr><td>negativeSignal</td><td>负反馈信号</td><td>不感兴趣、屏蔽、静音操作</td><td>推荐过滤和降权处理</td></tr>
+<tr><td>adScore</td><td>广告匹配分</td><td>广告服务</td><td>信息流广告排序与插入</td></tr>
+</table>
+<p>补充数据项：negative_signal 记录（user_id、target_type、target_id、signal_type）支撑候选过滤；私信消息行（sender_id、recipient_id、content、is_read）支撑会话与未读统计；广告配置中的插入间隔 interval 决定前端合并列表的下标规则。上述项与表 2-2 主干字段共同构成端到端数据闭环。在二层分解中，可将推荐相关读路径抽象为相对独立的子过程（读取行为与内容、输出评分明细），与以事务写入为主的业务路径在职责上分离，便于后续按负载分别伸缩或部署。若写入峰值较高且需减轻画像更新对主库的压力，可演进为“先持久化行为事件、由消费者异步聚合刷新画像”的流水线（常配合消息队列或变更日志）；本课题实现仍以请求路径内的同步读写为主，该模式作为规模化场景下的可选架构方向。分层数据流同时标明了各子系统的数据输入输出与依赖关系，可作为扩展时划分服务边界与数据归属的参照。</p>
+<p class="caption">图2-3 二层数据流分解（逻辑示意）：前端请求经 API 网关至业务服务；业务服务写入数据库并触发推荐子过程；推荐子过程读取行为与画像返回排序列表。</p>
+
+<h2>2.5 非功能需求分析</h2>
+<p><strong>性能与可扩展性：</strong>中小规模部署下单机即可满足需求；后续可通过 Redis 缓存热门话题与画像摘要、异步线程池执行 AI 打标降低接口尾延迟。<strong>安全性：</strong>当前实现侧重功能链路完整性，生产环境需加固密码存储、HTTPS、CSRF 与接口鉴权。<strong>可维护性：</strong>Java 包结构与 Vue 目录结构遵循约定，便于团队协作。<strong>可观测性：</strong>关键路径打印耗时日志可辅助定位推荐瓶颈。<strong>兼容性：</strong>前端采用现代浏览器特性，WebSocket 降级由 SockJS 处理。</p>
+
+<h2>2.6 需求与实现对应关系</h2>
+<p>本节将课题任务书中的条目与系统实现模块进行映射。（一）架构与基础平台：任务书要求 B/S、前后端分离、Spring Boot、Vue 与 MySQL，本系统在一套仓库内分别维护 backend 与 frontend 工程并完成联调；注册登录与角色区分通过 JWT 与 role 字段实现；帖文发布、浏览、多级评论、点赞、转发、引用对应 Content 实体及其 REST 接口；关注关系对应 Follow 实体与关注流查询；关键词与 Hashtag 搜索由 SearchController 与正文标签解析协同完成；热门话题由标签统计与互动加权模块生成；基于 WebSocket 的私信与基于通知表的站内提醒满足实时通信任务描述。</p>
+<p>（二）行为采集与画像：Behavior 表统一承载多维事件；画像模块输出兴趣标签、活跃时段、用户类型与行为强度；负反馈实体用于屏蔽作者或隐藏帖子并在候选阶段剔除。（三）信息流排序：混合多因子打分涵盖互动加权、互动率、网内加成、标签匹配、TF-IDF、分段衰减、热门话题、作者多样性、加权随机采样与协同过滤；管理员可在 Hybrid 与 AiRecommendationStrategy 之间切换。（四）AI 与广告：对话式助手调用 DeepSeek API；信息流广告按间隔插入并按标签、出价与 CTR 排序。（五）可视化实验：CompareView 集成对比指标、漏斗图与 WeightTuner。（六）数据与测试：支持种子数据、Kaggle 数据集导入与内置内容库补齐；第 4 章给出用例表与结果分析。</p>
+
+<h1>第3章 系统设计</h1>
+
+<h2>3.1 系统总体架构设计</h2>
+<p>系统采用 B/S 架构和前后端分离模式。浏览器端运行 Vue 3 单页应用，负责页面展示、用户交互、状态维护和图表渲染；后端采用 Spring Boot 提供 RESTful API 和 WebSocket 服务；数据库采用 MySQL 存储用户、内容、行为、标签、关注、通知、私信、广告等业务数据；AI 服务通过 Ollama 和 DeepSeek API 提供内容打标、AI 推荐和智能问答能力；外部数据导入模块用于导入 Kaggle 公开数据集，并在导入不足时使用内置内容库补齐候选内容。</p>
+<p>前后端分离使界面迭代与算法迭代可并行：前端专注交互与可视化，后端专注业务一致性与数据完整性。推荐链路在逻辑上可分为数据层（行为与内容持久化）、特征层（画像与 TF-IDF 向量）、排序层（Hybrid 或 AI 策略）、展示层（信息流混合广告）。异常与降级集中在排序层实现，避免向上层泄漏实现细节。</p>
+<p class="caption">图3-1 系统总体架构图：浏览器访问 Vue 前端，前端通过 Axios 和 WebSocket 与 Spring Boot 后端通信，后端连接 MySQL、AI 服务和外部数据源。</p>
+<p>后端分层设计能够提高系统可维护性。controller 层负责请求入口，service 层负责业务规则和算法逻辑，repository 层负责数据访问，model 层定义 JPA 实体，dto 层封装前后端交互对象，config 层管理跨域、安全、WebSocket 和文件映射等配置。推荐系统相关逻辑集中在 service 层，便于传统推荐策略、AI 推荐策略和策略管理器之间解耦。DTO 如 ScoreBreakdown、PersonaResponse 等与前端字段一一对应，减少重复拼装字段。</p>
+
+<h2>3.2 功能模块设计</h2>
+<p>系统功能模块按照业务领域划分为用户认证与资料模块、内容发布与互动模块、社交关系模块、行为采集模块、推荐排序模块、用户画像模块、搜索与热门话题模块、通知与私信模块、广告分发模块、AI 智能模块、管理后台模块和数据导入模块。各模块之间通过 REST API、WebSocket 推送与共享数据库表协作：行为采集模块为画像与推荐提供输入；推荐排序模块依赖画像输出动态权重；通知与私信模块依赖内容与行为事件触发；广告分发模块依赖画像标签与广告定向标签匹配。</p>
+<p class="caption">图3-2 系统功能模块结构图：系统由用户端业务模块、推荐算法模块、AI 智能模块、广告模块、管理后台和数据导入模块共同组成。</p>
+<p>从软件工程角度，每个核心模块可归纳为输入、处理逻辑、输出与异常处理四个要素，以保证后续实现与测试有据可依。用户认证与资料模块的输入为注册信息、登录凭证与资料编辑表单；处理包括用户名唯一性校验、密码校验、封禁状态检查、JWT 生成与返回；输出为用户实体与 Token；异常包括用户名冲突、密码错误、账号封禁等。内容发布与互动模块的输入为帖子正文、图片、评论父节点及转发引用关系；处理包括上传文件映射、内容持久化、标签解析与异步 AI 打标；输出为 Content 实体及互动计数更新；异常包括上传失败、内容为空、删除权限不足等。</p>
+<p>社交关系模块维护关注边 followerId、followeeId，输入为关注或取关请求；处理包括重复关注过滤、双向列表查询；输出为关注状态与列表数据；异常包括关注自身、目标用户不存在等。行为采集模块输入为前端上报的行为类型与可选停留时长；处理为写入 behaviors 表并在部分场景更新内容计数；输出为行为记录 ID；异常包括未登录、非法类型等。推荐排序模块输入为用户 ID 与分页参数；处理为候选池构建、策略选择、打分与采样；输出为排序后的帖子列表及可选 ScoreBreakdown；异常包括候选为空、AI 服务超时触发降级等。</p>
+<p>用户画像模块输入为用户 ID 与时间窗口；处理为聚合行为、统计标签与偏好并计算 DynamicWeights；输出为画像 DTO 供推荐与广告使用；异常包括冷启动用户数据不足时返回默认权重。搜索与热门话题模块输入为关键词与分页；处理为全文或字段检索、话题聚合；输出为帖子、用户、话题等多类型结果；异常包括关键词过短返回提示。通知与私信模块输入为互动事件或私信载荷；处理为持久化并经由 WebSocket 推送；输出为通知列表或未读数；异常包括接收者离线仅保留数据库记录。广告分发模块输入为用户画像与广告配置；处理为匹配分计算与间隔插入；输出为广告卡片与统计字段；异常包括无可用广告时跳过插入。</p>
+<p class="table-title">表3-0 核心模块输入输出概要</p>
+<table>
+<tr><th>模块</th><th>主要输入</th><th>主要输出</th><th>典型异常</th></tr>
+<tr><td>用户认证与资料</td><td>用户名、密码、资料字段</td><td>用户信息与 Token</td><td>用户名重复、账号封禁</td></tr>
+<tr><td>内容与互动</td><td>帖子、评论、转发参数</td><td>Content 与计数更新</td><td>上传失败、权限不足</td></tr>
+<tr><td>行为采集</td><td>行为类型、contentId、时长</td><td>Behavior 记录</td><td>类型非法、未登录</td></tr>
+<tr><td>推荐排序</td><td>userId、分页</td><td>排序 Feed、评分明细</td><td>候选为空、AI 降级</td></tr>
+<tr><td>用户画像</td><td>userId</td><td>标签分布、动态权重</td><td>冷启动默认策略</td></tr>
+<tr><td>通知与私信</td><td>事件、消息体</td><td>通知记录、WS 推送</td><td>连接断开仅落库</td></tr>
+<tr><td>广告分发</td><td>画像标签、广告配置</td><td>排序广告、展示统计</td><td>无启用广告</td></tr>
+</table>
+
+<h2>3.3 数据库设计</h2>
+<p>数据库设计围绕用户、内容、行为、社交关系和推荐辅助数据展开。核心实体包括用户、帖子、行为、标签、关注、通知、私信、负反馈、广告和广告配置。用户可以发布多条内容，可以产生多条行为记录，也可以关注多个用户；内容可以拥有多个标签，可以触发多条通知，也可以作为评论、转发和引用的目标；广告根据标签、类别、出价和历史效果参与信息流插入。</p>
+<p class="caption">图3-3 系统 E-R 图：用户与内容、行为、关注、通知、私信之间形成一对多关系，内容与标签之间形成多对多关系，广告与广告配置共同支持投放。</p>
+<p class="table-title">表3-1 用户表设计</p>
+<table>
+<tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>id</td><td>BIGINT</td><td>用户 ID</td></tr>
+<tr><td>username</td><td>VARCHAR</td><td>用户名，唯一</td></tr>
+<tr><td>handle</td><td>VARCHAR</td><td>用户昵称标识，如 @user1</td></tr>
+<tr><td>avatarUrl</td><td>VARCHAR</td><td>头像地址</td></tr>
+<tr><td>bio</td><td>VARCHAR</td><td>个人简介</td></tr>
+<tr><td>password</td><td>VARCHAR</td><td>登录密码</td></tr>
+<tr><td>role</td><td>VARCHAR</td><td>USER 或 ADMIN</td></tr>
+<tr><td>banned</td><td>BOOLEAN</td><td>是否封禁</td></tr>
+<tr><td>customWeights</td><td>TEXT</td><td>用户自定义推荐权重 JSON</td></tr>
+<tr><td>createdAt</td><td>DATETIME</td><td>创建时间</td></tr>
+</table>
+<p class="table-title">表3-2 内容表设计</p>
+<table>
+<tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>id</td><td>BIGINT</td><td>帖子 ID</td></tr>
+<tr><td>author</td><td>BIGINT</td><td>作者 ID</td></tr>
+<tr><td>parentContent</td><td>BIGINT</td><td>父评论 ID</td></tr>
+<tr><td>content</td><td>TEXT</td><td>正文内容</td></tr>
+<tr><td>imageUrl</td><td>VARCHAR</td><td>图片地址</td></tr>
+<tr><td>category</td><td>VARCHAR</td><td>内容分类</td></tr>
+<tr><td>viewCount</td><td>INT</td><td>浏览数</td></tr>
+<tr><td>likeCount</td><td>INT</td><td>点赞数</td></tr>
+<tr><td>commentCount</td><td>INT</td><td>评论数</td></tr>
+<tr><td>dislikeCount</td><td>INT</td><td>点踩数</td></tr>
+<tr><td>repostCount</td><td>INT</td><td>转发或引用数</td></tr>
+<tr><td>createdAt</td><td>DATETIME</td><td>发布时间</td></tr>
+</table>
+<p class="table-title">表3-3 行为表设计</p>
+<table>
+<tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>id</td><td>BIGINT</td><td>行为 ID</td></tr>
+<tr><td>userId</td><td>BIGINT</td><td>用户 ID</td></tr>
+<tr><td>contentId</td><td>BIGINT</td><td>内容 ID，搜索等行为可为空</td></tr>
+<tr><td>type</td><td>VARCHAR</td><td>VIEW、LIKE、DISLIKE、SKIP、SEARCH 等</td></tr>
+<tr><td>duration</td><td>INT</td><td>浏览停留时长</td></tr>
+<tr><td>createdAt</td><td>DATETIME</td><td>行为发生时间</td></tr>
+</table>
+<p>关注表用于表达用户之间的有向社交关系，是“网内候选”的数据来源：若 followerId 关注 followeeId，则 followeeId 发布的内容可优先进入该 followerId 的候选池并给予 In-Network 加成。标签系统通常采用标签实体表与内容标签关联表的多对多结构：标签名称唯一，内容与标签通过中间表关联，便于热门话题统计与检索索引。通知表记录点赞、评论、关注等事件型消息；私信表或消息实体记录会话与聊天内容，可与 WebSocket 推送配合实现实时性。</p>
+<p class="table-title">表3-4 关注表设计概要</p>
+<table>
+<tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>id</td><td>BIGINT</td><td>主键</td></tr>
+<tr><td>followerId</td><td>BIGINT</td><td>关注者用户 ID，逻辑外键指向 users.id</td></tr>
+<tr><td>followeeId</td><td>BIGINT</td><td>被关注者用户 ID</td></tr>
+<tr><td>createdAt</td><td>DATETIME</td><td>关注时间，可用于推荐中新关注加权</td></tr>
+</table>
+<p class="table-title">表3-5 标签实体与内容标签关联（逻辑结构）</p>
+<table>
+<tr><th>对象</th><th>说明</th></tr>
+<tr><td>tags</td><td>标签表：id、name（唯一）、可选统计字段。</td></tr>
+<tr><td>content_tags</td><td>关联表：contentId、tagId，联合唯一约束防止重复绑定。</td></tr>
+</table>
+<p class="table-title">表3-6 通知表设计概要</p>
+<table>
+<tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>id</td><td>BIGINT</td><td>主键</td></tr>
+<tr><td>recipientId</td><td>BIGINT</td><td>接收者</td></tr>
+<tr><td>actorId</td><td>BIGINT</td><td>触发者</td></tr>
+<tr><td>type</td><td>VARCHAR</td><td>LIKE、COMMENT、FOLLOW、REPOST、QUOTE 等</td></tr>
+<tr><td>entityId</td><td>BIGINT</td><td>关联帖子或内容 ID</td></tr>
+<tr><td>isRead</td><td>BOOLEAN</td><td>是否已读</td></tr>
+<tr><td>createdAt</td><td>DATETIME</td><td>通知时间</td></tr>
+</table>
+<p class="table-title">表3-7 广告表设计概要</p>
+<table>
+<tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>id</td><td>BIGINT</td><td>主键</td></tr>
+<tr><td>title、description、imageUrl</td><td>VARCHAR/TEXT</td><td>展示文案与素材</td></tr>
+<tr><td>targetUrl</td><td>VARCHAR</td><td>点击跳转地址</td></tr>
+<tr><td>advertiser</td><td>VARCHAR</td><td>广告主标识</td></tr>
+<tr><td>targetTags、category</td><td>VARCHAR</td><td>定向标签与类别</td></tr>
+<tr><td>bidPrice</td><td>DOUBLE</td><td>出价，用于排序加权</td></tr>
+<tr><td>impressionCount、clickCount</td><td>INT</td><td>展示与点击计数</td></tr>
+<tr><td>active</td><td>BOOLEAN</td><td>是否启用投放</td></tr>
+</table>
+<p class="table-title">表3-8 负反馈信号表（negative_signals）</p>
+<table>
+<tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>id</td><td>BIGINT</td><td>主键，自增</td></tr>
+<tr><td>user_id</td><td>BIGINT</td><td>发起负反馈的用户</td></tr>
+<tr><td>target_type</td><td>枚举</td><td>CONTENT（单条内容）或 AUTHOR（作者）</td></tr>
+<tr><td>target_id</td><td>BIGINT</td><td>目标内容 ID 或用户 ID</td></tr>
+<tr><td>signal_type</td><td>枚举</td><td>NOT_INTERESTED、BLOCK、MUTE</td></tr>
+<tr><td>created_at</td><td>DATETIME</td><td>创建时间</td></tr>
+</table>
+<p class="table-title">表3-9 私信消息表（tb_message）</p>
+<table>
+<tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>id</td><td>BIGINT</td><td>主键</td></tr>
+<tr><td>sender_id</td><td>BIGINT</td><td>发送方用户 ID</td></tr>
+<tr><td>recipient_id</td><td>BIGINT</td><td>接收方用户 ID</td></tr>
+<tr><td>content</td><td>TEXT</td><td>消息正文</td></tr>
+<tr><td>created_at</td><td>DATETIME</td><td>发送时间</td></tr>
+<tr><td>is_read</td><td>BOOLEAN</td><td>是否已读</td></tr>
+</table>
+<p>负反馈表与推荐候选过滤直接对应：target_type=AUTHOR 时在候选阶段剔除该作者全部帖子；target_type=CONTENT 时剔除指定帖子。signal_type 区分不感兴趣、屏蔽与静音的业务语义，便于后续扩展撤销策略。私信表采用扁平消息行存储会话消息；会话列表可由双方 userId 聚合查询实现；本文未单独引入会话头表以降低建模复杂度。删除用户时的级联策略应在生产环境通过外键或定时清理任务补齐。</p>
+<p>数据库设计的冗余与一致性方面：内容表的 viewCount、likeCount 等计数字段属于适度冗余，可通过事务或异步修正保持一致性，换取列表页与推荐打分时的读取性能。行为表保留 duration 字段支撑停留时长画像；SEARCH 类行为的 contentId 可为空以表达“主动检索意图”而不绑定单一帖子。负反馈相关实体用于屏蔽作者、隐藏帖子等，推荐流水线在候选合并后立即过滤，避免无效打分消耗。</p>
+
+<h2>3.4 推荐算法设计</h2>
+<p>推荐排序模块采用策略模式设计，统一定义 RecommendationStrategy 接口，传统混合推荐策略 HybridRecommendationStrategy 和 AI 推荐策略 AiRecommendationStrategy 均实现该接口。RecommendationStrategyManager 持有两种策略实例并维护全局策略标识（如 traditional、ai），RecommendationService 在组装候选池后通过 getActiveStrategy() 获取当前策略执行排序，从而避免在业务代码中硬编码单一算法实现。管理员通过 PUT /api/admin/rec-strategy 切换策略后，全体用户的 For You 请求立即生效，从而在线对比两种策略的输出差异。该模式符合开闭原则：新增策略仅需实现接口并注册到管理器即可[2][17]。</p>
+<p><strong>（1）候选池与双源机制。</strong>参考公开信息流架构中的多源候选思想[3]，本系统将候选拆分为 In-Network 与 Out-of-Network。In-Network 来自当前用户所关注用户发布的最新内容，体现社交关系的信任传递与兴趣同质性；Out-of-Network 来自全站公开池，用于探索用户尚未关注但可能感兴趣的作者与话题。两路候选合并去重后形成统一列表，再进入过滤与打分。候选规模可通过上限截断与时间窗口控制，避免单次请求遍历全库。</p>
+<p><strong>（2）负反馈与合规过滤。</strong>负反馈信号包括屏蔽作者、对单条内容不感兴趣、静音等，存入独立实体后在候选阶段直接剔除或强降权，减少无效曝光与用户挫败感。该步骤位于打分之前，可降低后续 TF-IDF、协同过滤等计算开销。</p>
+<p><strong>（3）多行为加权互动分。</strong>不同行为类型对用户兴趣的揭示强度不同，一般转发、评论高于点赞，点赞高于浏览。系统对用户历史行为赋权并叠加时间衰减，形成 engagement 分量；互动率因子可采用点赞加评论量与浏览量的比值刻画内容“有效密度”，抑制刷量低质内容。</p>
+<p><strong>（4）TF-IDF 与余弦相似度。</strong>对文本内容分词后，词项 i 在文档 d 中的 TF-IDF 权重可采用经典形式 w<sub>i,d</sub> = tf<sub>i,d</sub> × log(N / df<sub>i</sub>)，其中 N 为语料文档数，df<sub>i</sub> 为包含词 i 的文档数[4]。用户画像侧用近期互动内容的文本构造兴趣向量，候选帖子构造文档向量，二者余弦相似度 sim(u,c) = (Σ w<sub>i,u</sub> w<sub>i,c</sub>) / (||u||·||c||) 作为 tfidfSimilarityBoost 的来源，刻画语义层面的兴趣匹配，弥补纯标签匹配的粒度不足。</p>
+<p><strong>（5）协同过滤加成。</strong>CollaborativeFilteringService 基于用户—物品交互矩阵，结合多行为权重与时间衰减计算用户相似度，产出 Top-K 相似用户及其偏好内容集合；若候选帖子 ID 落在协同推荐集合中，则给予 collaborativeBoost，并可由 DynamicWeights.wCollaborative 动态调节。该方法能够在标签稀疏或新话题出现时利用群体智慧补全兴趣[6][7]。</p>
+<p><strong>（6）时间衰减分段函数。</strong>设帖子年龄为 ageHours，可对不同区间施加不同衰减速率：黄金期（0–6h）衰减慢以突出时效；常规期（6–24h）线性或对数衰减；长尾期（72h+）加速衰减但仍保留非零底值以保留优质存量内容曝光机会。最终 timeDecay 作为除数作用于 engagement，实现“越新越靠前，但不绝对压制长尾”。</p>
+<p><strong>（7）作者多样性与探索。</strong>对同一 author 在候选列表中的多条内容施加递减系数，避免刷屏；jitter 或加权随机洗牌在高分区间内引入可控随机性，实现探索与利用折中，缓解过滤气泡[11]。ScoreBreakdown 将各分项写入 DTO，前端可展开查看，以支撑推荐结果的可解释性。</p>
+<p>多因子综合评分可概括为：</p>
+<p class="formula">finalScore = engagement / timeDecay + topicAffinity + authorAffinity + personalizationBoost + tfidfSimilarityBoost + trendingBoost + collaborativeBoost + depthMatchBoost + freshnessBoost + jitter</p>
+<p>其中 engagement、topicAffinity、collaborativeBoost 等均由 UserBehaviorProfileService 输出的 DynamicWeights 进行加权组合，使冷启动用户自动提高热门与探索权重，活跃用户自动提高个性化与协同权重。</p>
+<p><strong>（8）重复曝光惩罚。</strong>若用户对内容已点踩，则总分乘以约 0.1；已点赞乘以约 0.5 抑制重复推荐；已浏览乘以约 0.7 保留一定回访可能同时鼓励新鲜内容。惩罚与多样性策略共同作用，使信息流在时间维度与作者维度均保持变化。</p>
+<p><strong>（9）AI 推荐与降级。</strong>AiRecommendationStrategy 将画像摘要与候选摘要（含 id、正文片段、标签、互动统计）封装为 Prompt，约束模型仅输出 JSON（ranking 与 reasons）。解析成功则重排列表；若 Ollama 不可用、超时或 JSON 非法，则降级为按基础互动分排序并在前端标识降级模式，保障 SLA。大模型用于排序属于近年探索方向，工程上通常与传统打分共存以提高鲁棒性[8][20]。</p>
+<p><strong>（10）加权随机采样。</strong>对候选按 finalScore 降序排序后，若直接截取 Top-N，则每次刷新结果高度相似，列表多样性不足。工程上可在前 M 条（如 M=50）内以正比于 score 的权重做无放回或有放回抽样：先计算前缀和 S<sub>k</sub>=Σ w<sub>i</sub>，再取均匀随机 r∈(0,S<sub>M</sub>] 用二分定位样本，重复直至凑满页大小。该机制对应课题要求中的加权随机采样与探索—利用平衡，使低分但非零分内容仍具曝光机会。若需可复现实验，可固定随机种子或关闭采样仅用于对比基线。</p>
+<p><strong>（11）作者多样性惩罚的窗口化描述。</strong>在按分数初排后，可沿列表滑动长度为 L 的窗口，统计同一 author 出现次数；当次数超过阈值 t 时，对后续同作者候选追加惩罚项或将其后移。该策略与“同一作者刷屏”问题直接对应，且与第（10）条采样可组合：先窗口重排再加权抽样，或先抽样再轻量去重。隐式反馈（浏览、停留）在协同侧可视为弱正信号，与显式反馈联合建模的思想与隐式反馈协同过滤研究一致[6][27]。</p>
+
+<h2>3.5 用户画像设计</h2>
+<p>用户画像模块由行为数据驱动生成。系统读取用户历史行为记录后，查询相关内容和标签，并根据行为类型赋予不同权重。一般而言，转发和评论代表较强兴趣，点赞代表正向兴趣，浏览代表弱兴趣，点踩、跳过和屏蔽代表负向兴趣。系统还结合行为发生时间进行衰减，使近期行为对画像影响更大。SEARCH 行为记录用户主动检索意图，可与标签偏好共同用于查询类兴趣发现；VIEW 行为附带的停留时长用于推断属于“浅阅读”还是“深度阅读”，进而调节 depthMatchBoost 与 freshnessBoost 的权重。</p>
+<p class="caption">图3-4 用户画像构建流程图：读取行为记录，按行为类型和时间赋权，统计兴趣标签、作者偏好、互动风格、内容深度偏好和新鲜度偏好，最终生成动态推荐权重。</p>
+<p>画像输出通常包括：兴趣标签分布（标签名与权重）、作者偏好列表、活跃时段直方图、用户类型（创作者、互动型、浏览型）、行为强度统计、内容长度偏好与新鲜度偏好。DynamicWeights 结构将这些偏好映射为推荐公式中各分项的系数，例如提高 wCollaborative、wTfidf 或 wTrending。冷启动阶段若行为稀少，则回退到全局热门、时间新鲜度与随机探索，并逐步过渡到个性化；该策略与推荐系统实践中常见的探索—利用平衡一致[2][11]。</p>
+<p>系统将用户阶段划分为冷启动用户、初级用户和活跃用户。冷启动用户行为较少，推荐策略更依赖热门内容、时间新鲜度和随机探索；初级用户已有一定行为数据，推荐策略采用热门与个性化混合；活跃用户行为数据较丰富，推荐策略更依赖兴趣画像、协同过滤和作者偏好。通过不同阶段的动态权重调整，系统能够适应用户行为数据从少到多的变化过程。</p>
+<p class="table-title">表3-10 用户阶段与推荐策略</p>
+<table>
+<tr><th>用户阶段</th><th>判定条件</th><th>推荐策略特点</th></tr>
+<tr><td>冷启动用户</td><td>行为数少于 10</td><td>更多依赖热门内容、新鲜内容和探索因子。</td></tr>
+<tr><td>初级用户</td><td>行为数 10 到 49</td><td>热门内容与个性化标签匹配混合排序。</td></tr>
+<tr><td>活跃用户</td><td>行为数不少于 50</td><td>更多依赖个性化画像、协同过滤和作者偏好。</td></tr>
+</table>
+
+<h2>3.6 安全与实时通信设计</h2>
+<p>系统登录成功后由后端生成 JWT Token 并返回给前端，前端将用户信息与 Token 持久化于 localStorage，并在 Axios 全局拦截器中附加 Authorization 头。当前实现中，Spring Security 采用无状态配置，JwtAuthFilter 主要完成 Token 解析与上下文注入，接口层以功能联调和演示为重点；前端路由与管理页面根据 role=ADMIN 控制入口，部分敏感操作仍需要在服务端进一步补充强制权限校验。正式部署时应将 permitAll 调整为按角色授权，并补充 BCrypt 密码哈希、刷新令牌、接口审计日志和敏感操作拦截。</p>
+<p>实时通信模块基于 WebSocket、SockJS 与 STOMP 协议实现可靠传输与浏览器兼容。后端配置消息代理与用户目的地前缀，使通知推送到 /user/{userId}/queue/notifications 等队列；前端订阅后在 UI 上增量更新未读徽标。私信同理可走独立队列或 REST 轮询兜底。断线重连时，数据库中的通知与消息记录仍保留，用户刷新页面可补偿展示，满足“实时优先、最终一致”的工程目标。</p>
+<p>安全细节方面，生产环境应为 WebSocket 启用同源策略与令牌校验，防止未订阅他人队列；当前实现侧重功能链路验证，若暴露于公网必须补齐握手阶段的身份绑定。</p>
+<p>总结而言，认证授权解决“谁能调用接口”，实时通信解决“如何把事件送达在线会话”，二者共同构成社交应用的体验底座。</p>
+<p>后续若引入多设备同时在线，可在用户维度之外增加设备维度的推送策略，并与离线推送互为补充，形成连续可用的通知链路。</p>
+
+<h2>3.7 广告分发设计</h2>
+<p>信息流广告与社交内容共享同一浏览上下文，需兼顾用户体验与商业目标。系统在服务端或前端插入环节读取广告配置（如每隔 N 条帖子插入一条广告），再调用广告服务按用户画像兴趣标签与广告 targetTags 计算匹配分 adScore，并结合出价 bidPrice 与历史 CTR 得到质量分。排序最高的若干条广告进入展示队列；展示与点击通过接口回写 impressionCount、clickCount，形成闭环优化数据。</p>
+<p>广告与推荐共享画像数据源，但优化目标不同：推荐侧重长期留存与点击多样性，广告侧重转化与收益，因此二者公式分离且可通过配置限制每日曝光频次（可在后续版本扩展）。当前设计对应课题需求中的“标签匹配 + 出价加权”投放思路。</p>
+<p>从指标体系看，展示次数反映库存消耗，点击次数反映创意吸引力，CTR 则是二者的比值；若仅优化标签匹配而忽略 CTR，可能出现“匹配但不点击”的低效投放。因此 qualityScore 引入历史 CTR 作为校正项，能够在新广告缺少统计时退化为中性权重，随着样本累积逐步提高区分度。若未来接入转化率埋点，还可进一步扩展为后置 ROI 模型。</p>
+
+<h2>3.8 算法可视化设计</h2>
+<p>算法验证页（CompareView）承担对比评测与结果解释职能：其一，双栏对比个性化排序与时间倒序，输出平均分、标签命中率、TF-IDF 均值、互动量与个性化倍率等统计量；其二，多用户画像对比展示不同用户的动态权重与 Top 推荐，体现“千人千面”；其三，排序管道漏斗图呈现候选规模在各过滤阶段的变化；其四，WeightTuner 组件支持在线调节权重，并通过 /api/compare/tuned 重新计算推荐结果，验证参数敏感性。图表采用 ECharts，词云与雷达图用于画像页，以支撑数据驱动的观察与记录。</p>
+<p>可视化模块强调先呈现中间结果再给出结论：读者可通过漏斗图观察候选在各阶段的收缩过程，通过双栏指标比较个性化排序相对时间序的差异，通过 WeightTuner 观察权重调整对指标的影响方向。</p>
+
+<h2>3.9 核心 REST 接口与 DTO 约定</h2>
+<p>为保证前后端并行开发与后期测试可追溯性，系统在控制器层采用统一 REST 风格资源命名，DTO 承载结构化输出，避免直接泄露实体内部字段。认证接口返回 AuthResponse，内含 token 与用户概要；内容接口返回 ContentDTO 列表或分页包装；推荐接口支持附带 ScoreBreakdown 的扩展字段以便调试；管理员接口统一前缀 /api/admin。错误响应包含 HTTP 状态码与简要 message，前端 Axios 拦截器集中提示。</p>
+<p class="table-title">表3-11 主要 REST 接口一览（节选）</p>
+<table>
+<tr><th>路径</th><th>方法</th><th>说明</th></tr>
+<tr><td>/api/auth/register</td><td>POST</td><td>注册并签发 Token</td></tr>
+<tr><td>/api/auth/login</td><td>POST</td><td>登录校验与签发 Token</td></tr>
+<tr><td>/api/content/feed</td><td>GET</td><td>个性化或时间序信息流</td></tr>
+<tr><td>/api/content/publish</td><td>POST</td><td>发帖</td></tr>
+<tr><td>/api/behavior/view</td><td>POST</td><td>浏览行为与停留时长</td></tr>
+<tr><td>/api/search</td><td>GET</td><td>综合搜索，附带 userId 记 SEARCH</td></tr>
+<tr><td>/api/compare/feed</td><td>GET</td><td>算法对比数据</td></tr>
+<tr><td>/api/compare/tuned</td><td>GET</td><td>调参后的对比数据</td></tr>
+<tr><td>/api/admin/rec-strategy</td><td>GET/PUT</td><td>查询或切换推荐策略</td></tr>
+<tr><td>/api/user/{id}/persona</td><td>GET</td><td>用户画像</td></tr>
+</table>
+<p>DTO 命名遵循 Java Bean 规范，前端按接口字段约定进行渲染与状态维护，可减少字段遗漏和命名不一致。对于大数据量导入与 AI 推理等耗时操作，可采用异步任务 ID 查询模式扩展；当前版本仍以同步返回和缓存预计算为主，以保持实现简洁。</p>
+
+
+<h2>3.10 关键术语与符号说明</h2>
+<p>为便于阅读，对文中频繁出现的术语、符号与缩写集中说明。下列定义侧重于本文语境下的含义，不等同于某一文献中的唯一标准定义。</p>
+<p class="table-title">表3-12 术语与缩写</p>
+<table>
+<tr><th>术语或符号</th><th>含义说明</th></tr>
+<tr><td>In-Network</td><td>网内候选，主体来自当前用户关注对象发布的内容。</td></tr>
+<tr><td>Out-of-Network</td><td>网外候选，主体来自全站公开内容，用于兴趣探索。</td></tr>
+<tr><td>TF-IDF</td><td>词频—逆文档频率，用于构建文本向量并与兴趣向量计算相似度。</td></tr>
+<tr><td>CTR</td><td>点击率，click/impression，用于广告质量评估。</td></tr>
+<tr><td>JWT</td><td>JSON Web Token，一种紧凑的令牌格式，用于无状态会话。</td></tr>
+<tr><td>REST</td><td>表述性状态转移风格的 HTTP API 设计范式。</td></tr>
+<tr><td>STOMP</td><td>面向消息的文本协议，常与 WebSocket 组合实现订阅推送。</td></tr>
+<tr><td>DTO</td><td>数据传输对象，封装接口响应字段。</td></tr>
+<tr><td>ScoreBreakdown</td><td>推荐得分拆分对象，记录各分项贡献。</td></tr>
+<tr><td>DynamicWeights</td><td>动态权重集合，由画像阶段输出并作用于打分公式。</td></tr>
+<tr><td>Ollama</td><td>本地大模型运行环境，本课题用于打标与 AI 推荐。</td></tr>
+<tr><td>冷启动</td><td>新用户或新内容缺少行为历史时的推荐难题。</td></tr>
+<tr><td>探索—利用</td><td>Exploration-Exploitation，在尝试新内容与巩固已知兴趣之间权衡。</td></tr>
+</table>
+<p class="table-title">表3-13 主要数学符号（与正文约定一致）</p>
+<table>
+<tr><th>符号</th><th>含义</th></tr>
+<tr><td>u,c</td><td>分别表示用户与候选内容。</td></tr>
+<tr><td>w<sub>i,d</sub></td><td>词项 i 在文档 d 上的 TF-IDF 权重。</td></tr>
+<tr><td>sim(u,c)</td><td>用户兴趣向量与候选内容向量的余弦相似度。</td></tr>
+<tr><td>ageHours</td><td>内容自发布时刻起的小时年龄，用于时间衰减。</td></tr>
+<tr><td>finalScore</td><td>推荐最终得分，由多分项线性或分段组合得到。</td></tr>
+</table>
+<p>上述术语表随系统迭代可能新增字段（例如新增行为类型或广告约束），应以实现中的枚举与配置为准保持一致。</p>
+
+<h2>3.11 推荐流水线与复杂度分析</h2>
+<p>以下用文字化步骤描述一次 For You 请求的推荐流水线，将第 3、4 章涉及的接口与类组织为连贯的处理序列，并对单机环境下的时间复杂度做数量级估计。</p>
+<p><strong>步骤一：身份与会话。</strong>前端附带 JWT，后端过滤器解析 userId 并注入上下文；当前演示版本以软校验为主，前端在本地会话缺失时跳转登录，后续可扩展为服务端强制 401 拦截。该步骤时间复杂度 O(1)。</p>
+<p><strong>步骤二：候选收集。</strong>查询关注用户近期发帖构成集合 S_in，查询全站候选构成 S_out；合并为集合 C，按 contentId 去重。若采用上限截断，复杂度约为 O(K_in + K_out)，其中 K 为截断规模。</p>
+<p><strong>步骤三：负反馈过滤。</strong>读取屏蔽列表与不感兴趣集合，从 C 中剔除；若使用哈希集合判断，总体近似 O(|C|)。</p>
+<p><strong>步骤四：画像与协同。</strong>读取用户画像向量与协同过滤 Top 列表；画像聚合复杂度与用户历史行为条数 B 成正比，约为 O(B)；协同过滤若预先缓存相似用户结果则可降为 O(1) 查询。</p>
+<p><strong>步骤五：逐条打分。</strong>对 C 中每条内容计算 ScoreBreakdown；若 TF-IDF 需要向量点积，长度取决于词典维度 L，则单条 O(L)，整体 O(|C|×L)。在本文数据规模下该路径可接受；若迁移到大规模生产，应改为离线特征缓存或近似最近邻检索。</p>
+<p><strong>步骤六：排序与多样性。</strong>按分数排序 O(|C| log |C|)；作者多样性惩罚可能采用滑动窗口或频次哈希，近似线性。</p>
+<p><strong>步骤七：加权随机洗牌。</strong>为列表引入可控抖动，避免每次刷新完全一致；实现可使用前缀和与二分或权重蓄水池抽样。</p>
+<p><strong>步骤八：策略分支。</strong>若启用 AI 策略，则将候选摘要拼接 Prompt 调用 Ollama；主导耗时来自网络推理，可达数秒；若超时则降级为步骤五结果按互动分重排。</p>
+<p><strong>步骤九：分页返回。</strong>截取当前页返回前端并附带可选评分明细字段。</p>
+<p>综上，传统路径瓶颈主要在逐条 TF-IDF 与排序；AI 路径瓶颈在外部推理延迟。后续可通过批量向量缓存、倒排索引与异步预热画像缓解。</p>
+
+
+<h1>第4章 系统实现与测试</h1>
+
+<p>本章从工程落地角度说明系统如何在既定架构下完成编码实现与验证。实现阶段遵循三项原则：其一，业务写入路径与推荐读取路径分离——发帖、点赞等行为先保证事务一致写入数据库，再由推荐服务异步或同步聚合画像；其二，算法策略与候选构建分离——候选池逻辑保持稳定，策略仅负责打分与重排，便于单元测试与策略替换；其三，交互可用性与健壮性兼顾——AI 相关调用必须具备超时与降级分支，避免单次推理阻塞整体信息流请求。</p>
+<p>测试阶段遵循“场景驱动 + 指标对照”方法：场景驱动覆盖用户侧与管理侧完整故事线；指标对照依赖 CompareView 输出的平均分、标签命中率、TF-IDF 均值等量化差异，避免仅凭主观观感评价推荐优劣。对于表格中标记为通过的用例，均在本地开发环境重复执行至少两次以降低偶然性。</p>
+
+<h2>4.1 开发环境与项目结构</h2>
+<p>系统开发环境以 Windows 为主，后端运行环境为 JDK 17 和 Maven，前端运行环境为 Node.js 和 npm，数据库采用 MySQL，后端默认端口为 8888，前端默认端口为 5173。后端服务启动后提供 http://localhost:8888/api 作为 API 基础地址，WebSocket 地址为 http://localhost:8888/ws，前端通过浏览器访问 http://localhost:5173。</p>
+<p class="table-title">表4-1 开发环境配置</p>
+<table>
+<tr><th>项目</th><th>配置</th></tr>
+<tr><td>操作系统</td><td>Windows</td></tr>
+<tr><td>后端运行环境</td><td>JDK 17、Maven</td></tr>
+<tr><td>前端运行环境</td><td>Node.js、npm</td></tr>
+<tr><td>后端框架</td><td>Spring Boot 3.2.1</td></tr>
+<tr><td>前端框架</td><td>Vue 3、Vite、Element Plus</td></tr>
+<tr><td>数据库</td><td>MySQL rec_db</td></tr>
+<tr><td>图表工具</td><td>ECharts、echarts-wordcloud</td></tr>
+<tr><td>AI 服务</td><td>Ollama、DeepSeek API</td></tr>
+</table>
+<p>项目目录分为 backend、frontend、scraper 与论文文档等部分。<strong>backend</strong> 下 src/main/java/com/example/rec 包含 controller（REST 入口）、service（业务与算法）、repository（JPA）、model（实体）、dto（传输对象）、config（全局配置）；src/main/resources/application.properties 配置数据源、JPA、跨域、文件上传路径、Ollama 模型名与温度等。<strong>frontend</strong> 下 src/views 为页面级路由组件（HomeView、AdminView、CompareView 等），src/components 为可复用组件（FeedList、TweetCard、WeightTuner），src/router 定义路由守卫与懒加载。<strong>scraper</strong> 存放辅助脚本或抓取逻辑，与后端批量导入接口协同。</p>
+<p>构建与运行命令：后端在 backend 目录执行 mvn spring-boot:run 或 mvn -q test 做单元验证；前端在 frontend 目录执行 npm install、npm run dev 本地调试、npm run build 生产构建。数据库需预先创建 rec_db 并导入初始化脚本或依赖 DataSeeder 自动生成种子数据。</p>
+<p>前端路由侧，views 目录按业务分包：首页与个人主页承担消费路径；CompareView 专注算法对比展示；AdminView 聚合后台治理；AdDashboard 承担广告报表；GrokView 承载 AI 助手。通过路由懒加载减轻首屏体积，路由 meta 可挂载标题与权限标记，便于后续接入全局导航守卫统一鉴权。</p>
+
+
+<h2>4.2 部署配置与运维要点</h2>
+<p>本节面向单机部署与小型局域网访问场景，给出可复现的部署步骤与常见问题排查思路，以降低环境迁移成本。</p>
+<p><strong>（一）依赖安装。</strong>后端需 JDK 17、Maven 3.8+；前端需 Node.js 18+ 与 npm；数据库需 MySQL 8.x；AI 功能需本机安装 Ollama 并拉取打标模型与推荐模型镜像；DeepSeek API 需在配置文件中填写密钥并注意外网连通性。操作系统以 Windows 为例时，应注意防火墙放行 8888、5173 端口以便浏览器访问。</p>
+<p><strong>（二）数据库初始化。</strong>创建数据库 rec_db，配置字符集 utf8mb4 以兼容 emoji 与多语言正文；导入建表脚本或首次启动依赖 JPA ddl-auto 自动生成（开发环境可选用）。随后运行 DataSeeder 或导入 JSON，确保至少包含多领域标签帖子与多名模拟用户，以便协同过滤与热门话题模块有足够信号。</p>
+<p><strong>（三）配置文件。</strong>application.properties 中需核对数据源 URL、用户名密码、文件上传目录映射、跨域来源列表、Ollama 服务地址与模型名称（打标模型与推荐模型分离）、DeepSeek API Key、JWT 密钥长度与过期策略。修改配置后应重启后端进程使变更生效。</p>
+<p><strong>（四）启动顺序。</strong>建议先启动 MySQL，再启动 Ollama（若使用 AI），然后 mvn spring-boot:run 启动后端，最后 npm run dev 启动前端。若前端使用代理转发 API，应检查 vite.config 中 proxy 目标端口与后端一致，否则将出现跨域或 404。</p>
+<p><strong>（五）功能巡检清单。</strong>登录注册成功后访问首页；切换 For You 与 Following；执行点赞、评论、搜索并观察行为是否入库；打开 CompareView 查看对比指标；进入 Admin 切换推荐策略并返回首页确认徽标；关闭 Ollama 再次请求 AI 模式验证降级。若某一步失败，应优先查看浏览器控制台网络面板与后端控制台堆栈。</p>
+<p><strong>（六）性能与日志。</strong>中小规模负载下通常无需 JVM 大规模调优；若 AI 推理耗时过长，可降低候选摘要条数或提升超时阈值并启用降级。建议在 ContentController 与 RecommendationService 的关键路径打印耗时日志，以便定位瓶颈。</p>
+<p><strong>（七）备份与版本管理。</strong>数据库定期导出 SQL；前端 package-lock.json 与后端 pom.xml 锁定依赖版本；Git 可使用发布标签标记稳定版本，避免在未完成特性合并后即部署验证。</p>
+
+
+<h2>4.3 用户认证与内容互动实现</h2>
+<p><strong>认证链路。</strong>注册 POST /api/auth/register：服务端校验用户名唯一性，密码明文入库仅为开发测试阶段的简化处理，生产应替换为单向哈希。登录 POST /api/auth/login：根据用户名加载 User，校验密码与 banned 标记，通过后签发 JWT（包含 userId、username、role 等声明）。前端 LoginView 成功后将 token、user 写入 localStorage；router 可在 meta.requiresAuth 的路由上校验本地会话。</p>
+<p><strong>内容与多媒体。</strong>发帖 POST /api/content/publish：请求体含正文、作者 ID 和可选 imageUrl。若含图片，前端先 POST /api/upload multipart，后端存储至映射目录并返回可访问 URL，再随正文一并提交。服务端持久化 Content 后解析正文中的 #话题 标签并写入 content_tags；随后可触发 AIService 生成语义标签，失败不影响发帖成功返回。</p>
+<p><strong>互动与行为上报。</strong>点赞 POST /api/behavior/like、浏览 POST /api/behavior/view、点踩 POST /api/behavior/dislike、快速滑过 POST /api/behavior/skip：服务端写入 behaviors，并在点赞、点踩等场景同步维护内容计数。点赞与点踩互斥逻辑在 BehaviorService 中保证状态一致。搜索 GET /api/search：增加 userId 查询参数后写入 type=SEARCH 行为，以落实 SEARCH 类型行为采集。</p>
+<p><strong>评论与转发。</strong>评论本质是 parentContent 非空的 Content；转发 repostOf、引用 quoteOf 指向原帖 ID，列表接口通过字段区分渲染样式，减少多套 CRUD 模板。</p>
+
+<h2>4.4 推荐排序实现</h2>
+<p>推荐服务是系统实现的重点。前端 FeedList 请求 GET /api/content/feed?personalized=true，并在 Axios 拦截器中附带 Authorization。RecommendationService 组装候选：查询关注用户近期发帖作为 In-Network，合并全站候选作为 Out-of-Network，按 contentId 去重；调用 NegativeSignalService 过滤；再调用 RecommendationStrategyManager.getActiveStrategy()。</p>
+<p>HybridRecommendationStrategy.recommendWithScore 流程：注入 CollaborativeFilteringService.getCollaborativeRecommendations(userId, K) 得到候选 ID 集；对每条 Content 计算 calculateScoreWithDetails，填充 ScoreBreakdown（含协同过滤加成字段）；按分数排序后经加权洗牌返回列表。管理员切换策略后无需重启进程，下一次请求即生效。</p>
+<p>CompareView 页面调用 /api/compare/feed、/api/compare/profiles、/api/compare/tuned 等接口：/feed 用于对比推荐与时间序，/profiles 用于展示不同用户画像和 Top 推荐，/tuned 用于在 WeightTuner 调节权重后重新拉取排序，体现参数敏感性实验。Feed 页在 For You 标签旁展示“传统算法”或“AI 推荐”徽标；AI 模式下缓存命中时直接返回 AI 排序，缓存未命中时先返回传统排序并在后台异步预计算 AI 结果。</p>
+<p>AI 推荐策略通过 Prompt 调用 Ollama（如 application.properties 中 ollama.rec.model）。Prompt 含画像摘要与候选帖子摘要，并约束模型输出包含 ranking 与 reasons 的 JSON；解析成功后系统按 AI 返回顺序重排候选并写入推荐理由，解析失败或模型不可用时则在服务端降级为基础互动排序。策略管理接口同时返回 aiAvailable 与缓存统计，便于管理端判断 AI 服务状态。</p>
+
+<h2>4.5 AI 模块与管理后台实现</h2>
+<p>AI 模块主要包括三类能力：<strong>自动打标</strong>使用较轻量模型（如 ollama.model）在发帖后异步执行，避免阻塞主链路；<strong>AI 推荐</strong>使用较大上下文模型（如 ollama.rec.model）专注排序决策；<strong>Grok 助手</strong>通过 DeepSeek API 提供对话，前端 GrokView 以聊天窗口呈现，与推荐链路解耦。</p>
+<p>AdminView 集成统计卡片、用户表格、推荐策略单选卡片与 Ollama 状态展示：页面通过 GET /api/admin/rec-strategy 获取当前策略、AI 可用状态和缓存统计，并通过 PUT /api/admin/rec-strategy 切换 traditional 或 ai。批量打标接口遍历内容集合调用模型写入标签，用于历史数据补全。数据导入区域通过 /api/admin/import-kaggle-batch 或 /api/admin/import-kaggle 导入公开数据集，并在 Kaggle 不可用或数量不足时使用内置内容库补齐，以增强 Out-of-Network 候选多样性。</p>
+
+<h2>4.6 广告智能分发实现</h2>
+<p>广告模块采用信息流原生广告形式。管理员在 AdDashboard 或后台表单创建广告实体，配置 targetTags 与 bidPrice。首页 FeedList 拉取帖子列表后，根据全局配置 interval 计算插入下标；每条广告展示调用统计接口增加 impressionCount，点击跳转前记录 clickCount，CTR=click/impression 动态进入 qualityScore。</p>
+<p>广告得分由标签匹配、出价和历史质量共同决定，可表示为：</p>
+<p class="formula">adScore = matchedTagCount × 30 + bidPrice × 10 + qualityScore</p>
+<p class="formula">qualityScore = CTR × 100</p>
+<p>其中 matchedTagCount 为用户画像高频标签与广告 targetTags 的交集规模。该线性加权实现简单可解释，便于分析参数影响；后续可改为 Logistic 组合或加入频次惩罚。</p>
+<p><strong>广告业务实现补充。</strong>典型路径为：管理员在 AdDashboard 中执行创建（POST）与编辑（PUT），并通过更新 active 字段控制广告启停；列表页（GET）展示广告明细与统计数据。首页展示前再 GET /api/ads/relevant 或等价接口拉取当前用户最相关广告，与帖子流在客户端按 interval 合并。展示、点击分别调用统计接口回写 impressionCount、clickCount。拍卖理论中的广义第二价格等机制与工业展示广告不同，本系统以规则排序为主，若拓展可参考文献中关于关键词拍卖与质量分的讨论[28]。</p>
+
+<h2>4.7 系统测试</h2>
+<p>系统测试主要包括功能测试、推荐算法测试、接口一致性与构建测试。功能测试采用黑盒场景驱动：围绕用户故事“注册—发帖—互动—接收通知—浏览推荐—后台治理”逐条覆盖。推荐算法测试采用控制变量法：固定候选集合与用户画像，只改变单一因子观察 ScoreBreakdown 或排序变化。构建测试在 CI 或本地执行 mvn -q test 与 npm run build，确保代码提交可回归。</p>
+<p class="table-title">表4-2 主要功能测试用例</p>
+<table>
+<tr><th>编号</th><th>测试模块</th><th>测试内容</th><th>预期结果</th><th>结果</th></tr>
+<tr><td>T01</td><td>注册登录</td><td>输入用户名和密码注册</td><td>注册成功并返回用户信息和 Token</td><td>通过</td></tr>
+<tr><td>T02</td><td>登录</td><td>使用正确账号登录</td><td>登录成功并进入首页</td><td>通过</td></tr>
+<tr><td>T03</td><td>发帖</td><td>输入文字发布帖子</td><td>首页出现新帖子</td><td>通过</td></tr>
+<tr><td>T04</td><td>图片发帖</td><td>上传图片后发布</td><td>图片地址保存并展示</td><td>通过</td></tr>
+<tr><td>T05</td><td>评论</td><td>对帖子发表评论</td><td>评论数增加并生成通知</td><td>通过</td></tr>
+<tr><td>T06</td><td>转发引用</td><td>转发或引用帖子</td><td>生成关联帖并更新计数</td><td>通过</td></tr>
+<tr><td>T07</td><td>点赞点踩</td><td>点赞或点踩帖子</td><td>计数变化并记录行为</td><td>通过</td></tr>
+<tr><td>T08</td><td>关注</td><td>关注其他用户</td><td>关注状态变为已关注</td><td>通过</td></tr>
+<tr><td>T09</td><td>推荐流</td><td>访问个性化推荐</td><td>返回带排序结果的信息流</td><td>通过</td></tr>
+<tr><td>T10</td><td>关注流</td><td>切换到 Following</td><td>仅展示已关注作者帖子</td><td>通过</td></tr>
+<tr><td>T11</td><td>搜索</td><td>搜索关键词并带 userId</td><td>返回多类型结果并记录 SEARCH</td><td>通过</td></tr>
+<tr><td>T12</td><td>热门话题</td><td>查看侧边栏热门话题</td><td>展示按互动聚合的标签列表</td><td>通过</td></tr>
+<tr><td>T13</td><td>通知</td><td>点赞或评论他人帖子</td><td>对方收到通知并可标记已读</td><td>通过</td></tr>
+<tr><td>T14</td><td>私信</td><td>发送私信</td><td>会话双方实时收到消息</td><td>通过</td></tr>
+<tr><td>T15</td><td>用户画像</td><td>打开个人画像页</td><td>展示词云、雷达图与偏好统计</td><td>通过</td></tr>
+<tr><td>T16</td><td>算法对比</td><td>打开 CompareView</td><td>展示推荐与时间序对比指标</td><td>通过</td></tr>
+<tr><td>T17</td><td>参数调节</td><td>打开 WeightTuner 调权</td><td>调用 /api/compare/tuned 后指标变化</td><td>通过</td></tr>
+<tr><td>T18</td><td>管理后台</td><td>切换推荐策略</td><td>策略切换成功且 Feed 徽标更新</td><td>通过</td></tr>
+<tr><td>T19</td><td>AI 模式</td><td>Ollama 在线时切换 AI</td><td>返回 AI 排序或推荐理由</td><td>通过</td></tr>
+<tr><td>T20</td><td>AI 降级</td><td>关闭 Ollama 后请求 AI</td><td>降级为基础互动排序</td><td>通过</td></tr>
+<tr><td>T21</td><td>Kaggle 导入</td><td>管理员批量导入公开数据集帖文</td><td>内容库新增帖子或由内置内容库补齐</td><td>通过</td></tr>
+<tr><td>T22</td><td>广告</td><td>浏览首页带广告配置</td><td>按间隔插入广告并可点击统计</td><td>通过</td></tr>
+<tr><td>T23</td><td>角色权限</td><td>普通用户访问后台接口</td><td>返回拒绝或前端隐藏入口</td><td>通过</td></tr>
+<tr><td>T24</td><td>构建验证</td><td>mvn test 与 npm run build</td><td>构建成功无报错</td><td>通过</td></tr>
+</table>
+<p class="table-title">表4-3 推荐算法测试项</p>
+<table>
+<tr><th>测试项</th><th>测试方法</th><th>预期效果</th></tr>
+<tr><td>标签匹配</td><td>用户点赞某类内容后刷新推荐</td><td>同类标签内容得分提高</td></tr>
+<tr><td>时间衰减</td><td>对比新旧内容得分</td><td>新内容获得更高新鲜度优势</td></tr>
+<tr><td>负反馈过滤</td><td>对作者屏蔽或对内容不感兴趣</td><td>对应内容不再进入推荐候选</td></tr>
+<tr><td>协同过滤</td><td>构造相似用户行为</td><td>相似用户喜欢的内容获得加成</td></tr>
+<tr><td>作者多样性</td><td>候选集中存在同作者多篇内容</td><td>同作者后续内容被适当降权</td></tr>
+<tr><td>推荐对比</td><td>推荐流和时间流并排展示</td><td>推荐流平均分和标签命中率更高</td></tr>
+<tr><td>随机探索</td><td>多次刷新推荐列表</td><td>列表顺序存在可控随机差异</td></tr>
+<tr><td>策略切换</td><td>Admin 切换 traditional/ai</td><td>排序结果与徽标同步变化</td></tr>
+</table>
+
+<h2>4.8 测试结果分析</h2>
+<p>功能测试整体通过率较高，说明核心业务闭环完整。推荐相关用例（T09–T20）验证了系统的可解释性与鲁棒性：ScoreBreakdown 与对比页能够呈现各分项贡献；AI 降级用例表明在推理服务不可用或超时等条件下仍能返回可用列表。</p>
+<p>从对比指标角度，推荐流相对时间倒序在平均推荐分、标签命中率、TF-IDF 相似度均值上通常更优，但个别场景可能出现“过度个性化”导致话题收窄，此时可通过 WeightTuner 降低个性化权重或提高探索 jitter 缓解。协同过滤与 SEARCH 行为记录互补：前者挖掘被动曝光兴趣，后者捕捉主动意图，二者共同提升画像准确度。</p>
+<p>构建测试通过说明依赖版本与编译配置一致；后续若引入更多前端路由分包或后端测试用例，应纳入持续集成。当前不足在于缺少自动化 UI 测试与压力测试，难以量化并发场景下的接口延迟，这在展望章节中进一步讨论。</p>
+<p>进一步从实验设计角度补充说明：当对比推荐流与时间倒序流时，应确保二者在同一时间窗口内抓取候选集合，否则“平均互动量”等指标可能因候选偏差而失真；调节 WeightTuner 时应记录前后权重向量，以保证图表与文字描述一致。作者多样性测试可在候选池人为注入同一作者多条帖子以放大惩罚效应；协同过滤测试则需预先构造相似用户行为簇，否则稀疏交互下加成可能不明显。</p>
+<p>关于 AI 测试，除在线与离线两类场景外，还应记录 Prompt 长度与候选条数对耗时的影响：候选摘要过多会增加 Token 消耗与推理时间，过少则可能丢失语义上下文。测试可将候选限制在约二十条作为折中。实验记录应包含所用模型版本号与 temperature 配置，并与 application.properties 保持一致（可与 4.9 节测试数据与实验说明一并保存）。</p>
+<p><strong>构建与联调问题回顾。</strong>后端 mvn -q test 若因端口占用或数据库未启动失败，应先检查 rec_db 是否可连、application.properties 是否指向本机；前端 npm run build 若因 Node 版本偏低或依赖冲突失败，可删除 node_modules 后按锁文件重装。跨域与 404 多由 Vite 代理未指向 8888 或 API 基地址写错导致，应优先对照浏览器网络面板与后端访问日志。此类问题属于工程配置与集成范畴，与算法正确性应区分排查。机器学习工程化实践亦强调数据、训练与部署全链路可维护性[29]。</p>
+
+
+<h2>4.9 测试数据构造与实验建议</h2>
+<p>推荐算法输出对数据分布敏感。若帖子题材单一或行为稀疏，协同过滤与 TF-IDF 都难以体现差异。为此可在验证前构造分层数据集：用户层划分若干兴趣 persona，使其点赞与搜索关键词集中于不同标签簇；内容层为各簇准备带话题标签、长短不一的帖子，以触发深度匹配与新鲜度偏好差异；行为层安排交叉互动，使协同过滤能获得非空相似邻居。</p>
+<p>对照实验可固定随机种子或关闭抖动因子中的随机项，以便重复刷新时观察排序稳定性；开启抖动后再观察列表多样性。对比页面上记录两种策略下的平均分与命中率差异时，应保存运行截图作为实验记录附录。</p>
+<p>针对 SEARCH 行为，可设计检索词与帖子标签对齐，验证画像中出现检索意图相关的权重增量；针对负反馈，可屏蔽某一作者后刷新 For You，确认该作者内容不再进入候选集合。</p>
+
+
+<h1>第5章 设计总结（结论）</h1>
+
+<h2>5.1 工作总结</h2>
+<p>本文围绕“基于用户行为分析的实时信息流排序与分发系统的设计与开发”这一课题，完成了从需求分析、系统设计、数据库建模、核心算法设计、前后端实现到系统测试的完整开发过程。系统采用 Spring Boot 与 Vue 3 构建前后端分离架构，使用 MySQL 存储核心业务数据，使用 WebSocket 实现通知与私信实时推送，并通过 ECharts 展示用户画像、推荐对比和广告统计等可视化内容。</p>
+<p><strong>（1）业务与数据层面。</strong>系统实现用户、内容、行为、社交关系、标签、通知、私信、广告等实体的统一建模，覆盖注册登录、发帖评论、点赞点踩、转发引用、关注搜索、实时通知与私信等主流社交链路。行为表支持 VIEW、LIKE、COMMENT、REPOST、SEARCH 等多类型事件，为画像与推荐提供可计算的特征基础；内容表通过 parentContent、repostOf、quoteOf 等字段在一套模型上表达帖子、评论与二次传播，降低冗余代码。</p>
+<p><strong>（2）推荐与画像层面。</strong>混合推荐策略 HybridRecommendationStrategy 将互动分、互动率、关注加成、标签匹配、TF-IDF 相似度、热门话题、协同过滤、内容深度、新鲜度、时间衰减、负反馈过滤、作者多样性惩罚与加权随机采样统一到同一打分管线；RecommendationStrategyManager 支持与传统算法并行存在的 AiRecommendationStrategy，实现策略热切换与降级排序。用户画像服务输出 DynamicWeights，根据行为数量与偏好分布自适应调节各分项权重，缓解冷启动与兴趣漂移问题。</p>
+<p><strong>（3）AI 与后台治理层面。</strong>AI 打标与 AI 推荐共享 Ollama 基础设施但模型规格分离，兼顾异步标注延迟与推荐推理质量；DeepSeek API 驱动的助手模块与排序链路解耦，避免对话流量冲击核心接口。AdminView 集成用户治理、策略切换、批量打标与外部数据导入，为对照实验提供可控输入。</p>
+<p><strong>（4）评测与可视化层面。</strong>CompareView 将对比指标、漏斗图与 WeightTuner 联结起来，使算法行为可通过调节权重观察指标变化；Feed 页徽标提示当前策略，便于区分实验条件。</p>
+<p><strong>（5）广告与商业化扩展层面。</strong>原生广告按间隔插入，匹配函数结合标签交集、出价与 CTR，展示点击统计闭环，为后续接入竞价与频次控制预留字段空间。</p>
+<p>综上，本课题在工程完整性与算法表达之间取得了平衡：既能在有限时间内交付可运行系统，又能通过评分明细与对比实验支撑论文的技术论述。</p>
+
+<h2>5.2 不足与展望</h2>
+<p>由于时间与测试数据规模有限，系统仍存在一些不足。首先，当前推荐算法主要基于模拟数据和中小规模数据进行测试，尚未在大规模真实用户数据上验证效果。其次，系统的权限控制和安全校验仍有进一步加强空间，正式部署时应完善密码加密、接口鉴权、角色拦截和敏感操作审计。再次，AI 推荐策略依赖本地模型运行状态，模型推理速度和输出稳定性会影响推荐接口响应时间，需要结合缓存、异步任务和超时降级机制进一步优化。</p>
+<p>未来系统可以从以下方向继续完善。第一，引入更大规模的数据集，优化召回层和排序层结构，形成更接近工业推荐系统的多阶段架构。第二，增加推荐解释能力，使用户能够了解推荐原因并主动调整兴趣偏好。第三，完善内容审核与反作弊机制，降低低质量内容和异常行为对推荐结果的影响。第四，进一步优化广告投放策略，将预算控制、频次控制和转化率预估纳入广告排序。第五，采用缓存、消息队列、异步任务和分布式部署提升系统并发能力。通过这些改进，系统可从业态原型逐步扩展为更完整、更稳定的社交媒体推荐平台。</p>
+<p>从评测方法论角度，本文以离线指标与对照实验为主；后续可引入在线 A/B 测试框架：将用户随机分流到不同策略桶，观察留存、停留时长与互动率的显著性检验结果；离线侧则可构建训练集与验证集分离的行为日志重放，评估 NDCG、MAP、覆盖率与多样性指标，以降低单次实验路径依赖带来的偏差。与此同时，应记录模型版本、特征词典与权重快照，保证实验可复现。</p>
+<p>从伦理与合规角度，推荐系统直接影响用户接收的信息结构，应在产品层面提供“关闭个性化”“只看关注”“减少某类话题”之类的可控入口；日志采集需最小化原则，仅保存完成任务所需字段，并对敏感字段脱敏存储。对于广告推荐混合场景，应明确区分标注社交内容与 sponsored 内容，防止用户误判信息来源，这一点亦是主流平台用户体验规范的重要组成部分。</p>
+
+<h2>5.3 个人收获</h2>
+<p>通过本课题，笔者将面向对象设计、数据库范式、Web 开发与机器学习基础串联为贯通的需求—设计—实现链条：从需求映射到数据字段，从接口契约驱动前后端协同，从 ScoreBreakdown 审视推荐结果的可解释性与健壮性。与此同时，也体会到推荐系统既依赖模型与公式，也依赖数据治理与异常处理策略。后续将在软件质量与算法评测方向继续积累。</p>
+
+
+
+
+<h2>5.4 系统功能验证流程概要</h2>
+<p>为检验系统端到端行为一致性，可按下列顺序组织功能验证：用户注册登录后进入首页，分别访问个性化推荐流与关注流，确认列表加载与策略徽标展示正常；执行发帖、话题标签解析与图片上传，校验内容出现在预期信息流路径；打开用户画像页，核对词云、雷达图与统计字段与行为记录一致；进入算法对比页，读取推荐与时间序并列指标及漏斗图，并通过 WeightTuner 调整权重后复查 /api/compare/tuned 输出；在管理后台切换推荐策略（传统混合与 AI），确认 Feed 排序与接口返回随之变化；在 AI 策略下验证缓存命中、缓存未命中回退传统排序以及后台预计算路径；最后验证信息流广告按间隔插入及展示、点击统计闭环。上述流程覆盖核心业务链路与关键异常分支，可作为系统验收与回归测试的检查清单。</p>
+
+
+<h1>参考文献</h1>
+<p class="ref">[1] Covington P, Adams J, Sargin E. Deep Neural Networks for YouTube Recommendations[C]. Proceedings of the 10th ACM Conference on Recommender Systems, 2016: 191-198.</p>
+<p class="ref">[2] 项亮. 推荐系统实践[M]. 北京: 人民邮电出版社, 2012.</p>
+<p class="ref">[3] X. Twitter's Recommendation Algorithm[EB/OL]. https://github.com/twitter/the-algorithm, 2023.</p>
+<p class="ref">[4] Salton G, Buckley C. Term-weighting approaches in automatic text retrieval[J]. Information Processing & Management, 1988, 24(5): 513-523.</p>
+<p class="ref">[5] Aggarwal C C. Recommender Systems: The Textbook[M]. Springer, 2016.</p>
+<p class="ref">[6] Koren Y, Bell R, Volinsky C. Matrix Factorization Techniques for Recommender Systems[J]. Computer, 2009, 42(8): 30-37.</p>
+<p class="ref">[7] Linden G, Smith B, York J. Amazon.com Recommendations: Item-to-item Collaborative Filtering[J]. IEEE Internet Computing, 2003, 7(1): 76-80.</p>
+<p class="ref">[8] Brown T, Mann B, Ryder N, et al. Language Models are Few-Shot Learners[C]. Advances in Neural Information Processing Systems, 2020, 33: 1877-1901.</p>
+<p class="ref">[9] Craig Walls. Spring Boot 实战[M]. 北京: 人民邮电出版社, 2016.</p>
+<p class="ref">[10] 尤雨溪. Vue.js 设计与实现[M]. 北京: 人民邮电出版社, 2022.</p>
+<p class="ref">[11] 李兴华. Java 开发实战经典[M]. 北京: 清华大学出版社, 2009.</p>
+<p class="ref">[12] 杨开振, 等. Java EE 互联网轻量级框架整合开发[M]. 北京: 电子工业出版社, 2017.</p>
+<p class="ref">[13] 陈丁. Java EE 程序设计教程[M]. 西安: 西安电子科技大学出版社, 2018.</p>
+<p class="ref">[14] Joshua Bloch. Effective Java[M]. 3版. 北京: 电子工业出版社, 2018.</p>
+<p class="ref">[15] Stefanov S. JavaScript Patterns[M]. O'Reilly Media, 2010.</p>
+<p class="ref">[16] Hellerstein J M, Stonebraker M, Hamilton J. Architecture of a Database System[J]. Foundations and Trends in Databases, 2007, 1(2): 141-259.</p>
+<p class="ref">[17] Ricci F, Rokach L, Shapira B. Recommender Systems Handbook[M]. Springer, 2015.</p>
+<p class="ref">[18] Schafer J B, Konstan J, Riedl J. Recommender Systems in E-Commerce[C]. Proceedings of the 1st ACM Conference on Electronic Commerce, 1999: 158-166.</p>
+<p class="ref">[19] Herlocker J L, Konstan J A, Terveen L G, et al. Evaluating Collaborative Filtering Recommender Systems[J]. ACM Transactions on Information Systems, 2004, 22(1): 5-53.</p>
+<p class="ref">[20] Zhang S, Yao L, Sun A, et al. Deep Learning Based Recommender System: A Survey and New Perspectives[J]. ACM Computing Surveys, 2019, 52(1): 1-38.</p>
+<p class="ref">[21] 王珊, 萨师煊. 数据库系统概论[M]. 北京: 高等教育出版社, 2014.</p>
+<p class="ref">[22] 周志华. 机器学习[M]. 北京: 清华大学出版社, 2016.</p>
+<p class="ref">[23] Fielding R T. Architectural Styles and the Design of Network-based Software Architectures[D]. Irvine: University of California, 2000.</p>
+<p class="ref">[24] Melnikov A, Fette I. The WebSocket Protocol[S]. RFC 6455, 2011.</p>
+<p class="ref">[25] Richardson L, Ruby S. RESTful Web Services[M]. Sebastopol: O'Reilly Media, 2007.</p>
+<p class="ref">[26] He H, Garcia E A. Learning from Imbalanced Data[J]. IEEE Transactions on Knowledge and Data Engineering, 2009, 21(9): 1263-1284.</p>
+<p class="ref">[27] Hu Y, Koren Y, Volinsky C. Collaborative Filtering for Implicit Feedback Datasets[C]. Proceedings of the 8th IEEE International Conference on Data Mining, 2008: 263-272.</p>
+<p class="ref">[28] Edelman B, Ostrovsky M, Schwarz M. Internet Advertising and the Generalized Second-Price Auction[J]. American Economic Review, 2007, 97(1): 242-259.</p>
+<p class="ref">[29] Sculley D, et al. Hidden Technical Debt in Machine Learning Systems[C]. Proceedings of the 28th International Conference on Neural Information Processing Systems, 2015: 2503-2511.</p>
+<p class="ref">[30] He X, Liao L, Zhang H, et al. Neural Collaborative Filtering[C]. Proceedings of the 26th International Conference on World Wide Web, 2017: 173-182.</p>
+
+<h1>致谢</h1>
+<p>在本次毕业设计的完成过程中，指导教师在选题方向、需求分析、系统设计、论文结构与写作规范等方面给予了持续指导，使本人能够在有限时间内完成系统实现与论文撰写。每当遇到推荐策略切换、协同过滤接入或论文章节衔接等问题时，老师的建议帮助本人理清优先级与表达逻辑。</p>
+<p>感谢学院提供的实验与文献资源，使本人能够查阅推荐系统、数据库与 Web 工程相关资料并规范引用。感谢同窗好友在联调测试、界面体验与文字校对中的反馈，使系统缺陷得以提前暴露。感谢家人在生活与精神上的支持，使本人能够专心投入毕业设计阶段。</p>
+<p>特别感谢在数据库设计与接口调试阶段给予帮助的同学们：前后端字段不一致、跨域与 WebSocket 连接异常等问题往往需要在短时间内协同排查，大家的耐心沟通让系统得以稳定运行。也感谢在论文排版与格式检查阶段提出意见的同伴，使参考文献格式、图表编号与章节层级更符合学院规范。</p>
+<p>最后，感谢开源社区与各大技术文档作者：Spring、Vue、ECharts、MySQL 与 Ollama 等项目的文档降低了工程门槛，GitHub 上的开源讨论也为定位异常提供了线索。本人深知当前系统在安全性、性能与评测严谨性方面仍有诸多不足，恳请各位评审老师批评指正。</p>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="620" viewBox="0 0 1800 620">
+  <defs>
+    <style>
+      .line { fill: none; stroke: #20242a; stroke-width: 3; stroke-linecap: square; stroke-linejoin: miter; }
+      .root { fill: #eef1f4; stroke: #20242a; stroke-width: 3; rx: 4; }
+      .module { fill: #f7f8f9; stroke: #20242a; stroke-width: 2.5; rx: 4; }
+      .root-text { font-family: "Microsoft YaHei", "SimHei", sans-serif; font-size: 29px; font-weight: 700; fill: #111820; text-anchor: middle; }
+      .module-text { font-family: "Microsoft YaHei", "SimHei", sans-serif; font-size: 23px; font-weight: 700; fill: #111820; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="620" fill="#ffffff"/>
+
+  <rect class="root" x="520" y="55" width="760" height="100"/>
+  <text class="root-text" x="900" y="116">基于用户行为分析的实时信息流排序与分发系统</text>
+
+  <path class="line" d="M900 155 V250"/>
+  <path class="line" d="M180 250 H1620"/>
+
+  <path class="line" d="M180 250 V340"/>
+  <path class="line" d="M540 250 V340"/>
+  <path class="line" d="M900 250 V340"/>
+  <path class="line" d="M1260 250 V340"/>
+  <path class="line" d="M1620 250 V340"/>
+
+  <rect class="module" x="45" y="340" width="270" height="130"/>
+  <text class="module-text" x="180" y="396">
+    <tspan x="180" dy="0">用户与内容互动</tspan>
+    <tspan x="180" dy="36">模块</tspan>
+  </text>
+
+  <rect class="module" x="405" y="340" width="270" height="130"/>
+  <text class="module-text" x="540" y="396">
+    <tspan x="540" dy="0">推荐排序与用户画像</tspan>
+    <tspan x="540" dy="36">模块</tspan>
+  </text>
+
+  <rect class="module" x="765" y="340" width="270" height="130"/>
+  <text class="module-text" x="900" y="396">
+    <tspan x="900" dy="0">AI 推荐与后台管理</tspan>
+    <tspan x="900" dy="36">模块</tspan>
+  </text>
+
+  <rect class="module" x="1125" y="340" width="270" height="130"/>
+  <text class="module-text" x="1260" y="396">
+    <tspan x="1260" dy="0">广告分发</tspan>
+    <tspan x="1260" dy="36">模块</tspan>
+  </text>
+
+  <rect class="module" x="1485" y="340" width="270" height="130"/>
+  <text class="module-text" x="1620" y="396">
+    <tspan x="1620" dy="0">数据统计与可视化</tspan>
+    <tspan x="1620" dy="36">模块</tspan>
+  </text>
+</svg>

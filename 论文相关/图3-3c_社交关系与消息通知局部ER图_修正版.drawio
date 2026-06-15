@@ -1,0 +1,160 @@
+<mxfile host="app.diagrams.net" modified="2026-06-06T16:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="social-message-notification-er" name="图3-3c 社交关系与消息通知局部ER图">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1450" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- 用户 User -->
+        <mxCell id="user" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#263440;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="60" y="245" width="250" height="280" as="geometry"/>
+        </mxCell>
+        <mxCell id="userHeader" value="用户 User" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#263440;strokeWidth=2;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="245" width="250" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="userFields" value="PK  id&#xa;username&#xa;handle&#xa;role&#xa;banned&#xa;created_at" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=16;spacingLeft=16;spacingTop=12;lineSpacing=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="295" width="250" height="230" as="geometry"/>
+        </mxCell>
+
+        <!-- 关注 Follow -->
+        <mxCell id="follow" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#263440;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="470" y="60" width="300" height="245" as="geometry"/>
+        </mxCell>
+        <mxCell id="followHeader" value="关注 Follow" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#263440;strokeWidth=2;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="470" y="60" width="300" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="followFields" value="PK  id&#xa;FK  follower_id&#xa;FK  followee_id&#xa;created_at&#xa;&#xa;UNIQUE (follower_id, followee_id)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=16;spacingLeft=16;spacingTop=12;lineSpacing=11;" vertex="1" parent="1">
+          <mxGeometry x="470" y="110" width="300" height="195" as="geometry"/>
+        </mxCell>
+
+        <!-- 私信 Message -->
+        <mxCell id="message" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#263440;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="470" y="470" width="300" height="285" as="geometry"/>
+        </mxCell>
+        <mxCell id="messageHeader" value="私信 Message" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#263440;strokeWidth=2;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="470" y="470" width="300" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="messageFields" value="PK  id&#xa;FK  sender_id&#xa;FK  recipient_id&#xa;content&#xa;is_read&#xa;created_at" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=16;spacingLeft=16;spacingTop=12;lineSpacing=12;" vertex="1" parent="1">
+          <mxGeometry x="470" y="520" width="300" height="235" as="geometry"/>
+        </mxCell>
+
+        <!-- 通知 Notification -->
+        <mxCell id="notification" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#263440;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="920" y="200" width="320" height="330" as="geometry"/>
+        </mxCell>
+        <mxCell id="notificationHeader" value="通知 Notification" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#263440;strokeWidth=2;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="920" y="200" width="320" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="notificationFields" value="PK  id&#xa;FK  recipient_id&#xa;FK  actor_id&#xa;type&#xa;entity_id&#xa;is_read&#xa;created_at" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=16;spacingLeft=16;spacingTop=12;lineSpacing=12;" vertex="1" parent="1">
+          <mxGeometry x="920" y="250" width="320" height="280" as="geometry"/>
+        </mxCell>
+
+        <!-- 内容 Content -->
+        <mxCell id="content" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7C92A8;strokeWidth=2;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="650" width="270" height="190" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentHeader" value="内容 Content" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#7C92A8;strokeWidth=2;dashed=1;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="970" y="650" width="270" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentFields" value="PK  id&#xa;FK  author_id&#xa;content" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=16;spacingLeft=16;spacingTop=14;lineSpacing=15;" vertex="1" parent="1">
+          <mxGeometry x="970" y="700" width="270" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- 用户作为关注者：User 1 - N Follow -->
+        <mxCell id="followerEdge" value="作为关注者" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=15;fontStyle=1;exitX=1;exitY=0.25;entryX=0;entryY=0.42;" edge="1" parent="1" source="user" target="follow">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="followerOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="290" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="followerMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="435" y="160" width="25" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- 用户作为被关注者：User 1 - N Follow -->
+        <mxCell id="followeeEdge" value="作为被关注者" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=15;fontStyle=1;exitX=1;exitY=0.08;entryX=0;entryY=0.18;" edge="1" parent="1" source="user" target="follow">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="385" y="267"/>
+              <mxPoint x="385" y="105"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="followeeOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="245" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="followeeMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="435" y="85" width="25" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- 用户发送私信：User 1 - N Message -->
+        <mxCell id="messageSenderEdge" value="发送私信" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=15;fontStyle=1;exitX=1;exitY=0.72;entryX=0;entryY=0.30;" edge="1" parent="1" source="user" target="message">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="messageSenderOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="435" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="messageSenderMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="435" y="545" width="25" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- 用户接收私信：User 1 - N Message -->
+        <mxCell id="messageRecipientEdge" value="接收私信" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=15;fontStyle=1;exitX=1;exitY=0.92;entryX=0;entryY=0.72;" edge="1" parent="1" source="user" target="message">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="385" y="503"/>
+              <mxPoint x="385" y="675"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="messageRecipientOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="500" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="messageRecipientMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="435" y="660" width="25" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- 用户触发通知：User 1 - N Notification -->
+        <mxCell id="notificationActorEdge" value="触发通知" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=15;fontStyle=1;exitX=1;exitY=0.40;entryX=0;entryY=0.35;" edge="1" parent="1" source="user" target="notification">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="357"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="notificationActorOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="335" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="notificationActorMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="885" y="300" width="25" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- 用户接收通知：User 1 - N Notification -->
+        <mxCell id="notificationRecipientEdge" value="接收通知" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=15;fontStyle=1;exitX=1;exitY=0.55;entryX=0;entryY=0.65;" edge="1" parent="1" source="user" target="notification">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="414"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="notificationRecipientOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="380" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="notificationRecipientMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="885" y="410" width="25" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- 通知可选关联内容 -->
+        <mxCell id="notificationContentEdge" value="关联内容（互动类通知）" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#7C92A8;strokeWidth=2;dashed=1;endArrow=block;endFill=1;fontSize=14;fontStyle=1;exitX=0.55;exitY=1;entryX=0.55;entryY=0;" edge="1" parent="1" source="notification" target="content">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="notificationContentMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="545" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="notificationContentOptionalOne" value="0..1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="610" width="45" height="25" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

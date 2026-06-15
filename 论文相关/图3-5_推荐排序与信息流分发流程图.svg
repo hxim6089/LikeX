@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1500" viewBox="0 0 2400 1500">
+  <defs>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1D4ED8"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/>
+    </marker>
+    <style>
+      .title { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 64px; font-weight: 800; fill: #1F2937; }
+      .boxText { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 40px; font-weight: 800; fill: #1F2937; }
+      .smallText { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 34px; font-weight: 800; fill: #1F2937; }
+      .note { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 32px; font-weight: 700; fill: #6B7280; }
+      .label { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 30px; font-weight: 800; fill: #1F2937; }
+      .blue { fill: #DBEAFE; stroke: #2563EB; stroke-width: 6; }
+      .green { fill: #D1FAE5; stroke: #059669; stroke-width: 6; }
+      .gray { fill: #F3F4F6; stroke: #6B7280; stroke-width: 6; }
+      .red { fill: #FEE2E2; stroke: #B91C1C; stroke-width: 6; }
+      .amber { fill: #FEF3C7; stroke: #B45309; stroke-width: 6; }
+      .arrow { fill: none; stroke: #1D4ED8; stroke-width: 8; marker-end: url(#arrowBlue); }
+      .feedback { fill: none; stroke: #059669; stroke-width: 8; stroke-dasharray: 34 26; marker-end: url(#arrowGreen); }
+    </style>
+  </defs>
+
+  <rect width="2400" height="1500" fill="#FFFFFF"/>
+  <text x="1200" y="92" text-anchor="middle" class="title">推荐排序与信息流分发流程图</text>
+  <line x1="520" y1="126" x2="1880" y2="126" stroke="#2563EB" stroke-width="7"/>
+
+  <rect x="90" y="190" width="340" height="160" rx="28" class="green"/>
+  <text x="260" y="248" text-anchor="middle" class="boxText">
+    <tspan x="260" dy="0">用户行为数据</tspan>
+    <tspan x="260" dy="50">浏览/点赞/评论/搜索</tspan>
+  </text>
+
+  <rect x="560" y="190" width="350" height="160" rx="28" class="blue"/>
+  <text x="735" y="248" text-anchor="middle" class="boxText">
+    <tspan x="735" dy="0">用户画像生成</tspan>
+    <tspan x="735" dy="50">兴趣标签/动态权重</tspan>
+  </text>
+
+  <rect x="1040" y="190" width="350" height="160" rx="28" class="blue"/>
+  <text x="1215" y="288" text-anchor="middle" class="boxText">候选内容获取</text>
+
+  <rect x="910" y="460" width="330" height="140" rx="24" class="gray"/>
+  <text x="1075" y="514" text-anchor="middle" class="smallText">
+    <tspan x="1075" dy="0">关注源候选</tspan>
+    <tspan x="1075" dy="44">In-Network</tspan>
+  </text>
+
+  <rect x="1300" y="460" width="330" height="140" rx="24" class="gray"/>
+  <text x="1465" y="514" text-anchor="middle" class="smallText">
+    <tspan x="1465" dy="0">全站源候选</tspan>
+    <tspan x="1465" dy="44">Out-of-Network</tspan>
+  </text>
+
+  <rect x="1070" y="700" width="390" height="150" rx="28" class="blue"/>
+  <text x="1265" y="792" text-anchor="middle" class="boxText">双源合并与去重</text>
+
+  <rect x="1570" y="700" width="390" height="150" rx="28" class="red"/>
+  <text x="1765" y="756" text-anchor="middle" class="smallText">
+    <tspan x="1765" dy="0">负反馈过滤</tspan>
+    <tspan x="1765" dy="44">屏蔽/点踩/跳过</tspan>
+  </text>
+
+  <rect x="540" y="1050" width="440" height="180" rx="28" class="blue"/>
+  <text x="760" y="1102" text-anchor="middle" class="smallText">
+    <tspan x="760" dy="0">多因子评分</tspan>
+    <tspan x="760" dy="44">标签匹配  TF-IDF</tspan>
+    <tspan x="760" dy="44">协同过滤  热度  时间衰减</tspan>
+  </text>
+
+  <rect x="1110" y="1050" width="390" height="180" rx="28" class="blue"/>
+  <text x="1305" y="1122" text-anchor="middle" class="boxText">
+    <tspan x="1305" dy="0">作者多样性</tspan>
+    <tspan x="1305" dy="50">与随机扰动</tspan>
+  </text>
+
+  <rect x="1600" y="1050" width="390" height="180" rx="28" class="amber"/>
+  <text x="1795" y="1122" text-anchor="middle" class="boxText">
+    <tspan x="1795" dy="0">广告插入</tspan>
+    <tspan x="1795" dy="50">与信息流混排</tspan>
+  </text>
+
+  <rect x="2040" y="1050" width="300" height="180" rx="28" class="green"/>
+  <text x="2190" y="1155" text-anchor="middle" class="boxText">推荐流展示</text>
+
+  <rect x="90" y="1050" width="350" height="180" rx="28" class="green"/>
+  <text x="265" y="1155" text-anchor="middle" class="boxText">行为反馈回写</text>
+
+  <path d="M430 270 L560 270" class="arrow"/>
+  <path d="M910 270 L1040 270" class="arrow"/>
+  <path d="M1215 350 L1075 460" class="arrow"/>
+  <path d="M1215 350 L1465 460" class="arrow"/>
+  <path d="M1075 600 L1190 700" class="arrow"/>
+  <path d="M1465 600 L1340 700" class="arrow"/>
+  <path d="M1460 775 L1570 775" class="arrow"/>
+  <path d="M1765 850 L1765 960 L760 960 L760 1050" class="arrow"/>
+  <path d="M980 1140 L1110 1140" class="arrow"/>
+  <path d="M1500 1140 L1600 1140" class="arrow"/>
+  <path d="M1990 1140 L2040 1140" class="arrow"/>
+  <path d="M540 1140 L440 1140" fill="none" stroke="#059669" stroke-width="8" marker-end="url(#arrowGreen)"/>
+  <path d="M2190 1050 L2190 154 L260 154 L260 190" class="feedback"/>
+
+  <rect x="1692" y="132" width="140" height="44" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+  <text x="1762" y="164" text-anchor="middle" class="label">反馈闭环</text>
+
+  <text x="90" y="1410" class="note">说明：流程体现从行为采集、画像生成、候选召回、排序分发到反馈回写的闭环。</text>
+</svg>

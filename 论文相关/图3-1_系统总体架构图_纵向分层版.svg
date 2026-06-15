@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1500" viewBox="0 0 1600 1500">
+  <defs>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#334155" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; fill: #172033; }
+      .layer-title { font-size: 30px; font-weight: 700; fill: #ffffff; }
+      .box-title { font-size: 25px; font-weight: 700; }
+      .small { font-size: 20px; fill: #526176; }
+      .arrow { stroke: #334155; stroke-width: 4; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1500" fill="#ffffff"/>
+  <rect x="35" y="35" width="1530" height="1430" rx="14" fill="#f8fafc" stroke="#d7e1ed" stroke-width="3"/>
+
+  <!-- Layer 1 -->
+  <g filter="url(#shadow)">
+    <rect x="170" y="75" width="1260" height="210" rx="8" fill="#ffffff" stroke="#4f91bf" stroke-width="3"/>
+    <rect x="170" y="75" width="1260" height="58" rx="8" fill="#4f91bf"/>
+    <rect x="170" y="125" width="1260" height="8" fill="#4f91bf"/>
+    <text class="layer-title" x="800" y="114" text-anchor="middle">用户接入层</text>
+
+    <rect x="285" y="163" width="280" height="82" rx="6" fill="#eef6fc" stroke="#6ea7cf" stroke-width="2.5"/>
+    <text class="box-title" x="425" y="214" text-anchor="middle">未登录访客</text>
+    <rect x="660" y="163" width="280" height="82" rx="6" fill="#eef6fc" stroke="#6ea7cf" stroke-width="2.5"/>
+    <text class="box-title" x="800" y="214" text-anchor="middle">普通用户</text>
+    <rect x="1035" y="163" width="280" height="82" rx="6" fill="#eef6fc" stroke="#6ea7cf" stroke-width="2.5"/>
+    <text class="box-title" x="1175" y="214" text-anchor="middle">系统管理员</text>
+  </g>
+
+  <path class="arrow" d="M 800 288 L 800 335"/>
+
+  <!-- Layer 2 -->
+  <g filter="url(#shadow)">
+    <rect x="135" y="342" width="1330" height="255" rx="8" fill="#ffffff" stroke="#58a3c8" stroke-width="3"/>
+    <rect x="135" y="342" width="1330" height="58" rx="8" fill="#58a3c8"/>
+    <rect x="135" y="392" width="1330" height="8" fill="#58a3c8"/>
+    <text class="layer-title" x="800" y="381" text-anchor="middle">前端表现层</text>
+
+    <rect x="185" y="435" width="280" height="112" rx="6" fill="#eff8fc" stroke="#75b4d2" stroke-width="2.5"/>
+    <text class="box-title" x="325" y="478" text-anchor="middle">信息流与内容互动</text>
+    <text class="small" x="325" y="516" text-anchor="middle">发布、浏览、点赞、评论</text>
+
+    <rect x="505" y="435" width="280" height="112" rx="6" fill="#eff8fc" stroke="#75b4d2" stroke-width="2.5"/>
+    <text class="box-title" x="645" y="478" text-anchor="middle">社交与消息页面</text>
+    <text class="small" x="645" y="516" text-anchor="middle">搜索、关注、私信、通知</text>
+
+    <rect x="825" y="435" width="280" height="112" rx="6" fill="#eff8fc" stroke="#75b4d2" stroke-width="2.5"/>
+    <text class="box-title" x="965" y="478" text-anchor="middle">推荐与统计页面</text>
+    <text class="small" x="965" y="516" text-anchor="middle">算法验证、数据统计</text>
+
+    <rect x="1145" y="435" width="270" height="112" rx="6" fill="#eff8fc" stroke="#75b4d2" stroke-width="2.5"/>
+    <text class="box-title" x="1280" y="478" text-anchor="middle">后台管理页面</text>
+    <text class="small" x="1280" y="516" text-anchor="middle">用户、内容与广告管理</text>
+  </g>
+
+  <path class="arrow" d="M 800 600 L 800 647"/>
+
+  <!-- Layer 3 -->
+  <g filter="url(#shadow)">
+    <rect x="135" y="654" width="1330" height="220" rx="8" fill="#ffffff" stroke="#7798b5" stroke-width="3"/>
+    <rect x="135" y="654" width="1330" height="58" rx="8" fill="#607f9c"/>
+    <rect x="135" y="704" width="1330" height="8" fill="#607f9c"/>
+    <text class="layer-title" x="800" y="693" text-anchor="middle">接口接入层</text>
+
+    <rect x="180" y="750" width="220" height="78" rx="6" fill="#f2f6fa" stroke="#91a9bd" stroke-width="2.5"/>
+    <text class="box-title" x="290" y="799" text-anchor="middle">REST API</text>
+    <rect x="435" y="750" width="220" height="78" rx="6" fill="#f2f6fa" stroke="#91a9bd" stroke-width="2.5"/>
+    <text class="box-title" x="545" y="799" text-anchor="middle">JWT 身份认证</text>
+    <rect x="690" y="750" width="220" height="78" rx="6" fill="#f2f6fa" stroke="#91a9bd" stroke-width="2.5"/>
+    <text class="box-title" x="800" y="799" text-anchor="middle">角色权限控制</text>
+    <rect x="945" y="750" width="220" height="78" rx="6" fill="#f2f6fa" stroke="#91a9bd" stroke-width="2.5"/>
+    <text class="box-title" x="1055" y="799" text-anchor="middle">WebSocket</text>
+    <rect x="1200" y="750" width="220" height="78" rx="6" fill="#f2f6fa" stroke="#91a9bd" stroke-width="2.5"/>
+    <text class="box-title" x="1310" y="799" text-anchor="middle">文件上传接口</text>
+  </g>
+
+  <path class="arrow" d="M 800 877 L 800 924"/>
+
+  <!-- Layer 4 -->
+  <g filter="url(#shadow)">
+    <rect x="135" y="931" width="1330" height="285" rx="8" fill="#ffffff" stroke="#83aa42" stroke-width="3"/>
+    <rect x="135" y="931" width="1330" height="58" rx="8" fill="#7fa43d"/>
+    <rect x="135" y="981" width="1330" height="8" fill="#7fa43d"/>
+    <text class="layer-title" x="800" y="970" text-anchor="middle">后端服务层</text>
+
+    <rect x="190" y="1025" width="255" height="68" rx="6" fill="#f5f9ec" stroke="#a5bd70" stroke-width="2.5"/>
+    <text class="box-title" x="318" y="1068" text-anchor="middle">用户认证与管理</text>
+    <rect x="475" y="1025" width="255" height="68" rx="6" fill="#f5f9ec" stroke="#a5bd70" stroke-width="2.5"/>
+    <text class="box-title" x="603" y="1068" text-anchor="middle">内容发布与互动</text>
+    <rect x="760" y="1025" width="255" height="68" rx="6" fill="#f5f9ec" stroke="#a5bd70" stroke-width="2.5"/>
+    <text class="box-title" x="888" y="1068" text-anchor="middle">行为记录与画像</text>
+    <rect x="1045" y="1025" width="255" height="68" rx="6" fill="#f5f9ec" stroke="#a5bd70" stroke-width="2.5"/>
+    <text class="box-title" x="1173" y="1068" text-anchor="middle">混合推荐计算</text>
+
+    <rect x="190" y="1115" width="255" height="68" rx="6" fill="#f5f9ec" stroke="#a5bd70" stroke-width="2.5"/>
+    <text class="box-title" x="318" y="1158" text-anchor="middle">关注、私信与通知</text>
+    <rect x="475" y="1115" width="255" height="68" rx="6" fill="#f5f9ec" stroke="#a5bd70" stroke-width="2.5"/>
+    <text class="box-title" x="603" y="1158" text-anchor="middle">AI 打标与推荐</text>
+    <rect x="760" y="1115" width="255" height="68" rx="6" fill="#f5f9ec" stroke="#a5bd70" stroke-width="2.5"/>
+    <text class="box-title" x="888" y="1158" text-anchor="middle">广告投放与统计</text>
+    <rect x="1045" y="1115" width="255" height="68" rx="6" fill="#f5f9ec" stroke="#a5bd70" stroke-width="2.5"/>
+    <text class="box-title" x="1173" y="1158" text-anchor="middle">数据导入与后台管理</text>
+  </g>
+
+  <path class="arrow" d="M 800 1219 L 800 1266"/>
+
+  <!-- Layer 5 -->
+  <g filter="url(#shadow)">
+    <rect x="135" y="1273" width="1330" height="170" rx="8" fill="#ffffff" stroke="#597d9c" stroke-width="3"/>
+    <rect x="135" y="1273" width="1330" height="58" rx="8" fill="#597d9c"/>
+    <rect x="135" y="1323" width="1330" height="8" fill="#597d9c"/>
+    <text class="layer-title" x="800" y="1312" text-anchor="middle">数据持久与外部支撑层</text>
+
+    <rect x="180" y="1360" width="275" height="54" rx="6" fill="#eef5fa" stroke="#83a9c4" stroke-width="2.5"/>
+    <text class="box-title" x="318" y="1396" text-anchor="middle">MySQL 业务数据库</text>
+    <rect x="500" y="1360" width="275" height="54" rx="6" fill="#eef5fa" stroke="#83a9c4" stroke-width="2.5"/>
+    <text class="box-title" x="638" y="1396" text-anchor="middle">uploads 图片目录</text>
+    <rect x="820" y="1360" width="275" height="54" rx="6" fill="#eef5fa" stroke="#83a9c4" stroke-width="2.5"/>
+    <text class="box-title" x="958" y="1396" text-anchor="middle">Kaggle / 内置数据</text>
+    <rect x="1140" y="1360" width="275" height="54" rx="6" fill="#eef5fa" stroke="#83a9c4" stroke-width="2.5"/>
+    <text class="box-title" x="1278" y="1396" text-anchor="middle">Ollama / DeepSeek</text>
+  </g>
+</svg>

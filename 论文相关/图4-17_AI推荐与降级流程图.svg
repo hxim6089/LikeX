@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1500" viewBox="0 0 2400 1500">
+  <defs>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1D4ED8"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B91C1C"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B45309"/>
+    </marker>
+    <style>
+      .title { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 64px; font-weight: 800; fill: #1F2937; }
+      .boxText { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 40px; font-weight: 800; fill: #1F2937; }
+      .smallText { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 34px; font-weight: 800; fill: #1F2937; }
+      .note { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 32px; font-weight: 700; fill: #6B7280; }
+      .label { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 30px; font-weight: 800; fill: #1F2937; }
+      .blue { fill: #DBEAFE; stroke: #2563EB; stroke-width: 6; }
+      .green { fill: #D1FAE5; stroke: #059669; stroke-width: 6; }
+      .gray { fill: #F3F4F6; stroke: #6B7280; stroke-width: 6; }
+      .red { fill: #FEE2E2; stroke: #B91C1C; stroke-width: 6; }
+      .amber { fill: #FEF3C7; stroke: #B45309; stroke-width: 6; }
+      .decision { fill: #FEF3C7; stroke: #B45309; stroke-width: 6; }
+      .arrowBlue { fill: none; stroke: #1D4ED8; stroke-width: 8; marker-end: url(#arrowBlue); }
+      .arrowGreen { fill: none; stroke: #059669; stroke-width: 8; marker-end: url(#arrowGreen); }
+      .arrowRed { fill: none; stroke: #B91C1C; stroke-width: 8; marker-end: url(#arrowRed); }
+      .arrowAmber { fill: none; stroke: #B45309; stroke-width: 8; marker-end: url(#arrowAmber); }
+    </style>
+  </defs>
+
+  <rect width="2400" height="1500" fill="#FFFFFF"/>
+  <text x="1200" y="92" text-anchor="middle" class="title">AI 推荐与降级流程图</text>
+  <line x1="520" y1="126" x2="1880" y2="126" stroke="#2563EB" stroke-width="7"/>
+
+  <rect x="90" y="190" width="380" height="160" rx="28" class="blue"/>
+  <text x="280" y="248" text-anchor="middle" class="boxText">
+    <tspan x="280" dy="0">输入</tspan>
+    <tspan x="280" dy="50">用户画像 + 候选内容摘要</tspan>
+  </text>
+
+  <rect x="580" y="190" width="360" height="160" rx="28" class="gray"/>
+  <text x="760" y="288" text-anchor="middle" class="boxText">查询 AI 排序缓存</text>
+
+  <polygon points="1140,160 1325,270 1140,380 955,270" class="decision"/>
+  <text x="1140" y="288" text-anchor="middle" class="boxText">缓存命中？</text>
+
+  <rect x="1500" y="190" width="360" height="160" rx="28" class="green"/>
+  <text x="1680" y="248" text-anchor="middle" class="boxText">
+    <tspan x="1680" dy="0">使用缓存</tspan>
+    <tspan x="1680" dy="50">AI 排序结果</tspan>
+  </text>
+
+  <rect x="330" y="580" width="390" height="170" rx="28" class="blue"/>
+  <text x="525" y="642" text-anchor="middle" class="boxText">
+    <tspan x="525" dy="0">构造 Prompt</tspan>
+    <tspan x="525" dy="50">约束输出 JSON</tspan>
+  </text>
+
+  <rect x="840" y="580" width="390" height="170" rx="28" class="blue"/>
+  <text x="1035" y="642" text-anchor="middle" class="boxText">
+    <tspan x="1035" dy="0">调用 Ollama</tspan>
+    <tspan x="1035" dy="50">推荐模型</tspan>
+  </text>
+
+  <polygon points="1435,535 1645,665 1435,795 1225,665" class="decision"/>
+  <text x="1435" y="642" text-anchor="middle" class="boxText">
+    <tspan x="1435" dy="0">返回有效</tspan>
+    <tspan x="1435" dy="50">JSON？</tspan>
+  </text>
+
+  <rect x="1720" y="580" width="400" height="170" rx="28" class="green"/>
+  <text x="1920" y="642" text-anchor="middle" class="boxText">
+    <tspan x="1920" dy="0">解析 ranking</tspan>
+    <tspan x="1920" dy="50">与 reasons</tspan>
+  </text>
+
+  <rect x="1720" y="860" width="400" height="170" rx="28" class="green"/>
+  <text x="1920" y="922" text-anchor="middle" class="boxText">
+    <tspan x="1920" dy="0">按 AI 排名</tspan>
+    <tspan x="1920" dy="50">重排候选列表</tspan>
+  </text>
+
+  <rect x="1010" y="970" width="360" height="170" rx="28" class="red"/>
+  <text x="1190" y="1032" text-anchor="middle" class="boxText">
+    <tspan x="1190" dy="0">超时/异常</tspan>
+    <tspan x="1190" dy="50">格式不合法</tspan>
+  </text>
+
+  <rect x="1480" y="1080" width="420" height="170" rx="28" class="amber"/>
+  <text x="1690" y="1142" text-anchor="middle" class="boxText">
+    <tspan x="1690" dy="0">回退传统</tspan>
+    <tspan x="1690" dy="50">混合推荐策略</tspan>
+  </text>
+
+  <rect x="2030" y="1080" width="330" height="170" rx="28" class="green"/>
+  <text x="2195" y="1142" text-anchor="middle" class="boxText">
+    <tspan x="2195" dy="0">返回推荐流</tspan>
+    <tspan x="2195" dy="50">展示推荐理由</tspan>
+  </text>
+
+  <path d="M470 270 L580 270" class="arrowBlue"/>
+  <path d="M940 270 L955 270" class="arrowBlue"/>
+  <path d="M1325 270 L1500 270" class="arrowGreen"/>
+  <path d="M1140 380 L1140 470 L525 470 L525 580" class="arrowBlue"/>
+  <path d="M720 665 L840 665" class="arrowBlue"/>
+  <path d="M1230 665 L1225 665" class="arrowBlue"/>
+  <path d="M1645 665 L1720 665" class="arrowGreen"/>
+  <path d="M1920 750 L1920 860" class="arrowGreen"/>
+  <path d="M2040 1030 L2195 1080" class="arrowGreen"/>
+  <path d="M1435 795 L1435 900 L1190 900 L1190 970" class="arrowRed"/>
+  <path d="M1370 1060 L1480 1165" class="arrowAmber"/>
+  <path d="M1900 1165 L2030 1165" class="arrowAmber"/>
+  <path d="M1860 270 L2195 270 L2195 1080" class="arrowGreen"/>
+
+  <rect x="1385" y="452" width="60" height="44" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+  <text x="1415" y="484" text-anchor="middle" class="label">否</text>
+  <rect x="1390" y="885" width="60" height="44" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+  <text x="1420" y="917" text-anchor="middle" class="label">否</text>
+  <rect x="1370" y="242" width="60" height="44" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+  <text x="1400" y="274" text-anchor="middle" class="label">是</text>
+  <rect x="1660" y="635" width="60" height="44" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+  <text x="1690" y="667" text-anchor="middle" class="label">是</text>
+
+  <text x="90" y="1410" class="note">说明：AI 路径成功时使用模型排序；缓存未命中、调用超时或 JSON 解析失败时，自动回退传统推荐，保证信息流可用。</text>
+</svg>

@@ -1,0 +1,195 @@
+{
+  "info": {
+    "_postman_id": "2f9a63d6-7b21-4fd2-9e58-2b60f9d6e001",
+    "name": "内容发布与互动功能接口测试",
+    "description": "用于论文第 5 章“内容发布与互动功能的测试过程及结果”接口联调截图。导入 Postman 或 Apifox 后，建议按顺序执行：发布帖子、点赞帖子、评论帖子。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "T05 文字发帖接口",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const data = pm.response.json();",
+              "if (data && data.id) {",
+              "  pm.collectionVariables.set('contentId', data.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"authorId\": {{authorId}},\n  \"content\": \"这是一条用于内容发布与互动功能测试的帖子，包含 #推荐系统 #毕业设计 标签。\",\n  \"imageUrl\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/content/publish",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "content",
+            "publish"
+          ]
+        },
+        "description": "验证用户能否正常发布文字帖子，返回结果中应包含新帖子的 id、content、author、createdAt 等字段。"
+      },
+      "response": []
+    },
+    {
+      "name": "T08 点赞接口",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response contains Liked', function () {",
+              "  pm.expect(pm.response.text()).to.include('Liked');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "text/plain"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": {{authorId}},\n  \"contentId\": {{contentId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/behavior/like",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "behavior",
+            "like"
+          ]
+        },
+        "description": "验证用户对帖子执行点赞后，后端能够写入 LIKE 行为并返回 Liked。"
+      },
+      "response": []
+    },
+    {
+      "name": "T07 评论接口",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const data = pm.response.json();",
+              "pm.test('Comment content is returned', function () {",
+              "  pm.expect(data.content).to.include('评论功能测试');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"authorId\": {{authorId}},\n  \"content\": \"这是一条评论功能测试数据，用于验证评论内容能否正确保存和返回。\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/content/{{contentId}}/comment",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "content",
+            "{{contentId}}",
+            "comment"
+          ]
+        },
+        "description": "验证用户能否对指定帖子发表评论，返回结果应包含评论 id、content、author 和 parentContent 等字段。"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8888",
+      "type": "string"
+    },
+    {
+      "key": "authorId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "contentId",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}

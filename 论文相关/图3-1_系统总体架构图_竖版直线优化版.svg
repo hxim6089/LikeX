@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#243247"/>
+    </marker>
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; fill: #172033; letter-spacing: 0; }
+      .title { font-size: 34px; font-weight: 700; }
+      .section { font-size: 26px; font-weight: 700; }
+      .box-title { font-size: 22px; font-weight: 700; }
+      .body { font-size: 18px; }
+      .small { font-size: 16px; }
+      .label { font-size: 16px; font-weight: 700; }
+      .main-frame { fill: #ffffff; stroke: #243247; stroke-width: 3; }
+      .client { fill: #eaf4ff; stroke: #4f81b8; stroke-width: 2.5; }
+      .api { fill: #eef3f8; stroke: #667b91; stroke-width: 2.3; }
+      .core { fill: #eaf7ef; stroke: #4f8b69; stroke-width: 2.5; }
+      .rec { fill: #fff4d8; stroke: #b98519; stroke-width: 2.8; }
+      .data { fill: #edf0f5; stroke: #596a7b; stroke-width: 2.5; }
+      .support { fill: #f7f8fa; stroke: #718096; stroke-width: 2.2; }
+      .line { fill: none; stroke: #243247; stroke-width: 3; marker-end: url(#arrow); }
+      .bi { fill: none; stroke: #243247; stroke-width: 3; marker-start: url(#arrow); marker-end: url(#arrow); }
+      .thin { fill: none; stroke: #4f6175; stroke-width: 2.2; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1200" height="1500" fill="#ffffff"/>
+  <text class="title" x="600" y="55" text-anchor="middle">系统总体架构图</text>
+
+  <!-- Actors -->
+  <rect class="main-frame" x="310" y="90" width="580" height="90" rx="5"/>
+  <text class="section" x="600" y="128" text-anchor="middle">系统访问角色</text>
+  <text class="body" x="600" y="162" text-anchor="middle">普通用户　｜　管理员</text>
+
+  <!-- Frontend -->
+  <rect class="client" x="230" y="240" width="740" height="170" rx="5"/>
+  <text class="section" x="600" y="280" text-anchor="middle">Vue 3 前端表现层</text>
+  <rect class="main-frame" x="270" y="315" width="200" height="58" rx="3"/>
+  <rect class="main-frame" x="500" y="315" width="200" height="58" rx="3"/>
+  <rect class="main-frame" x="730" y="315" width="200" height="58" rx="3"/>
+  <text class="body" x="370" y="351" text-anchor="middle">页面展示与交互</text>
+  <text class="body" x="600" y="351" text-anchor="middle">Axios REST 请求</text>
+  <text class="body" x="830" y="351" text-anchor="middle">WebSocket 客户端</text>
+
+  <!-- Main backend -->
+  <rect class="main-frame" x="120" y="500" width="780" height="720" rx="5"/>
+  <text class="section" x="510" y="545" text-anchor="middle">Spring Boot 后端</text>
+
+  <rect class="api" x="185" y="585" width="650" height="90" rx="4"/>
+  <text class="box-title" x="510" y="620" text-anchor="middle">Controller 接口控制层</text>
+  <text class="body" x="510" y="653" text-anchor="middle">身份认证　｜　参数校验　｜　请求响应</text>
+
+  <rect class="core" x="185" y="735" width="650" height="320" rx="4"/>
+  <text class="box-title" x="510" y="775" text-anchor="middle">Service 业务与算法层</text>
+
+  <rect class="main-frame" x="225" y="815" width="270" height="80" rx="3"/>
+  <rect class="main-frame" x="525" y="815" width="270" height="80" rx="3"/>
+  <rect class="rec" x="225" y="925" width="270" height="90" rx="3"/>
+  <rect class="main-frame" x="525" y="925" width="270" height="90" rx="3"/>
+
+  <text class="box-title" x="360" y="850" text-anchor="middle">内容与行为服务</text>
+  <text class="small" x="360" y="877" text-anchor="middle">发布、互动、关注、消息</text>
+  <text class="box-title" x="660" y="850" text-anchor="middle">用户画像构建</text>
+  <text class="small" x="660" y="877" text-anchor="middle">兴趣标签、作者与行为偏好</text>
+  <text class="box-title" x="360" y="962" text-anchor="middle">混合推荐排序与分发</text>
+  <text class="small" x="360" y="990" text-anchor="middle">双源召回、过滤、评分、分页分发</text>
+  <text class="box-title" x="660" y="962" text-anchor="middle">广告分发与统计分析</text>
+  <text class="small" x="660" y="990" text-anchor="middle">画像匹配、效果验证、数据报表</text>
+
+  <rect class="api" x="185" y="1110" width="650" height="75" rx="4"/>
+  <text class="box-title" x="510" y="1142" text-anchor="middle">Repository 数据访问层</text>
+  <text class="small" x="510" y="1168" text-anchor="middle">业务数据查询、保存与统计聚合</text>
+
+  <!-- Support services -->
+  <rect class="support" x="940" y="640" width="220" height="120" rx="4"/>
+  <text class="box-title" x="1050" y="678" text-anchor="middle">AI 服务</text>
+  <text class="small" x="1050" y="708" text-anchor="middle">智能问答、内容打标</text>
+  <text class="small" x="1050" y="735" text-anchor="middle">辅助推荐与语义重排</text>
+
+  <rect class="support" x="940" y="825" width="220" height="120" rx="4"/>
+  <text class="box-title" x="1050" y="863" text-anchor="middle">外部数据源</text>
+  <text class="small" x="1050" y="893" text-anchor="middle">公开数据集、抓取脚本</text>
+  <text class="small" x="1050" y="920" text-anchor="middle">批量导入与数据清洗</text>
+
+  <rect class="support" x="940" y="1010" width="220" height="120" rx="4"/>
+  <text class="box-title" x="1050" y="1048" text-anchor="middle">文件存储</text>
+  <text class="small" x="1050" y="1078" text-anchor="middle">上传图片与静态资源</text>
+  <text class="small" x="1050" y="1105" text-anchor="middle">统一路径访问</text>
+
+  <!-- Database -->
+  <rect class="data" x="250" y="1320" width="700" height="120" rx="5"/>
+  <text class="section" x="600" y="1362" text-anchor="middle">MySQL 数据库</text>
+  <text class="body" x="600" y="1402" text-anchor="middle">用户　｜　内容　｜　行为　｜　标签　｜　关注消息　｜　广告与推荐日志</text>
+
+  <!-- Straight main flow -->
+  <path class="line" d="M 600 180 L 600 240"/>
+  <text class="label" x="620" y="218">访问系统</text>
+
+  <path class="bi" d="M 600 410 L 600 500"/>
+  <rect x="620" y="438" width="190" height="28" fill="#ffffff"/>
+  <text class="label" x="715" y="459" text-anchor="middle">REST API / WebSocket</text>
+
+  <path class="line" d="M 510 675 L 510 735"/>
+  <path class="line" d="M 510 1055 L 510 1110"/>
+  <path class="bi" d="M 510 1185 L 510 1320"/>
+  <rect x="530" y="1240" width="110" height="28" fill="#ffffff"/>
+  <text class="label" x="585" y="1261" text-anchor="middle">数据持久化</text>
+
+  <!-- Straight support connections -->
+  <path class="bi" d="M 835 790 L 885 790 L 885 700 L 940 700"/>
+  <text class="label" x="885" y="680" text-anchor="middle">模型调用</text>
+
+  <path class="line" d="M 940 885 L 885 885 L 885 865 L 835 865"/>
+  <text class="label" x="885" y="855" text-anchor="middle">内容导入</text>
+
+  <path class="bi" d="M 835 1030 L 885 1030 L 885 1070 L 940 1070"/>
+  <text class="label" x="885" y="1014" text-anchor="middle">文件读写</text>
+</svg>

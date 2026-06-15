@@ -1,0 +1,55 @@
+@startuml
+title 系统核心模块时序图
+
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Microsoft YaHei
+skinparam sequence {
+  ArrowColor #111827
+  LifeLineBorderColor #94A3B8
+  ParticipantBorderColor #111827
+  ParticipantBackgroundColor #F8FAFC
+  ActorBorderColor #111827
+}
+
+actor 用户
+participant "Vue 前端" as Frontend
+participant "后端业务服务" as Backend
+participant "推荐与画像模块" as Rec
+participant "AI 智能模块" as AI
+participant "广告分发模块" as Ad
+database "MySQL 数据库" as DB
+
+用户 -> Frontend: 访问首页或执行操作
+Frontend -> Backend: 发送登录、发帖、互动或推荐请求
+Backend -> DB: 读取用户、内容、行为等基础数据
+DB --> Backend: 返回业务数据
+
+Backend -> Rec: 生成用户画像并计算推荐结果
+Rec -> DB: 读取行为记录、标签和内容信息
+DB --> Rec: 返回画像与候选内容数据
+Rec --> Backend: 返回推荐排序结果
+
+alt 启用 AI 推荐或 AI 打标
+  Backend -> AI: 请求推荐理由、内容打标或 AI 排序
+  AI --> Backend: 返回 AI 处理结果
+else AI 不可用
+  Backend -> Rec: 回退传统混合推荐策略
+  Rec --> Backend: 返回传统推荐结果
+end
+
+Backend -> Ad: 请求广告匹配与插入
+Ad -> DB: 读取广告配置和素材
+DB --> Ad: 返回广告数据
+Ad --> Backend: 返回广告卡片和统计信息
+
+Backend --> Frontend: 返回信息流、推荐解释和广告内容
+Frontend --> 用户: 展示推荐流、互动结果和通知信息
+
+opt 用户产生新行为
+  Frontend -> Backend: 上报浏览、点赞、评论或搜索行为
+  Backend -> DB: 写入行为记录
+  DB --> Backend: 写入成功
+end
+
+@enduml

@@ -1,0 +1,199 @@
+<mxfile host="app.diagrams.net" modified="2026-06-07T07:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="system-architecture" name="图3-1 系统总体架构图">
+    <mxGraphModel dx="1660" dy="940" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1650" pageHeight="930" math="0" shadow="0" background="#FFFFFF">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Background bands -->
+        <mxCell id="band1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F3F6F8;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="30" width="1590" height="155" as="geometry"/>
+        </mxCell>
+        <mxCell id="band2" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8FAFB;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="205" width="1590" height="275" as="geometry"/>
+        </mxCell>
+        <mxCell id="band3" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F3F6F8;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="500" width="1590" height="285" as="geometry"/>
+        </mxCell>
+
+        <!-- Vertical row labels -->
+        <mxCell id="row1" value="系统&#xa;架构" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#CFD4D8;strokeColor=none;fontSize=19;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="20" y="30" width="65" height="155" as="geometry"/>
+        </mxCell>
+        <mxCell id="row2" value="技术&#xa;实现" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#CFD4D8;strokeColor=none;fontSize=19;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="20" y="205" width="65" height="275" as="geometry"/>
+        </mxCell>
+        <mxCell id="row3" value="运行&#xa;流程" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#CFD4D8;strokeColor=none;fontSize=19;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="20" y="500" width="65" height="285" as="geometry"/>
+        </mxCell>
+
+        <!-- Vertical layer separators -->
+        <mxCell id="sep1" value="" style="edgeStyle=none;html=1;strokeColor=#42B9E8;strokeWidth=2;dashed=1;endArrow=none;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="405" y="30" as="sourcePoint"/>
+            <mxPoint x="405" y="785" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sep2" value="" style="edgeStyle=none;html=1;strokeColor=#42B9E8;strokeWidth=2;dashed=1;endArrow=none;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1200" y="30" as="sourcePoint"/>
+            <mxPoint x="1200" y="785" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Top system architecture headers -->
+        <mxCell id="clientLayer" value="客户端" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#86C5E8;strokeColor=none;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="120" y="60" width="235" height="55" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="applicationLayer" value="Spring Boot 应用服务层" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#89CE00;strokeColor=none;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="455" y="55" width="695" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="interfaceLayer" value="接口接入" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#B7E24B;strokeColor=none;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="455" y="125" width="195" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="businessLayer" value="业务服务" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#B7E24B;strokeColor=none;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="675" y="125" width="205" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="recommendLayer" value="推荐与智能分析" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#B7E24B;strokeColor=none;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="905" y="125" width="245" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="dataLayer" value="数据与外部服务层" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#86C5E8;strokeColor=none;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1245" y="55" width="315" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="dataAccessLayer" value="数据访问与存储" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#B7DDF1;strokeColor=none;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1245" y="125" width="145" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="externalLayer" value="AI、外部数据与文件" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#B7DDF1;strokeColor=none;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1410" y="125" width="150" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Technical implementation -->
+        <mxCell id="clientTech" value="Vue 3 / Vite&#xa;Vue Router&#xa;Axios REST 客户端&#xa;STOMP / SockJS WebSocket&#xa;Element Plus / ECharts" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;fontSize=16;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="105" y="240" width="275" height="205" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="interfaceTech" value="REST Controller&#xa;JWT 认证过滤器&#xa;WebSocket 消息服务&#xa;文件上传与静态资源" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;fontSize=16;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="430" y="240" width="220" height="205" as="geometry"/>
+        </mxCell>
+        <mxCell id="businessTech" value="认证、内容与互动&#xa;关注、搜索与热门话题&#xa;通知、私信与用户画像&#xa;后台管理与广告分发" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;fontSize=16;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="670" y="240" width="225" height="205" as="geometry"/>
+        </mxCell>
+        <mxCell id="recommendTech" value="双候选源召回与负反馈过滤&#xa;多行为加权、TF-IDF、协同过滤&#xa;时间衰减、热门话题与多样性&#xa;动态权重、推荐对比与漏斗&#xa;Ollama AI 推荐与降级" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;fontSize=16;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="915" y="230" width="255" height="225" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="databaseTech" value="Spring Data JPA&#xa;Repository 数据访问&#xa;MySQL rec_db&#xa;业务数据持久化" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;fontSize=16;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1225" y="240" width="175" height="205" as="geometry"/>
+        </mxCell>
+        <mxCell id="externalTech" value="Ollama 本地模型&#xa;DeepSeek API&#xa;Kaggle / 内置数据库&#xa;uploads 图片目录" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;fontSize=16;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1415" y="240" width="175" height="205" as="geometry"/>
+        </mxCell>
+
+        <!-- Runtime flow nodes -->
+        <mxCell id="browser" value="浏览器访问&#xa;Vue 单页应用" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6B86A3;strokeWidth=2;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="115" y="585" width="230" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="axiosNode" value="Axios 请求 / JSON 响应" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8EEF4;strokeColor=#8A9AAA;strokeWidth=1;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="115" y="705" width="230" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="wsNode" value="WebSocket 订阅 / 消息推送" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8EEF4;strokeColor=#8A9AAA;strokeWidth=1;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="115" y="745" width="230" height="35" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="authStep" value="用户认证&#xa;JWT 解析与角色识别" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F05B72;strokeWidth=2;dashed=1;fontSize=15;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="440" y="555" width="165" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="businessStep" value="业务处理&#xa;内容、互动、关注与消息" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F05B72;strokeWidth=2;dashed=1;fontSize=15;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="630" y="555" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="behaviorStep" value="行为记录与画像更新&#xa;VIEW / LIKE / COMMENT / SEARCH" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F05B72;strokeWidth=2;dashed=1;fontSize=15;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="855" y="555" width="265" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="recommendStep" value="推荐计算与结果返回&#xa;混合排序 / AI 推荐 / 降级" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F05B72;strokeWidth=2;dashed=1;fontSize=15;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="630" y="675" width="265" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="pushStep" value="通知与私信推送&#xa;页面及统计图表更新" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F05B72;strokeWidth=2;dashed=1;fontSize=15;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="920" y="675" width="200" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="repoNode" value="数据访问&#xa;Repository" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#E5F0F7;strokeColor=#6B86A3;strokeWidth=2;fontSize=15;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1235" y="560" width="130" height="65" as="geometry"/>
+        </mxCell>
+        <mxCell id="mysqlNode" value="数据库&#xa;MySQL" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#CBEA91;strokeColor=#4C93B3;strokeWidth=2;fontSize=15;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1430" y="550" width="120" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="aiNode" value="AI 服务&#xa;Ollama / DeepSeek" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#E5F0F7;strokeColor=#6B86A3;strokeWidth=2;fontSize=15;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1235" y="665" width="150" height="65" as="geometry"/>
+        </mxCell>
+        <mxCell id="externalNode" value="外部数据与文件&#xa;Kaggle / 内置数据 / uploads" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#E5F0F7;strokeColor=#6B86A3;strokeWidth=2;fontSize=15;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="665" width="160" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Runtime arrows -->
+        <mxCell id="e1" value="访问与操作" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=13;fontStyle=1;" edge="1" parent="1" source="browser" target="authStep">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="authStep" target="businessStep">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" value="产生行为" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=13;fontStyle=1;" edge="1" parent="1" source="businessStep" target="behaviorStep">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" value="画像与候选" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=13;fontStyle=1;" edge="1" parent="1" source="behaviorStep" target="recommendStep">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" value="返回结果" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=13;fontStyle=1;" edge="1" parent="1" source="recommendStep" target="pushStep">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" value="页面更新 / 实时推送" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=13;fontStyle=1;" edge="1" parent="1" source="pushStep" target="browser">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1020" y="775"/>
+              <mxPoint x="390" y="775"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" value="读写数据" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#263440;strokeWidth=2;startArrow=block;startFill=1;endArrow=block;endFill=1;fontSize=13;fontStyle=1;" edge="1" parent="1" source="behaviorStep" target="repoNode">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" value="JPA / JDBC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#263440;strokeWidth=2;startArrow=block;startFill=1;endArrow=block;endFill=1;fontSize=13;fontStyle=1;" edge="1" parent="1" source="repoNode" target="mysqlNode">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e9" value="模型调用与结果" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#263440;strokeWidth=2;startArrow=block;startFill=1;endArrow=block;endFill=1;fontSize=13;fontStyle=1;" edge="1" parent="1" source="recommendStep" target="aiNode">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e10" value="导入 / 上传 / 读取" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#263440;strokeWidth=2;startArrow=block;startFill=1;endArrow=block;endFill=1;fontSize=13;fontStyle=1;" edge="1" parent="1" source="businessStep" target="externalNode">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1160" y="640"/>
+              <mxPoint x="1160" y="745"/>
+              <mxPoint x="1390" y="745"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Bottom deployment bars -->
+        <mxCell id="clientDeployTitle" value="客户端运行架构" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#35699D;strokeColor=none;fontColor=#FFFFFF;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="80" y="815" width="300" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="clientDeploy" value="浏览器、PC 或移动端访问" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6B86A3;strokeWidth=1;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="80" y="850" width="300" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="appDeployTitle" value="应用服务运行架构" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#35699D;strokeColor=none;fontColor=#FFFFFF;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="430" y="815" width="720" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="appDeploy" value="Spring Boot 服务、推荐算法、WebSocket、文件上传、AI 调用与异常降级" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6B86A3;strokeWidth=1;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="430" y="850" width="720" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="dataDeployTitle" value="数据与外部服务运行架构" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#35699D;strokeColor=none;fontColor=#FFFFFF;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="815" width="370" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="dataDeploy" value="MySQL 数据库、Ollama、DeepSeek、Kaggle 与本地文件目录" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6B86A3;strokeWidth=1;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="850" width="370" height="45" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

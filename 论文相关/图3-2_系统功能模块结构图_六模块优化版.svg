@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1080" viewBox="0 0 1800 1080">
+<rect width="100%" height="100%" fill="white"/>
+<style>
+.root { fill:#FFFFFF; stroke:#263445; stroke-width:4; }
+.box { fill:#F8FAFC; stroke:#263445; stroke-width:3; }
+.title { font:700 42px 'Microsoft YaHei','SimHei',sans-serif; fill:#111827; }
+.mtitle { font:700 31px 'Microsoft YaHei','SimHei',sans-serif; fill:#111827; }
+.body { font:400 22px 'Microsoft YaHei','SimHei',sans-serif; fill:#334155; }
+.line { stroke:#263445; stroke-width:4; fill:none; marker-end:url(#arrow); }
+.bus { stroke:#263445; stroke-width:4; fill:none; }
+</style>
+<defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 Z" fill="#263445"/></marker></defs>
+<rect class="root" x="560" y="55" width="680" height="90"/>
+<text class="title" x="900" y="113" text-anchor="middle">实时信息流排序与分发系统</text>
+<path class="line" d="M900 145 L900 225"/>
+<path class="bus" d="M305 225 L1495 225"/>
+<path class="bus" d="M900 225 L900 630"/>
+<path class="bus" d="M305 630 L1495 630"/>
+
+<path class="line" d="M305 225 L305 285"/>
+<path class="line" d="M900 225 L900 285"/>
+<path class="line" d="M1495 225 L1495 285"/>
+<path class="line" d="M305 630 L305 700"/>
+<path class="line" d="M900 630 L900 700"/>
+<path class="line" d="M1495 630 L1495 700"/>
+<rect class="box" x="95" y="285" width="420" height="240"/>
+<text class="mtitle" x="305" y="346" text-anchor="middle">用户端业务模块</text>
+<line x1="131" y1="369" x2="479" y2="369" stroke="#D5DEE9" stroke-width="2"/>
+<text class="body" x="147" y="423">用户注册、登录认证</text>
+<text class="body" x="147" y="461">内容发布、评论、转发</text>
+<text class="body" x="147" y="499">点赞点踩、关注、私信通知</text>
+<rect class="box" x="690" y="285" width="420" height="240"/>
+<text class="mtitle" x="900" y="346" text-anchor="middle">推荐算法模块</text>
+<line x1="726" y1="369" x2="1074" y2="369" stroke="#D5DEE9" stroke-width="2"/>
+<text class="body" x="742" y="423">行为采集与用户画像</text>
+<text class="body" x="742" y="461">候选内容召回与综合评分</text>
+<text class="body" x="742" y="499">排序重排、负反馈过滤</text>
+<rect class="box" x="1285" y="285" width="420" height="240"/>
+<text class="mtitle" x="1495" y="346" text-anchor="middle">AI 智能模块</text>
+<line x1="1321" y1="369" x2="1669" y2="369" stroke="#D5DEE9" stroke-width="2"/>
+<text class="body" x="1337" y="423">AI 内容打标</text>
+<text class="body" x="1337" y="461">AI 推荐排序与推荐理由</text>
+<text class="body" x="1337" y="499">服务异常降级处理</text>
+<rect class="box" x="95" y="700" width="420" height="240"/>
+<text class="mtitle" x="305" y="761" text-anchor="middle">广告模块</text>
+<line x1="131" y1="784" x2="479" y2="784" stroke="#D5DEE9" stroke-width="2"/>
+<text class="body" x="147" y="838">广告配置与素材管理</text>
+<text class="body" x="147" y="876">用户画像匹配与信息流插入</text>
+<text class="body" x="147" y="914">曝光、点击与统计分析</text>
+<rect class="box" x="690" y="700" width="420" height="240"/>
+<text class="mtitle" x="900" y="761" text-anchor="middle">管理后台模块</text>
+<line x1="726" y1="784" x2="1074" y2="784" stroke="#D5DEE9" stroke-width="2"/>
+<text class="body" x="742" y="838">用户管理与权限控制</text>
+<text class="body" x="742" y="876">内容治理与策略切换</text>
+<text class="body" x="742" y="914">系统统计与运行监控</text>
+<rect class="box" x="1285" y="700" width="420" height="240"/>
+<text class="mtitle" x="1495" y="761" text-anchor="middle">数据导入模块</text>
+<line x1="1321" y1="784" x2="1669" y2="784" stroke="#D5DEE9" stroke-width="2"/>
+<text class="body" x="1337" y="838">外部数据抓取与批量导入</text>
+<text class="body" x="1337" y="876">数据清洗、去重与标签补齐</text>
+<text class="body" x="1337" y="914">种子数据生成与内容扩充</text>
+</svg>

@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="980" viewBox="0 0 1800 980">
+<rect width="100%" height="100%" fill="white"/>
+<style>
+.box { fill:#F7FAFC; stroke:#2F3A4A; stroke-width:3; }
+.top { fill:#FFFFFF; stroke:#2F3A4A; stroke-width:4; }
+.title { font:700 42px 'Microsoft YaHei', 'SimHei', sans-serif; fill:#111827; }
+.m-title { font:700 30px 'Microsoft YaHei', 'SimHei', sans-serif; fill:#111827; }
+.body { font:400 22px 'Microsoft YaHei', 'SimHei', sans-serif; fill:#374151; }
+.line { stroke:#2F3A4A; stroke-width:4; fill:none; marker-end:url(#arrow); }
+.line2 { stroke:#2F3A4A; stroke-width:3; fill:none; marker-end:url(#arrow); }
+.bus { stroke:#2F3A4A; stroke-width:4; fill:none; }
+.bus2 { stroke:#2F3A4A; stroke-width:3; fill:none; }
+.trunk { stroke:#2F3A4A; stroke-width:4; fill:none; }
+</style>
+<defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 Z" fill="#2F3A4A"/></marker></defs>
+<rect class="top" x="520" y="58" width="760" height="87"/>
+<text class="title" x="900" y="114" text-anchor="middle">实时信息流排序与分发系统</text>
+<path class="trunk" d="M900 145 L900 590"/>
+<path class="bus" d="M255 215 L1545 215"/>
+<path class="bus2" d="M255 590 L1545 590"/>
+
+<path class="line" d="M255 215 L255 275"/>
+<path class="line" d="M685 215 L685 275"/>
+<path class="line" d="M1115 215 L1115 275"/>
+<path class="line" d="M1545 215 L1545 275"/>
+<path class="line2" d="M255 590 L255 650"/>
+<path class="line2" d="M685 590 L685 650"/>
+<path class="line2" d="M1115 590 L1115 650"/>
+<path class="line2" d="M1545 590 L1545 650"/>
+<rect class="box" x="70" y="275" width="370" height="205"/>
+<text class="m-title" x="255" y="327" text-anchor="middle">用户认证与内容互动模块</text>
+<line x1="104" y1="347" x2="406" y2="347" stroke="#D7DEE8" stroke-width="2"/>
+<text class="body" x="112" y="395">注册登录与角色识别</text>
+<text class="body" x="112" y="432">文字/图片发帖、话题解析</text>
+<text class="body" x="112" y="469">点赞、评论、转发、引用</text>
+<rect class="box" x="500" y="275" width="370" height="205"/>
+<text class="m-title" x="685" y="327" text-anchor="middle">行为采集与用户画像模块</text>
+<line x1="534" y1="347" x2="836" y2="347" stroke="#D7DEE8" stroke-width="2"/>
+<text class="body" x="542" y="395">浏览、搜索、互动行为记录</text>
+<text class="body" x="542" y="432">兴趣标签权重与画像统计</text>
+<text class="body" x="542" y="469">近期兴趣序列与画像展示</text>
+<rect class="box" x="930" y="275" width="370" height="205"/>
+<text class="m-title" x="1115" y="327" text-anchor="middle">推荐排序与算法对比模块</text>
+<line x1="964" y1="347" x2="1266" y2="347" stroke="#D7DEE8" stroke-width="2"/>
+<text class="body" x="972" y="395">候选池构建与混合评分</text>
+<text class="body" x="972" y="432">TF-IDF、协同过滤、时间衰减</text>
+<text class="body" x="972" y="469">权重调节与多样性指标</text>
+<rect class="box" x="1360" y="275" width="370" height="205"/>
+<text class="m-title" x="1545" y="327" text-anchor="middle">AI 智能增强模块</text>
+<line x1="1394" y1="347" x2="1696" y2="347" stroke="#D7DEE8" stroke-width="2"/>
+<text class="body" x="1402" y="395">Ollama / DeepSeek 接入</text>
+<text class="body" x="1402" y="432">内容自动打标与推荐理由</text>
+<text class="body" x="1402" y="469">超时、缓存与降级处理</text>
+<rect class="box" x="70" y="650" width="370" height="205"/>
+<text class="m-title" x="255" y="702" text-anchor="middle">社交通知与私信模块</text>
+<line x1="104" y1="722" x2="406" y2="722" stroke="#D7DEE8" stroke-width="2"/>
+<text class="body" x="112" y="770">关注关系与关注流</text>
+<text class="body" x="112" y="807">点赞评论通知与未读状态</text>
+<text class="body" x="112" y="844">WebSocket 私信与消息列表</text>
+<rect class="box" x="500" y="650" width="370" height="205"/>
+<text class="m-title" x="685" y="702" text-anchor="middle">广告分发模块</text>
+<line x1="534" y1="722" x2="836" y2="722" stroke="#D7DEE8" stroke-width="2"/>
+<text class="body" x="542" y="770">广告配置与定向标签</text>
+<text class="body" x="542" y="807">信息流原生广告插入</text>
+<text class="body" x="542" y="844">曝光、点击与 CTR 统计</text>
+<rect class="box" x="930" y="650" width="370" height="205"/>
+<text class="m-title" x="1115" y="702" text-anchor="middle">后台管理与数据导入模块</text>
+<line x1="964" y1="722" x2="1266" y2="722" stroke="#D7DEE8" stroke-width="2"/>
+<text class="body" x="972" y="770">用户、内容与权限管理</text>
+<text class="body" x="972" y="807">推荐策略切换与批量打标</text>
+<text class="body" x="972" y="844">Kaggle 数据导入与补齐</text>
+<rect class="box" x="1360" y="650" width="370" height="205"/>
+<text class="m-title" x="1545" y="702" text-anchor="middle">数据统计与可视化模块</text>
+<line x1="1394" y1="722" x2="1696" y2="722" stroke="#D7DEE8" stroke-width="2"/>
+<text class="body" x="1402" y="770">行为类型与内容标签分布</text>
+<text class="body" x="1402" y="807">热门话题和高互动帖子</text>
+<text class="body" x="1402" y="844">平台运行与广告统计</text>
+</svg>

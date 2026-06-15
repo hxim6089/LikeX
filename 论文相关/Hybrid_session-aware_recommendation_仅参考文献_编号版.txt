@@ -1,0 +1,107 @@
+[1] Adomavicius, G., Kwon, Y.O.: Improving aggregate recommendation diversity using ranking-based techniques. IEEE Trans. Knowl. Data Eng. 24(5), 896–911 (2011)
+
+[2] Afchar, D., Melchiorre, A.B., Schedl, M., Hennequin, R., Epure, E.V., Moussallam, M.D.: Explainability in music recommender systems. (2022) arXiv preprint arXiv:2201.10528
+
+[3] Ben-Shimon, D., Tsikinovsky, A., Friedmann, M., Shapira, B., Rokach, L., Hoerle, J.: Recsys challenge 2015 and the YOOCHOOSE dataset. In Proceedings of the 9th ACM Conference on Recommender Systems, RecSys 2015, pp. 357–358 (2015)
+
+[4] Burke, R.: Hybrid recommender systems: survey and experiments. User Model. User-Adap. Inter. 12(4), 331–370 (2002)
+
+[5] Chen, H., Lundberg, S.M., Lee, S.-I.: Explaining a series of models by propagating shapley values. Nature Commun. 13(1), 4512 (2022)
+
+[6] Chen, S., Moore, J.L., Turnbull, D., Joachims, T.: Playlist prediction via metric embedding. In Proceedings of the 18th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, KDD ’12, pp. 714–722 (2012)
+
+[7] Gabriel De Souza, P.M., Jannach, D., Da-Cunha, A.M.: Contextual hybrid session-based news recommendation with recurrent neural networks. IEEE Access 7, 169185–169203 (2019)
+
+[8] Garcin, F., Dimitrakakis, C., Faltings, B.: Personalized news recommendation with context trees. In Proceedings of the ACM Confererence on Recommender Systems, RecSys ’13, pp. 105–112 (2013)
+
+[9] Geng, C., Wu, H., Fang, H.: Causality and correlation graph modeling for effective and explainable session-based recommendation. (2022) arXiv preprint arXiv:2201.10782
+
+[10] Hariri, N., Mobasher, B., Burke, R.: Context-aware music recommendation based on latent topic sequential patterns. In Proceedings of the Sixth ACM Conference on Recommender Systems, RecSys ’12, pp. 131–131 (2012)
+
+[11] Hastie, T., Tibshirani, R., Friedman, J.: The Elements of Statistical Learning: Data Mining, Inference, and Prediction. Springer Science & Business Media, Berlin (2009)
+
+[12] Hidasi, B., Karatzoglou, A., Baltrunas, L., Tikk, D.: Session-based recommendations with recurrent neural networks. In Proceedings International Conference on Learning Representatinos, ICLR ’16, (2016)
+
+[13] Hidasi, B., Quadrana, M., Karatzoglou, A., Tikk, D.: Parallel recurrent neural network architectures for feature-rich session-based recommendations. In Proceedings of the 10th ACM conference on recommender systems, pp. 241–248 (2016)
+
+[14] Liang, H., Chen, Q., Zhao, H., Jian, S., Cao, L., Cao, J.: Neural cross-session filtering: next-item prediction under intra-and inter-session context. IEEE Intell. Syst. 33(6), 57–67 (2018)
+
+[15] Jannach, D., Jugovac, M.: Measuring the business value of recommender systems. ACM Trans. Manage. Inf. Syst. 10(4), 1–23 (2019)
+
+[16] Jannach, D., Lerche, L., Jugovac, M.: Adaptation and evaluation of recommendations for short-term shopping goals. In Proceedings of the ACM Conference on Recommender Systems, RecSys ’15, pp. 211–218 (2015)
+
+[17] Jannach, D., Ludewig, M., Lerche, L.: Session-based item recommendation in e-commerce: on short-term intents, reminders, trends and discounts. User Model. User-Adap. Inter. 27(3), 351–392 (2017)
+
+[18] Jannach, D., Quadrana, M., Cremonesi, P.: Session-based recommendation. In: Ricci, F., Shapira, B., Rokach, L. (eds.) Recommender Systems Handbook. Springer, US (2021)
+
+[19] Kang, W.-C., McAuley, J.: Self-attentive sequential recommendation. In 2018 IEEE International Conference on Data Mining (ICDM), pp. 197–206 (2018)
+
+[20] Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Y e, Q., Liu, T.-Y.: Lightgbm: a highly efficient gradient boosting decision tree. Adv. Neural. Inf. Process. Syst. 30, 3146–3154 (2017)
+
+[21] Kouki, P., Fountalis, I., V asiloglou, N., Cui, X., Liberty, E., Al Jadda, K.: From the lab to production: a case study of session-based recommendations in the home-improvement domain. In Fourteenth ACM Conference on Recommender Systems, RecSys ’20, pp. 140–149, (2020)
+
+[22] Latifi, S., Mauro, N., Jannach, D.: Session-aware recommendation: a surprising quest for the state-of-the-art. Inf. Sci. 573, 291–315 (2021)
+
+[23] Li, J., Ren, P., Chen, Z., Ren, Z., Lian, T., Ma, J.: Neural attentive session-based recommendation. In Proceedings of the 2017 ACM on Conference on Information and Knowledge Management, CIKM ’17, pp. 1419–1428 (2017)
+
+[24] Liu, Q., Zeng, Y., Mokhosi, R., Zhang, H.: STAMP: short-term attention/memory priority model for session-based recommendation. In Proceedings ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, KDD ’18, pp. 1831–1839 (2018)
+
+[25] Ludewig, M., Jannach, D.: Evaluation of session-based recommendation algorithms. User Model. User- Adap. Inter. 28(4–5), 331–390 (2018)
+
+[26] Ludewig, M., Mauro, N., Latifi, S., Jannach, D.: Empirical analysis of session-based recommendation algorithms. User Model. User-Adap. Inter. 31(1), 149–181 (2021)
+
+[27] Lundberg, S.M., Lee, S.I.: A unified approach to interpreting model predictions. In Advances in neural information processing systems, pp. 4765–4774 (2017)
+
+[28] Lundberg, S.M., et al.: From local explanations to global understanding with explainable ai for trees. Nature Mach. Intell. 2(1), 56–67 (2020)
+
+[29] Misztal-Radecka, J., Indurkhya, B.: Bias-aware hierarchical clustering for detecting the discriminated groups of users in recommendation systems. Inf. Process. Manage. 58(3), 102519 (2021)
+
+[30] Mobasher, B., Dai, H., Luo, T., Nakagawa, M.: Using sequential and non-sequential patterns in predictive web usage mining tasks. In Proceedings of IEEE International Conference on Data Mining, ICDM ’02, pp. 669–672 (2002)
+
+[31] Phuong, T.M., Thanh, T.C., Bach, N.X.: Combining user-based and session-based recommendations with recurrent neural networks. In International Conference on Neural Information Processing, pp. 487– 498. Springer, Berlin (2018)
+
+[32] Phuong, T.M., Thanh, T.C., Bach, N.X.: Neural session-aware recommendation. IEEE Access 7, 86884– 86896 (2019)
+
+[33] Quadrana, M., Cremonesi, P., Jannach, D.: Sequence-aware recommender systems. ACM Comput. Surv. 51, 1–36 (2018)
+
+[34] Quadrana, M., Karatzoglou, A., Hidasi, B., Cremonesi, P.: Personalizing session-based recommendations with hierarchical recurrent neural networks. In proceedings of the Eleventh ACM Conference on Recommender Systems, pp. 130–137 (2017)
+
+[35] Ragno, R., Burges, C.J.C., Herley, C.: Inferring similarity between music objects with application to playlist generation. In Proceedings of the 7th ACM SIGMM International Workshop on Multimedia Information Retrieval, MIR ’05, pp. 73–80 (2005)
+
+[36] Ren, P., Chen, Z., Li, J., Ren, Z., Ma, J., de Rijke, M.: Repeatnet: A repeat aware neural recommendation machine for session-based recommendation. In Proceedings of the AAAI Conference on Artificial Intelligence, pp. 4806–4813 (2019)
+
+[37] Roberts, C.V., Elahi, E., Chandrashekar, A.: On the bias-variance characteristics of lime and shap in high sparsity movie recommendation explanation tasks. (2022) arXiv preprint arXiv:2206.04784
+
+[38] Sánchez Rodríguez, J.A., Wu, J.-C., Khandwawala, M.: Two-stage session-based recommendations with candidate rank embeddings. In Fashion Recommender Systems, pp. 49–66. Springer, Berlin (2020)
+
+[39] Ruocco, M., Lillestøl Skrede, O.S., Langseth, H.: Inter-session modeling for session-based recommendation. In Proceedings of the 2nd Workshop on Deep Learning for Recommender Systems, DLRS 2017, pp. 24–31, (2017)
+
+[40] Sachdeva, N., Manco, G., Ritacco, E., Pudi, V.: Sequential variational autoencoders for collaborative filtering. In Proceedings of the Twelfth ACM International Conference on Web Search and Data Mining, WSDM ’19, pp. 600–608 (2019)
+
+[41] Shani, G., Heckerman, D., Brafman, R.I.: An MDP-based recommender system. J. Mach. Learn. Res. 6, 1265–1295 (2005)
+
+[42] Song, B., Cao, Y., Zhang, W., Xu, C.: Session-based recommendation with hierarchical memory networks. In Proceedings of the 28th ACM International Conference on Information and Knowledge Management, pp. 2181–2184 (2019)
+
+[43] Song, Y., Lee, J.-G.: Augmenting recurrent neural networks with high-order user-contextual preference for session-based recommendation. (2018) arXiv preprint arXiv:1805.02983
+
+[44] Sun, F., Liu, J., Wu, J., Pei, C., Lin, X., Ou, W., Jiang, P.: BERT4Rec: sequential recommendation with bidirectional encoder representations from transformer. In Proceedings of the 28th ACM International Conference on Information and Knowledge Management, pp. 1441–1450 (2019)
+
+[45] Tavakol, M., Brefeld, U.: Factored MDPs for detecting topics of user sessions. In Proceedings of the 8th ACM Conference on Recommender Systems, RecSys ’14, pp. 33–40 (2014)
+
+[46] Tavakol, M., Brefeld, U.: Factored mdps for detecting topics of user sessions. In Proceedings of the 8th ACM Conference on Recommender Systems, pp. 33–40 (2014)
+
+[47] Ukil, A., Marin, L., Jara, A.J.: When less is more powerful: shapley value attributed ablation with augmented learning for practical time series sensor data classification. Plos one 17(11), e0277975 (2022)
+
+[48] Wang, M., Ren, P., Mei, L., Chen, Z., Ma, J., de Rijke, M.: A collaborative session-based recommendation approach with parallel memory modules. In Proceedings of the 42nd International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR ’19, pp. 345–354 (2019)
+
+[49] Wang, S., Cao, L., Wang, Y., Sheng, Q.Z., Orgun, M.A., Lian, D.: A survey on session-based recommender systems. ACM Comput. Surv. 54(7), 1–38 (2021)
+
+[50] Wu, S., Tang, Y., Zhu, Y., Wang, L., Xie, X., Tan, T.: Session-based recommendation with graph neural networks. In Proceedings of the Thirty-Third AAAI Conference on Artificial Intelligence, AAAI, pp. 346–353 (2019)
+
+[51] Ying, H., Zhuang, F., Zhang, F., Liu, Y., Xu, G., Xie, X., Xiong, H., Wu, J.: Sequential recommender system based on hierarchical attention network. In Proceedings of the 27th International Joint Conference on Artificial Intelligence, IJCAI’18, pp. 3926-3932. AAAI Press, (2018)
+
+[52] Yu, F., Zhu, Y., Liu, Q., Wu, S., Wang, L., Tan, T.: TAGNN: target attentive graph neural networks for session-based recommendation. In Proceedings of the 43rd International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR ’20, (2020)
+
+[53] Yuan, F., Karatzoglou, A., Arapakis, I., Jose, J.M., He, X.: A simple convolutional generative network for next item recommendation. In Proceedings of the 12th ACM International Conference on Web Search and Data Mining, WSDM ’19, pp. 582–590 (2019)
+
+[54] Zhu, N., Cao, J., Liu, Y., Yang, Y., Ying, H., Xiong, H.: Sequential modeling of hierarchical user intention and preference for next-item recommendation. In Proceedings of the 13th International Conference on Web Search and Data Mining, pp. 807–815 (2020)

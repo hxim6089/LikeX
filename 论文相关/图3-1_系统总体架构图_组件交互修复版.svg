@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#172033"/>
+    </marker>
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; fill: #172033; }
+      .title { font-size: 30px; font-weight: 700; }
+      .head { font-size: 27px; font-weight: 700; }
+      .box { font-size: 23px; }
+      .small { font-size: 19px; }
+      .label { font-size: 20px; font-weight: 700; }
+      .frame { fill: #ffffff; stroke: #172033; stroke-width: 3; }
+      .inner { fill: #f5f8fc; stroke: #7890aa; stroke-width: 2.2; }
+      .line { fill: none; stroke: #172033; stroke-width: 3; marker-end: url(#arrow); }
+      .bi { fill: none; stroke: #172033; stroke-width: 3; marker-start: url(#arrow); marker-end: url(#arrow); }
+      .dash { fill: none; stroke: #172033; stroke-width: 2.8; stroke-dasharray: 10 8; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1600" height="980" fill="#ffffff"/>
+
+  <!-- Browser client -->
+  <rect class="frame" x="75" y="188" width="355" height="560" rx="4"/>
+  <text class="head" x="252" y="242" text-anchor="middle">浏览器客户端</text>
+
+  <rect class="inner" x="118" y="285" width="270" height="72"/>
+  <text class="box" x="253" y="330" text-anchor="middle">用户访问页面</text>
+
+  <rect class="inner" x="118" y="385" width="270" height="72"/>
+  <text class="box" x="253" y="430" text-anchor="middle">Vue 3 前端</text>
+
+  <rect class="inner" x="118" y="485" width="270" height="72"/>
+  <text class="box" x="253" y="530" text-anchor="middle">Axios 请求</text>
+
+  <rect class="inner" x="118" y="585" width="270" height="72"/>
+  <text class="box" x="253" y="630" text-anchor="middle">WebSocket 客户端</text>
+
+  <!-- Spring Boot backend -->
+  <rect class="frame" x="635" y="150" width="410" height="650" rx="4"/>
+  <text class="head" x="840" y="207" text-anchor="middle">Spring Boot 后端</text>
+
+  <rect class="inner" x="680" y="255" width="320" height="68"/>
+  <text class="box" x="840" y="298" text-anchor="middle">Controller 接口层</text>
+
+  <rect class="inner" x="680" y="350" width="320" height="68"/>
+  <text class="box" x="840" y="393" text-anchor="middle">Service 业务与算法层</text>
+
+  <rect class="inner" x="680" y="445" width="320" height="68"/>
+  <text class="box" x="840" y="488" text-anchor="middle">Repository 持久层</text>
+
+  <rect class="inner" x="680" y="540" width="320" height="68"/>
+  <text class="box" x="840" y="583" text-anchor="middle">WebSocket 消息服务</text>
+
+  <rect class="inner" x="680" y="635" width="320" height="68"/>
+  <text class="box" x="840" y="678" text-anchor="middle">文件上传与配置管理</text>
+
+  <!-- Right services -->
+  <rect class="frame" x="1260" y="80" width="285" height="150" rx="4"/>
+  <text class="head" x="1402" y="135" text-anchor="middle">MySQL 数据库</text>
+  <text class="small" x="1402" y="180" text-anchor="middle">用户、内容、行为、广告</text>
+
+  <rect class="frame" x="1260" y="285" width="285" height="165" rx="4"/>
+  <text class="head" x="1402" y="340" text-anchor="middle">AI 服务</text>
+  <text class="small" x="1402" y="385" text-anchor="middle">Ollama 本地模型</text>
+  <text class="small" x="1402" y="418" text-anchor="middle">DeepSeek API</text>
+
+  <rect class="frame" x="1260" y="510" width="285" height="165" rx="4"/>
+  <text class="head" x="1402" y="565" text-anchor="middle">外部数据源</text>
+  <text class="small" x="1402" y="610" text-anchor="middle">公开数据集与抓取脚本</text>
+  <text class="small" x="1402" y="643" text-anchor="middle">批量导入与清洗</text>
+
+  <rect class="frame" x="1260" y="735" width="285" height="130" rx="4"/>
+  <text class="head" x="1402" y="790" text-anchor="middle">文件存储目录</text>
+  <text class="small" x="1402" y="832" text-anchor="middle">上传图片与静态资源</text>
+
+  <!-- Client/backend interactions -->
+  <path class="line" d="M 432 380 C 500 380, 555 300, 632 300"/>
+  <text class="label" x="515" y="326" text-anchor="middle">Axios / REST API</text>
+
+  <path class="line" d="M 432 585 C 505 585, 560 575, 632 575"/>
+  <text class="label" x="525" y="558" text-anchor="middle">WebSocket</text>
+
+  <path class="dash" d="M 635 160 C 545 72, 325 65, 225 165"/>
+  <text class="label" x="430" y="70" text-anchor="middle">页面渲染与状态更新</text>
+
+  <!-- Backend/right interactions -->
+  <path class="bi" d="M 1048 250 C 1120 205, 1178 155, 1256 155"/>
+  <rect x="1115" y="165" width="65" height="32" fill="#ffffff"/>
+  <text class="label" x="1148" y="188" text-anchor="middle">JPA</text>
+
+  <path class="bi" d="M 1048 385 C 1122 385, 1178 370, 1256 370"/>
+  <rect x="1085" y="335" width="135" height="32" fill="#ffffff"/>
+  <text class="label" x="1152" y="358" text-anchor="middle">AI 打标/推荐</text>
+
+  <!-- Corrected direction: external source imports into backend -->
+  <path class="line" d="M 1256 592 C 1175 592, 1120 520, 1048 480"/>
+  <rect x="1090" y="520" width="100" height="32" fill="#ffffff"/>
+  <text class="label" x="1140" y="543" text-anchor="middle">数据导入</text>
+
+  <path class="line" d="M 1048 670 C 1120 690, 1178 795, 1256 800"/>
+  <rect x="1090" y="715" width="100" height="32" fill="#ffffff"/>
+  <text class="label" x="1140" y="738" text-anchor="middle">图片上传</text>
+
+</svg>

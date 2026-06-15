@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="760" viewBox="0 0 1800 760">
+  <defs>
+    <style>
+      .line { fill: none; stroke: #20242a; stroke-width: 3; stroke-linecap: square; stroke-linejoin: miter; }
+      .root { fill: #eef1f4; stroke: #20242a; stroke-width: 3; rx: 4; }
+      .module { fill: #f4f5f7; stroke: #20242a; stroke-width: 2.5; rx: 4; }
+      .leaf { fill: #ffffff; stroke: #20242a; stroke-width: 2.2; rx: 3; }
+      .root-text { font-family: "Microsoft YaHei", "SimHei", sans-serif; font-size: 27px; font-weight: 700; fill: #111820; text-anchor: middle; }
+      .module-text { font-family: "Microsoft YaHei", "SimHei", sans-serif; font-size: 21px; font-weight: 700; fill: #111820; text-anchor: middle; }
+      .leaf-text { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 20px; fill: #111820; writing-mode: vertical-rl; text-orientation: upright; dominant-baseline: middle; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="760" fill="#ffffff"/>
+
+  <rect class="root" x="570" y="30" width="660" height="82"/>
+  <text class="root-text" x="900" y="80">基于用户行为分析的实时信息流排序与分发系统</text>
+
+  <path class="line" d="M900 112 V165"/>
+  <path class="line" d="M180 165 H1620"/>
+  <path class="line" d="M180 165 V220 M540 165 V220 M900 165 V220 M1260 165 V220 M1620 165 V220"/>
+
+  <rect class="module" x="40" y="220" width="280" height="92"/>
+  <text class="module-text" x="180" y="260"><tspan x="180">用户与内容互动</tspan><tspan x="180" dy="32">模块</tspan></text>
+  <rect class="module" x="400" y="220" width="280" height="92"/>
+  <text class="module-text" x="540" y="260"><tspan x="540">推荐排序与用户画像</tspan><tspan x="540" dy="32">模块</tspan></text>
+  <rect class="module" x="760" y="220" width="280" height="92"/>
+  <text class="module-text" x="900" y="260"><tspan x="900">AI 推荐与后台管理</tspan><tspan x="900" dy="32">模块</tspan></text>
+  <rect class="module" x="1120" y="220" width="280" height="92"/>
+  <text class="module-text" x="1260" y="260"><tspan x="1260">广告分发</tspan><tspan x="1260" dy="32">模块</tspan></text>
+  <rect class="module" x="1480" y="220" width="280" height="92"/>
+  <text class="module-text" x="1620" y="260"><tspan x="1620">数据统计与可视化</tspan><tspan x="1620" dy="32">模块</tspan></text>
+
+  <path class="line" d="M180 312 V370 M85 370 H275"/>
+  <path class="line" d="M540 312 V370 M416 370 H641"/>
+  <path class="line" d="M900 312 V370 M776 370 H1001"/>
+  <path class="line" d="M1260 312 V370 M1165 370 H1355"/>
+  <path class="line" d="M1620 312 V370 M1496 370 H1721"/>
+
+  <path class="line" d="M85 370 V420 M180 370 V420 M275 370 V420"/>
+  <path class="line" d="M416 370 V420 M491 370 V420 M566 370 V420 M641 370 V420"/>
+  <path class="line" d="M776 370 V420 M851 370 V420 M926 370 V420 M1001 370 V420"/>
+  <path class="line" d="M1165 370 V420 M1260 370 V420 M1355 370 V420"/>
+  <path class="line" d="M1496 370 V420 M1571 370 V420 M1646 370 V420 M1721 370 V420"/>
+
+  <rect class="leaf" x="40" y="420" width="90" height="300"/>
+  <text class="leaf-text" x="85" y="465">用户注册与登录</text>
+  <rect class="leaf" x="135" y="420" width="90" height="300"/>
+  <text class="leaf-text" x="180" y="450">内容发布与互动</text>
+  <rect class="leaf" x="230" y="420" width="90" height="300"/>
+  <text class="leaf-text" x="275" y="440">关注通知与私信</text>
+
+  <rect class="leaf" x="380" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="416" y="465">用户行为采集</text>
+  <rect class="leaf" x="455" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="491" y="465">用户画像构建</text>
+  <rect class="leaf" x="530" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="566" y="450">双源召回与过滤</text>
+  <rect class="leaf" x="605" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="641" y="450">混合排序与分发</text>
+
+  <rect class="leaf" x="740" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="776" y="465">人工智能推荐</text>
+  <rect class="leaf" x="815" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="851" y="450">智能问答与打标</text>
+  <rect class="leaf" x="890" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="926" y="450">用户与策略管理</text>
+  <rect class="leaf" x="965" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="1001" y="465">外部数据导入</text>
+
+  <rect class="leaf" x="1120" y="420" width="90" height="300"/>
+  <text class="leaf-text" x="1165" y="465">广告配置管理</text>
+  <rect class="leaf" x="1215" y="420" width="90" height="300"/>
+  <text class="leaf-text" x="1260" y="450">画像匹配与评分</text>
+  <rect class="leaf" x="1310" y="420" width="90" height="300"/>
+  <text class="leaf-text" x="1355" y="450">广告展示与统计</text>
+
+  <rect class="leaf" x="1460" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="1496" y="450">用户与内容统计</text>
+  <rect class="leaf" x="1535" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="1571" y="450">行为趋势与话题</text>
+  <rect class="leaf" x="1610" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="1646" y="450">推荐效果与对比</text>
+  <rect class="leaf" x="1685" y="420" width="72" height="300"/>
+  <text class="leaf-text" x="1721" y="450">负反馈与广告报表</text>
+</svg>

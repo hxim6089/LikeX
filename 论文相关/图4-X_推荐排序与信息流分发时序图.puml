@@ -1,0 +1,90 @@
+@startuml
+title 推荐排序与信息流分发时序图
+
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Microsoft YaHei
+skinparam sequence {
+  ArrowColor #111827
+  ActorBorderColor #111827
+  LifeLineBorderColor #94A3B8
+  LifeLineBackgroundColor #F8FAFC
+  ParticipantBorderColor #111827
+  ParticipantBackgroundColor #F8FAFC
+  BoxBorderColor #CBD5E1
+  BoxBackgroundColor #FFFFFF
+}
+skinparam note {
+  BackgroundColor #FFF7ED
+  BorderColor #FDBA74
+}
+
+actor 用户 as User
+participant "Vue 前端\nHomeView / FeedList" as Frontend
+participant "ContentController\n/ RecommendationController" as Controller
+participant "RecommendationService" as RecService
+participant "BehaviorService" as BehaviorService
+participant "PersonaService" as PersonaService
+participant "AIService\nOllama" as AI
+participant "AdService" as AdService
+database "MySQL 数据库" as DB
+
+User -> Frontend: 访问首页 / 切换 For You
+Frontend -> Controller: GET /api/content/feed?userId=...
+Controller -> RecService: getPersonalizedFeed(userId, page)
+
+RecService -> DB: 查询用户、内容、关注关系
+DB --> RecService: 返回基础数据
+
+RecService -> BehaviorService: 查询用户近期行为
+BehaviorService -> DB: 读取浏览、点赞、评论、搜索、点踩等记录
+DB --> BehaviorService: 返回行为列表
+BehaviorService --> RecService: 返回行为信号
+
+RecService -> PersonaService: 构建/读取用户画像
+PersonaService -> DB: 聚合标签、作者偏好、近期兴趣序列
+DB --> PersonaService: 返回画像相关数据
+PersonaService --> RecService: 返回用户画像与兴趣权重
+
+RecService -> RecService: 构建候选内容池
+RecService -> RecService: 过滤删除内容、负反馈内容、屏蔽作者
+
+alt 后台策略为 traditional
+  RecService -> RecService: 混合推荐打分
+  note right of RecService
+    标签匹配、TF-IDF 相似度、
+    协同过滤、时间衰减、
+    热门话题、内容深度、
+    作者多样性等共同参与排序
+  end note
+else 后台策略为 ai
+  RecService -> AI: 请求 AI 排序或推荐理由
+  alt AI 服务可用
+    AI --> RecService: 返回 AI 排序结果 / 推荐理由
+  else AI 超时或异常
+    AI --> RecService: 返回异常或无响应
+    RecService -> RecService: 降级为传统混合推荐
+  end
+end
+
+RecService -> RecService: 排序重排与多样性控制
+RecService -> AdService: 请求信息流广告匹配
+AdService -> DB: 查询广告配置与广告素材
+DB --> AdService: 返回广告数据
+AdService --> RecService: 返回待插入广告卡片
+
+RecService --> Controller: 返回 FeedDTO、评分明细、策略徽标
+Controller --> Frontend: JSON 响应
+Frontend --> User: 渲染内容卡片、推荐解释和广告卡片
+
+opt 用户产生浏览、点赞、评论或搜索
+  User -> Frontend: 执行互动操作
+  Frontend -> Controller: POST /api/behavior/*
+  Controller -> BehaviorService: 保存行为记录
+  BehaviorService -> DB: 写入 Behavior 数据
+  DB --> BehaviorService: 写入成功
+  BehaviorService --> Controller: 返回操作结果
+  Controller --> Frontend: 更新页面状态
+end
+
+@enduml

@@ -1,0 +1,94 @@
+<mxfile host="app.diagrams.net" modified="2026-06-06T15:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="user-content-er" name="图3-3a 用户与内容局部ER图">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="user" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#263440;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="60" y="90" width="300" height="420" as="geometry"/>
+        </mxCell>
+        <mxCell id="userHeader" value="用户 User" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#263440;strokeWidth=2;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="90" width="300" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="userFields" value="PK  id&#xa;&#xa;username&#xa;&#xa;handle&#xa;&#xa;password&#xa;&#xa;role&#xa;&#xa;banned&#xa;&#xa;custom_weights&#xa;&#xa;created_at" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=16;spacingLeft=18;spacingTop=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="145" width="300" height="365" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="content" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#263440;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="570" y="40" width="400" height="600" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentHeader" value="内容 Content" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#263440;strokeWidth=2;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="570" y="40" width="400" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentFields" value="PK  id&#xa;FK  author_id&#xa;FK  parent_id&#xa;FK  repost_of_id&#xa;FK  quote_of_id&#xa;title&#xa;content&#xa;image_url&#xa;category&#xa;view_count&#xa;like_count&#xa;comment_count&#xa;dislike_count&#xa;repost_count&#xa;created_at" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=16;spacingLeft=20;spacingTop=12;lineSpacing=10;" vertex="1" parent="1">
+          <mxGeometry x="570" y="95" width="400" height="545" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="publishEdge" value="发布" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=16;fontStyle=1;" edge="1" parent="1" source="user" target="content">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="publishOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=17;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="375" y="260" width="30" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="publishMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=17;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="525" y="260" width="30" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="commentEdge" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;exitX=0.12;exitY=1;entryX=0.32;entryY=1;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="content" target="content">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="618" y="750"/>
+              <mxPoint x="698" y="750"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="commentLabel" value="评论/回复" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="605" y="750" width="110" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="commentOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=17;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="598" y="645" width="30" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="commentMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=17;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="688" y="645" width="30" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="repostEdge" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;exitX=0.40;exitY=1;entryX=0.60;entryY=1;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="content" target="content">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="730" y="750"/>
+              <mxPoint x="810" y="750"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="repostLabel" value="转发来源" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="720" y="750" width="110" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="repostOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=17;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="715" y="645" width="30" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="repostMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=17;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="795" y="645" width="30" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="quoteEdge" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;exitX=0.68;exitY=1;entryX=0.88;entryY=1;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="content" target="content">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="842" y="750"/>
+              <mxPoint x="922" y="750"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="quoteLabel" value="引用来源" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="835" y="750" width="110" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="quoteOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=17;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="825" y="645" width="30" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="quoteMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=17;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="910" y="645" width="30" height="30" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

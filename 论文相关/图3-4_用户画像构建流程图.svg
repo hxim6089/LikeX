@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="780" viewBox="0 45 1200 735">
+  <defs>
+    <style>
+      .title { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 30px; font-weight: 700; fill: #111827; }
+      .box-title { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 20px; font-weight: 700; fill: #111827; }
+      .text { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 16px; fill: #1f2937; }
+      .small { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 14px; fill: #374151; }
+      .box { fill: #ffffff; stroke: #111827; stroke-width: 2; rx: 8; ry: 8; }
+      .soft { fill: #f8fafc; stroke: #334155; stroke-width: 1.6; rx: 8; ry: 8; }
+      .feature { fill: #ffffff; stroke: #64748b; stroke-width: 1.5; rx: 6; ry: 6; }
+      .line { stroke: #111827; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #475569; stroke-width: 2; fill: none; stroke-dasharray: 8 6; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#111827"/>
+    </marker>
+  </defs>
+
+  <rect x="20" y="20" width="1160" height="740" fill="#ffffff"/>
+  <g>
+    <rect x="70" y="120" width="240" height="110" class="box"/>
+    <text x="190" y="158" text-anchor="middle" class="box-title">读取行为记录</text>
+    <text x="190" y="192" text-anchor="middle" class="text">Behavior 表</text>
+    <text x="190" y="218" text-anchor="middle" class="small">浏览、点赞、评论、转发、点踩</text>
+  </g>
+
+  <g>
+    <rect x="420" y="120" width="260" height="110" class="box"/>
+    <text x="550" y="158" text-anchor="middle" class="box-title">行为与时间赋权</text>
+    <text x="550" y="192" text-anchor="middle" class="text">按行为类型设置基础权重</text>
+    <text x="550" y="218" text-anchor="middle" class="small">结合发生时间进行衰减</text>
+  </g>
+
+  <g>
+    <rect x="800" y="120" width="310" height="110" class="box"/>
+    <text x="955" y="158" text-anchor="middle" class="box-title">聚合用户行为信号</text>
+    <text x="955" y="192" text-anchor="middle" class="text">按内容、标签、作者与时间窗口统计</text>
+    <text x="955" y="218" text-anchor="middle" class="small">形成画像计算的基础特征</text>
+  </g>
+
+  <path d="M 310 175 L 420 175" class="line"/>
+  <path d="M 680 175 L 800 175" class="line"/>
+
+  <g>
+    <rect x="100" y="310" width="1000" height="230" class="soft"/>
+    <text x="600" y="350" text-anchor="middle" class="box-title">画像特征统计</text>
+
+    <rect x="135" y="385" width="180" height="110" class="feature"/>
+    <text x="225" y="423" text-anchor="middle" class="text">兴趣标签</text>
+    <text x="225" y="452" text-anchor="middle" class="small">topicPreferences</text>
+    <text x="225" y="476" text-anchor="middle" class="small">标签得分与衰减趋势</text>
+
+    <rect x="330" y="385" width="180" height="110" class="feature"/>
+    <text x="420" y="423" text-anchor="middle" class="text">作者偏好</text>
+    <text x="420" y="452" text-anchor="middle" class="small">authorAffinity</text>
+    <text x="420" y="476" text-anchor="middle" class="small">互动作者权重</text>
+
+    <rect x="525" y="385" width="180" height="110" class="feature"/>
+    <text x="615" y="423" text-anchor="middle" class="text">互动风格</text>
+    <text x="615" y="452" text-anchor="middle" class="small">engagementStyle</text>
+    <text x="615" y="476" text-anchor="middle" class="small">点赞型、评论型等</text>
+
+    <rect x="720" y="385" width="180" height="110" class="feature"/>
+    <text x="810" y="423" text-anchor="middle" class="text">内容深度偏好</text>
+    <text x="810" y="452" text-anchor="middle" class="small">depthPreference</text>
+    <text x="810" y="476" text-anchor="middle" class="small">短文本或长文本倾向</text>
+
+    <rect x="915" y="385" width="150" height="110" class="feature"/>
+    <text x="990" y="423" text-anchor="middle" class="text">新鲜度偏好</text>
+    <text x="990" y="452" text-anchor="middle" class="small">freshnessPreference</text>
+    <text x="990" y="476" text-anchor="middle" class="small">近期内容倾向</text>
+  </g>
+
+  <path d="M 955 230 C 955 270, 600 260, 600 310" class="line"/>
+
+  <g>
+    <rect x="180" y="610" width="300" height="95" class="box"/>
+    <text x="330" y="648" text-anchor="middle" class="box-title">生成用户画像</text>
+    <text x="330" y="681" text-anchor="middle" class="text">用户阶段、画像摘要、偏好分布</text>
+  </g>
+
+  <g>
+    <rect x="705" y="585" width="345" height="145" class="box"/>
+    <text x="878" y="623" text-anchor="middle" class="box-title">生成动态推荐权重</text>
+    <text x="878" y="656" text-anchor="middle" class="text">wLike、wReply、wRepost</text>
+    <text x="878" y="684" text-anchor="middle" class="text">wTopicAffinity、wAuthorAffinity</text>
+    <text x="878" y="712" text-anchor="middle" class="small">wSimilarity、wFreshness、wDepthMatch 等</text>
+  </g>
+
+  <path d="M 420 540 C 360 570, 330 575, 330 610" class="line"/>
+  <path d="M 780 540 C 830 560, 858 562, 878 585" class="line"/>
+  <path d="M 480 658 L 705 658" class="line"/>
+  <text x="592" y="645" text-anchor="middle" class="small">画像结果参与推荐参数计算</text>
+
+  <path d="M 878 585 C 878 535, 1010 520, 1010 495" class="dash"/>
+  <text x="1020" y="553" text-anchor="middle" class="small">反馈至推荐排序</text>
+
+  <text x="600" y="756" text-anchor="middle" class="small">说明：用户画像由历史行为和时间衰减共同驱动，最终转化为动态权重，用于个性化信息流排序。</text>
+</svg>

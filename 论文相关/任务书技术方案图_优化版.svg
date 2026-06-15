@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .row { fill: #f5f7fa; stroke: none; }
+      .side { fill: #d9d9d9; stroke: none; }
+      .client { fill: #9dc9ef; stroke: none; }
+      .app { fill: #a8c900; stroke: none; }
+      .data { fill: #8fc8e9; stroke: none; }
+      .card { fill: #ffffff; stroke: #64748b; stroke-width: 1.5; rx: 7; ry: 7; }
+      .card-gray { fill: #e8e8e8; stroke: #b8b8b8; stroke-width: 1.2; rx: 5; ry: 5; }
+      .dash-box { fill: #fff; stroke: #e11d48; stroke-width: 2; stroke-dasharray: 8 6; rx: 8; ry: 8; }
+      .v-blue { stroke: #11b8ee; stroke-width: 2; stroke-dasharray: 8 7; }
+      .v-gray { stroke: #a5a5a5; stroke-width: 2; stroke-dasharray: 8 7; }
+      .arrow { stroke: #111827; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .arrow-dash { stroke: #475569; stroke-width: 1.8; fill: none; stroke-dasharray: 7 6; marker-end: url(#arrow); }
+      .db { fill: #bbd99f; stroke: #0ea5d8; stroke-width: 2; }
+      .bluebar { fill: #33649d; stroke: none; }
+      .side-text { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 25px; font-weight: 700; fill: #111827; }
+      .layer-text { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 24px; font-weight: 700; fill: #111827; }
+      .module-text { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 19px; font-weight: 700; fill: #111827; }
+      .body-text { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 16px; fill: #111827; }
+      .small-text { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 14px; fill: #374151; }
+      .bar-text { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 19px; font-weight: 700; fill: #ffffff; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#111827"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1500" height="900" class="bg"/>
+
+  <!-- Left labels -->
+  <rect x="22" y="24" width="62" height="160" class="side"/>
+  <text x="53" y="88" text-anchor="middle" class="side-text">系统</text>
+  <text x="53" y="122" text-anchor="middle" class="side-text">架构</text>
+
+  <rect x="22" y="205" width="62" height="170" class="side"/>
+  <text x="53" y="274" text-anchor="middle" class="side-text">技术</text>
+  <text x="53" y="308" text-anchor="middle" class="side-text">实现</text>
+
+  <rect x="22" y="410" width="62" height="300" class="side"/>
+  <text x="53" y="540" text-anchor="middle" class="side-text">运行</text>
+  <text x="53" y="574" text-anchor="middle" class="side-text">流程</text>
+
+  <!-- Three layer vertical areas -->
+  <rect x="84" y="24" width="1392" height="160" class="row"/>
+  <rect x="84" y="205" width="1392" height="170" class="row"/>
+
+  <line x1="330" y1="0" x2="330" y2="735" class="v-blue"/>
+  <line x1="1070" y1="0" x2="1070" y2="735" class="v-blue"/>
+  <line x1="580" y1="112" x2="580" y2="735" class="v-gray"/>
+  <line x1="825" y1="112" x2="825" y2="735" class="v-gray"/>
+
+  <!-- System architecture row -->
+  <rect x="125" y="52" width="180" height="52" class="client"/>
+  <text x="215" y="85" text-anchor="middle" class="layer-text">客户端</text>
+
+  <rect x="380" y="52" width="640" height="52" class="app"/>
+  <text x="700" y="85" text-anchor="middle" class="layer-text">应用层</text>
+
+  <rect x="1120" y="52" width="300" height="52" class="data"/>
+  <text x="1270" y="85" text-anchor="middle" class="layer-text">数据层</text>
+
+  <rect x="380" y="124" width="175" height="42" class="app"/>
+  <text x="468" y="152" text-anchor="middle" class="module-text">接口控制</text>
+  <rect x="625" y="124" width="160" height="42" class="app"/>
+  <text x="705" y="152" text-anchor="middle" class="module-text">业务处理</text>
+  <rect x="858" y="124" width="162" height="42" class="app"/>
+  <text x="939" y="152" text-anchor="middle" class="module-text">推荐智能</text>
+
+  <rect x="1120" y="124" width="140" height="42" class="data"/>
+  <text x="1190" y="152" text-anchor="middle" class="module-text">数据访问</text>
+  <rect x="1280" y="124" width="140" height="42" class="data"/>
+  <text x="1350" y="152" text-anchor="middle" class="module-text">数据存储</text>
+
+  <!-- Technical implementation row -->
+  <text x="215" y="240" text-anchor="middle" class="body-text">Vue 3 / Vite</text>
+  <text x="215" y="268" text-anchor="middle" class="body-text">Element Plus</text>
+  <text x="215" y="296" text-anchor="middle" class="body-text">Axios / WebSocket</text>
+  <text x="215" y="324" text-anchor="middle" class="body-text">ECharts 可视化</text>
+
+  <text x="468" y="245" text-anchor="middle" class="body-text">Spring Boot</text>
+  <text x="468" y="273" text-anchor="middle" class="body-text">REST Controller</text>
+  <text x="468" y="301" text-anchor="middle" class="body-text">JWT 与跨域配置</text>
+  <text x="468" y="329" text-anchor="middle" class="body-text">文件上传接口</text>
+
+  <text x="705" y="238" text-anchor="middle" class="body-text">认证、内容、互动</text>
+  <text x="705" y="266" text-anchor="middle" class="body-text">关注、通知、私信</text>
+  <text x="705" y="294" text-anchor="middle" class="body-text">搜索、热门话题</text>
+  <text x="705" y="322" text-anchor="middle" class="body-text">后台管理与数据导入</text>
+
+  <text x="939" y="232" text-anchor="middle" class="body-text">行为采集与画像构建</text>
+  <text x="939" y="260" text-anchor="middle" class="body-text">TF-IDF、协同过滤</text>
+  <text x="939" y="288" text-anchor="middle" class="body-text">时间衰减、负反馈过滤</text>
+  <text x="939" y="316" text-anchor="middle" class="body-text">AI 服务、广告投放</text>
+  <text x="939" y="344" text-anchor="middle" class="body-text">推荐效果对比与调参</text>
+
+  <text x="1190" y="245" text-anchor="middle" class="body-text">Spring Data JPA</text>
+  <text x="1190" y="273" text-anchor="middle" class="body-text">Repository</text>
+  <text x="1190" y="301" text-anchor="middle" class="body-text">MySQL Driver</text>
+  <text x="1190" y="329" text-anchor="middle" class="body-text">文件目录映射</text>
+
+  <text x="1350" y="255" text-anchor="middle" class="body-text">MySQL rec_db</text>
+  <text x="1350" y="287" text-anchor="middle" class="body-text">本地上传目录</text>
+  <text x="1350" y="319" text-anchor="middle" class="body-text">外部数据集</text>
+
+  <!-- Runtime process row -->
+  <rect x="120" y="470" width="170" height="78" class="card"/>
+  <text x="205" y="500" text-anchor="middle" class="module-text">浏览器访问</text>
+  <text x="205" y="527" text-anchor="middle" class="small-text">Vue 前端页面</text>
+
+  <rect x="390" y="445" width="150" height="44" class="card-gray"/>
+  <text x="465" y="473" text-anchor="middle" class="body-text">Axios 请求</text>
+  <rect x="390" y="498" width="150" height="44" class="card-gray"/>
+  <text x="465" y="526" text-anchor="middle" class="body-text">WebSocket</text>
+  <rect x="390" y="551" width="150" height="44" class="card-gray"/>
+  <text x="465" y="579" text-anchor="middle" class="body-text">页面状态更新</text>
+
+  <rect x="610" y="425" width="195" height="230" class="dash-box"/>
+  <rect x="632" y="448" width="150" height="38" class="card-gray"/>
+  <text x="707" y="473" text-anchor="middle" class="body-text">用户认证</text>
+  <rect x="632" y="494" width="150" height="38" class="card-gray"/>
+  <text x="707" y="519" text-anchor="middle" class="body-text">内容发布</text>
+  <rect x="632" y="540" width="150" height="38" class="card-gray"/>
+  <text x="707" y="565" text-anchor="middle" class="body-text">互动与关系</text>
+  <rect x="632" y="586" width="150" height="38" class="card-gray"/>
+  <text x="707" y="611" text-anchor="middle" class="body-text">通知与私信</text>
+
+  <rect x="858" y="430" width="165" height="38" class="card-gray"/>
+  <text x="941" y="455" text-anchor="middle" class="body-text">行为记录入库</text>
+  <rect x="858" y="476" width="165" height="38" class="card-gray"/>
+  <text x="941" y="501" text-anchor="middle" class="body-text">用户画像计算</text>
+  <rect x="858" y="522" width="165" height="38" class="card-gray"/>
+  <text x="941" y="547" text-anchor="middle" class="body-text">混合推荐排序</text>
+  <rect x="858" y="568" width="165" height="38" class="card-gray"/>
+  <text x="941" y="593" text-anchor="middle" class="body-text">AI 与广告增强</text>
+  <rect x="858" y="614" width="165" height="38" class="card-gray"/>
+  <text x="941" y="639" text-anchor="middle" class="body-text">效果对比展示</text>
+
+  <rect x="1130" y="500" width="140" height="56" class="card-gray"/>
+  <text x="1200" y="522" text-anchor="middle" class="body-text">数据访问</text>
+  <text x="1200" y="543" text-anchor="middle" class="small-text">Repository</text>
+
+  <rect x="1325" y="470" width="115" height="90" class="db"/>
+  <ellipse cx="1382" cy="470" rx="57" ry="15" class="db"/>
+  <text x="1382" y="516" text-anchor="middle" class="body-text">数据库</text>
+  <text x="1382" y="538" text-anchor="middle" class="small-text">MySQL</text>
+
+  <rect x="1130" y="615" width="140" height="42" class="card-gray"/>
+  <text x="1200" y="641" text-anchor="middle" class="small-text">外部数据导入</text>
+  <rect x="1325" y="610" width="115" height="52" class="card-gray"/>
+  <text x="1382" y="631" text-anchor="middle" class="small-text">公开数据集</text>
+  <text x="1382" y="650" text-anchor="middle" class="small-text">模拟数据</text>
+
+  <path d="M 290 510 L 390 510" class="arrow"/>
+  <path d="M 540 520 L 632 520" class="arrow"/>
+  <path d="M 782 544 L 858 544" class="arrow"/>
+  <path d="M 1023 528 L 1130 528" class="arrow"/>
+  <path d="M 1270 528 L 1325 528" class="arrow"/>
+  <path d="M 1270 636 L 1325 636" class="arrow"/>
+
+  <text x="340" y="493" text-anchor="middle" class="small-text">访问请求</text>
+  <text x="585" y="503" text-anchor="middle" class="small-text">接口调用</text>
+  <text x="820" y="526" text-anchor="middle" class="small-text">行为信号</text>
+  <text x="1075" y="510" text-anchor="middle" class="small-text">数据对象</text>
+  <text x="1298" y="511" text-anchor="middle" class="small-text">JDBC</text>
+
+  <path d="M 941 430 C 915 388, 735 388, 707 448" class="arrow-dash"/>
+  <text x="820" y="404" text-anchor="middle" class="small-text">推荐结果实时反馈</text>
+
+  <!-- Execution architecture bars -->
+  <rect x="58" y="760" width="280" height="45" class="bluebar"/>
+  <text x="198" y="789" text-anchor="middle" class="bar-text">客户端执行架构</text>
+  <rect x="58" y="805" width="280" height="44" fill="#ffffff" stroke="#111827" stroke-width="1.3"/>
+  <text x="198" y="833" text-anchor="middle" class="small-text">浏览器、PC 或移动端访问</text>
+
+  <rect x="390" y="760" width="635" height="45" class="bluebar"/>
+  <text x="708" y="789" text-anchor="middle" class="bar-text">应用层执行架构</text>
+  <rect x="390" y="805" width="635" height="44" fill="#ffffff" stroke="#111827" stroke-width="1.3"/>
+  <text x="708" y="833" text-anchor="middle" class="small-text">Spring Boot 服务、推荐算法服务、WebSocket 消息服务、AI 接口调用</text>
+
+  <rect x="1110" y="760" width="340" height="45" class="bluebar"/>
+  <text x="1280" y="789" text-anchor="middle" class="bar-text">数据层执行架构</text>
+  <rect x="1110" y="805" width="340" height="44" fill="#ffffff" stroke="#111827" stroke-width="1.3"/>
+  <text x="1280" y="833" text-anchor="middle" class="small-text">MySQL 数据库、上传目录、外部数据集</text>
+</svg>

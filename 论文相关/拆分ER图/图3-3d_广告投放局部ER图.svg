@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1050" viewBox="0 0 1800 1050">
+<defs>
+<style>
+  .bg { fill: #ffffff; }
+  .entity { fill: #ffffff; stroke: #1f2937; stroke-width: 2.4; rx: 12; ry: 12; }
+  .entity-head { fill: #f1f5f9; stroke: #1f2937; stroke-width: 2.4; rx: 12; ry: 12; }
+  .logical { fill: #ffffff; stroke: #64748b; stroke-width: 2.2; stroke-dasharray: 8 6; rx: 12; ry: 12; }
+  .logical-head { fill: #f8fafc; stroke: #64748b; stroke-width: 2.2; stroke-dasharray: 8 6; rx: 12; ry: 12; }
+  .title { font-family: "Microsoft YaHei", "SimHei", sans-serif; font-size: 30px; font-weight: 700; fill: #111827; }
+  .field { font-family: "Microsoft YaHei", "SimHei", sans-serif; font-size: 22px; fill: #1f2937; }
+  .label { font-family: "Microsoft YaHei", "SimHei", sans-serif; font-size: 20px; fill: #374151; font-weight: 600; }
+  .card { font-family: "Microsoft YaHei", "SimHei", sans-serif; font-size: 22px; fill: #111827; font-weight: 700; }
+  .rel { stroke: #111827; stroke-width: 2.6; fill: none; marker-end: url(#arrow); }
+  .rel-dash { stroke: #64748b; stroke-width: 2.4; fill: none; stroke-dasharray: 8 6; marker-end: url(#arrowGray); }
+  .divider { stroke: #1f2937; stroke-width: 2.2; }
+  .note { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.6; rx: 8; ry: 8; }
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+  <path d="M 0 0 L 10 5 L 0 10 z" fill="#111827"/>
+</marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+  <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+</marker>
+</defs>
+<rect x="0" y="0" width="1800" height="1050" class="bg"/>
+<rect x="28" y="28" width="1744" height="994" fill="none" stroke="#e2e8f0" stroke-width="2"/>
+<rect x="90" y="210" width="330" height="300" class="logical"/>
+<rect x="90" y="210" width="330" height="62" class="logical-head"/>
+<line x1="90" y1="272" x2="420" y2="272" class="divider"/>
+<text x="255.0" y="250" text-anchor="middle" class="title"><tspan x="255.0" dy="0">用户画像</tspan></text>
+<text x="118" y="310" text-anchor="start" class="field">user_id</text>
+<text x="118" y="344" text-anchor="start" class="field">interest_tags</text>
+<text x="118" y="378" text-anchor="start" class="field">behavior_stats</text>
+<text x="118" y="412" text-anchor="start" class="field">match_rate</text>
+<text x="118" y="446" text-anchor="start" class="field">dynamic_weights</text>
+<rect x="610" y="145" width="420" height="450" class="entity"/>
+<rect x="610" y="145" width="420" height="62" class="entity-head"/>
+<line x1="610" y1="207" x2="1030" y2="207" class="divider"/>
+<text x="820.0" y="185" text-anchor="middle" class="title"><tspan x="820.0" dy="0">广告 Ad</tspan></text>
+<text x="638" y="245" text-anchor="start" class="field">PK id</text>
+<text x="638" y="279" text-anchor="start" class="field">title</text>
+<text x="638" y="313" text-anchor="start" class="field">description</text>
+<text x="638" y="347" text-anchor="start" class="field">image_url</text>
+<text x="638" y="381" text-anchor="start" class="field">target_url</text>
+<text x="638" y="415" text-anchor="start" class="field">target_tags</text>
+<text x="638" y="449" text-anchor="start" class="field">bid_price</text>
+<text x="638" y="483" text-anchor="start" class="field">impression_count</text>
+<text x="638" y="517" text-anchor="start" class="field">click_count</text>
+<text x="638" y="551" text-anchor="start" class="field">active</text>
+<rect x="1240" y="175" width="360" height="300" class="entity"/>
+<rect x="1240" y="175" width="360" height="62" class="entity-head"/>
+<line x1="1240" y1="237" x2="1600" y2="237" class="divider"/>
+<text x="1420.0" y="215" text-anchor="middle" class="title"><tspan x="1420.0" dy="0">广告配置 AdConfig</tspan></text>
+<text x="1268" y="275" text-anchor="start" class="field">PK id</text>
+<text x="1268" y="309" text-anchor="start" class="field">enabled</text>
+<text x="1268" y="343" text-anchor="start" class="field">frequency</text>
+<text x="1268" y="377" text-anchor="start" class="field">max_ads_per_page</text>
+<rect x="615" y="690" width="415" height="240" class="logical"/>
+<rect x="615" y="690" width="415" height="62" class="logical-head"/>
+<line x1="615" y1="752" x2="1030" y2="752" class="divider"/>
+<text x="822.5" y="730" text-anchor="middle" class="title"><tspan x="822.5" dy="0">信息流广告位</tspan></text>
+<text x="643" y="790" text-anchor="start" class="field">user_id</text>
+<text x="643" y="824" text-anchor="start" class="field">ad_id</text>
+<text x="643" y="858" text-anchor="start" class="field">ad_score</text>
+<text x="643" y="892" text-anchor="start" class="field">insert_index</text>
+<rect x="1240" y="650" width="360" height="250" class="logical"/>
+<rect x="1240" y="650" width="360" height="62" class="logical-head"/>
+<line x1="1240" y1="712" x2="1600" y2="712" class="divider"/>
+<text x="1420.0" y="690" text-anchor="middle" class="title"><tspan x="1420.0" dy="0">广告统计</tspan></text>
+<text x="1268" y="750" text-anchor="start" class="field">impression_count</text>
+<text x="1268" y="784" text-anchor="start" class="field">click_count</text>
+<text x="1268" y="818" text-anchor="start" class="field">CTR</text>
+<text x="1268" y="852" text-anchor="start" class="field">quality_score</text>
+<path d="M 420 330 L 610 330" class="rel"/>
+<text x="515.0" y="318.0" text-anchor="middle" class="label"><tspan x="515.0" dy="0">标签匹配</tspan></text>
+<text x="430" y="320" text-anchor="start" class="card">1</text>
+<text x="582" y="320" text-anchor="start" class="card">N</text>
+<path d="M 1030 330 L 1240 330" class="rel"/>
+<text x="1135.0" y="318.0" text-anchor="middle" class="label"><tspan x="1135.0" dy="0">投放控制</tspan></text>
+<text x="1040" y="320" text-anchor="start" class="card">N</text>
+<text x="1212" y="320" text-anchor="start" class="card">1</text>
+<path d="M 820 595 L 820 690" class="rel"/>
+<text x="895" y="650" text-anchor="middle" class="label"><tspan x="895" dy="0">生成广告位</tspan></text>
+<text x="828" y="585" text-anchor="start" class="card">N</text>
+<text x="792" y="680" text-anchor="start" class="card">N</text>
+<path d="M 1030 775 L 1240 775" class="rel-dash"/>
+<text x="1135.0" y="763.0" text-anchor="middle" class="label"><tspan x="1135.0" dy="0">统计反馈</tspan></text>
+<text x="1040" y="765" text-anchor="start" class="card">N</text>
+<text x="1212" y="765" text-anchor="start" class="card">1</text>
+</svg>

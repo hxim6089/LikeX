@@ -1,0 +1,744 @@
+package com.example.rec.service;
+
+import com.example.rec.dto.ContentWithScore;
+import com.example.rec.dto.ScoreBreakdown;
+import com.example.rec.model.Behavior;
+import com.example.rec.model.Content;
+import com.example.rec.repository.BehaviorRepository;
+import com.example.rec.service.UserBehaviorProfileService.BehaviorProfile;
+import com.example.rec.service.UserBehaviorProfileService.DynamicWeights;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * 基于用户行为画像的个性化混合推荐策略（传统算法）
+ *
+ * 【算法概述】
+ * 本类实现了系统的核心推荐排序逻辑，采用多因子加权打分模型，
+ * 综合考虑内容热度、用户兴趣匹配、社交关系、时间衰减等维度，
+ * 为每位用户生成个性化的信息流排序。
+ *
+ * 【设计模式】
+ * 实现 RecommendationStrategy 接口（策略模式），可通过 RecommendationStrategyManager
+ * 在运行时与 AiRecommendationStrategy 进行切换。
+ *
+ * 【打分因子说明】
+ *   1. 基础互动分：点赞×wLike + 评论×wReply + 转发×wRepost + 浏览×0.05
+ *   2. 互动率加成：(点赞+评论+转发)/浏览量，反映内容质量
+ *   3. 社交网络加成：关注用户发布的内容额外 ×1.5
+ *   4. 话题亲和度：基于用户历史行为统计的话题偏好得分
+ *   5. 作者亲密度：用户与特定作者的互动强度
+ *   6. TF-IDF 内容相似度：用户兴趣向量与帖子内容向量的余弦相似度
+ *   7. 热门话题加成：包含当前热门标签的帖子额外加分
+ *   8. 内容深度匹配：根据用户偏好的内容长度（短/中/长）调节分数
+ *   9. 新鲜度匹配：根据用户对时效性的偏好调节分数
+ *  10. 协同过滤加成：相似用户喜欢但当前用户未看过的内容额外加分
+ *  11. 时间衰减：越旧的内容分数衰减越多，采用分段衰减策略
+ *  12. 交互惩罚：已踩(×0.02)、已赞(×0.15)、已浏览(×0.5)
+ *  13. 作者多样性惩罚：同一作者的帖子出现越多，后续帖子得分衰减
+ *  14. 加权随机采样：最终排序引入可控随机性，避免固化（探索-利用平衡）
+ *
+ * 【动态权重机制】
+ * 权重不是写死的，而是由 UserBehaviorProfileService 根据每位用户的：
+ *   - 用户阶段（冷启动/初级/活跃）
+ *   - 互动风格（点赞达人/评论活跃者/安静阅读者）
+ *   - 内容深度偏好
+ *   - 新鲜度偏好
+ *   - 探索率
+ * 自动计算得出，实现"千人千面"的个性化推荐。
+ *
+ * 【参考论文/平台】
+ * 设计灵感参考 X (Twitter) 开源推荐算法中的 In-Network/Out-of-Network
+ * 双源架构和 Heavy Ranker 多因子打分思路。
+ */
+@Component
+public class HybridRecommendationStrategy implements RecommendationStrategy {
+
+    private final PersonaService personaService;            // 用户画像服务（获取兴趣标签）
+    private final TrendingService trendingService;          // 热门话题服务
+    private final TfIdfService tfIdfService;                // TF-IDF 内容相似度服务
+    private final UserBehaviorProfileService behaviorProfileService;  // 用户行为画像与动态权重
+    private final CollaborativeFilteringService collaborativeFilteringService; // 协同过滤服务
+    private final BehaviorRepository behaviorRepository;    // 行为数据访问层
+
+    // ==================== 算法超参数 ====================
+    // 浏览行为基础权重（相比点赞/评论/转发，浏览的信号较弱）
+    private static final double WEIGHT_VIEW = 0.05;
+    // 关注用户（In-Network）内容的加成倍数
+    private static final double WEIGHT_IN_NETWORK_BOOST = 1.5;
+    // 同一作者多次出现时的衰减系数（第 n 次出现时 score × 0.7^n）
+    private static final double AUTHOR_DIVERSITY_DECAY = 0.7;
+    // 互动率（engagement rate）对基础分的加成系数
+    private static final double ENGAGEMENT_RATE_WEIGHT = 0.3;
+    // 协同过滤最多取多少条推荐候选
+    private static final int CF_CANDIDATE_LIMIT = 50;
+    // 已踩内容的分数保留比例（几乎不再出现）
+    private static final double DISLIKE_PENALTY_FACTOR = 0.02;
+    // 已赞内容的分数保留比例（大幅降权，让新内容优先）
+    private static final double LIKE_PENALTY_FACTOR = 0.15;
+    // 已深度浏览内容的分数保留比例
+    private static final double VIEWED_PENALTY_FACTOR = 0.5;
+    private static final double SKIP_PENALTY_FACTOR = 0.65;
+    // 判定为"深度浏览"的最低停留秒数
+    private static final int VIEW_THRESHOLD_SECONDS = 5;
+
+    public HybridRecommendationStrategy(PersonaService personaService,
+                                         TrendingService trendingService,
+                                         TfIdfService tfIdfService,
+                                         UserBehaviorProfileService behaviorProfileService,
+                                         CollaborativeFilteringService collaborativeFilteringService,
+                                         BehaviorRepository behaviorRepository) {
+        this.personaService = personaService;
+        this.trendingService = trendingService;
+        this.tfIdfService = tfIdfService;
+        this.behaviorProfileService = behaviorProfileService;
+        this.collaborativeFilteringService = collaborativeFilteringService;
+        this.behaviorRepository = behaviorRepository;
+    }
+
+    /**
+     * 推荐主入口（无评分详情版本）
+     *
+     * 流程：
+     * 1. 构建用户行为画像（BehaviorProfile）
+     * 2. 计算该用户的动态权重（DynamicWeights）
+     * 3. 获取用户兴趣标签、TF-IDF 向量、协同过滤候选
+     * 4. 对每条候选内容进行多因子打分
+     * 5. 应用交互惩罚（已赞/已踩/已浏览降权）
+     * 6. 应用作者多样性惩罚
+     * 7. 按分数排序后进行加权随机采样（探索-利用平衡）
+     *
+     * @param userId     当前用户 ID（可为 null，则使用默认权重）
+     * @param candidates 候选内容池（由 RecommendationService 构建）
+     * @return 排序后的推荐内容列表
+     */
+    @Override
+    public List<Content> recommend(Long userId, List<Content> candidates) {
+        BehaviorProfile profile = userId != null
+                ? behaviorProfileService.buildProfile(userId) : new BehaviorProfile();
+        DynamicWeights dw = userId != null
+                ? behaviorProfileService.computeDynamicWeights(userId) : new DynamicWeights();
+
+        List<String> userInterests = getUserInterests(userId);
+        Map<String, Double> userTfIdf = Collections.emptyMap();
+        Map<String, Double> globalIdf = Collections.emptyMap();
+        if (userId != null) {
+            try {
+                userTfIdf = tfIdfService.getUserProfileVector(userId);
+                if (!userTfIdf.isEmpty()) globalIdf = tfIdfService.buildGlobalIdf();
+            } catch (Exception ignored) {}
+        }
+
+        final List<String> interests = userInterests;
+        final Map<String, Double> tfidfProfile = userTfIdf;
+        final Map<String, Double> idf = globalIdf;
+
+        Set<Long> cfRecommendedIds = getCfRecommendedIds(userId);
+        Set<Long> dislikedIds = getDislikedContentIds(userId);
+        Set<Long> likedIds = getLikedContentIds(userId);
+        Set<Long> viewedIds = getViewedContentIds(userId);
+        Set<Long> skippedIds = getSkippedContentIds(userId);
+
+        List<ScoredContent> scoredList = candidates.stream()
+                .map(c -> {
+                    double score = calculateScore(c, interests, tfidfProfile, idf, profile, dw, cfRecommendedIds, dislikedIds);
+                    score = applyInteractionPenalty(c.getId(), score, dislikedIds, likedIds, viewedIds, skippedIds);
+                    return new ScoredContent(c, score);
+                })
+                .collect(Collectors.toList());
+
+        applyAuthorDiversityPenalty(scoredList);
+        scoredList.sort(Comparator.comparingDouble(ScoredContent::getScore).reversed());
+        return weightedShuffle(scoredList, dw.explorationFactor);
+    }
+
+    /**
+     * 带评分详情的推荐（主页 debug 模式 + 对比页面均使用）
+     */
+    public List<ContentWithScore> recommendWithScore(Long userId, List<Content> candidates) {
+        return recommendWithScore(userId, candidates, null);
+    }
+
+    public List<ContentWithScore> recommendWithScore(Long userId, List<Content> candidates, Map<String, Double> manualWeights) {
+        BehaviorProfile profile = userId != null
+                ? behaviorProfileService.buildProfile(userId) : new BehaviorProfile();
+        DynamicWeights dw = userId != null
+                ? behaviorProfileService.computeDynamicWeights(userId) : new DynamicWeights();
+
+        if (manualWeights != null && !manualWeights.isEmpty()) {
+            applyManualOverrides(dw, manualWeights);
+        }
+
+        List<String> userInterests = getUserInterests(userId);
+        Map<String, Double> tmpTfIdf = Collections.emptyMap();
+        Map<String, Double> tmpIdf = Collections.emptyMap();
+        if (userId != null) {
+            try {
+                tmpTfIdf = tfIdfService.getUserProfileVector(userId);
+                if (!tmpTfIdf.isEmpty()) tmpIdf = tfIdfService.buildGlobalIdf();
+            } catch (Exception ignored) {}
+        }
+        final Map<String, Double> userTfIdf = tmpTfIdf;
+        final Map<String, Double> globalIdf = tmpIdf;
+
+        Map<String, Double> weightsMap = dynamicWeightsToMap(dw);
+        Set<Long> cfRecommendedIds = getCfRecommendedIds(userId);
+        Set<Long> dislikedIds = getDislikedContentIds(userId);
+        Set<Long> likedIds = getLikedContentIds(userId);
+        Set<Long> viewedIds = getViewedContentIds(userId);
+        Set<Long> skippedIds = getSkippedContentIds(userId);
+
+        List<ScoredContentWithDetails> scoredList = candidates.stream()
+                .map(c -> calculateScoreWithDetails(c, userInterests, userTfIdf, globalIdf, profile, dw, weightsMap, cfRecommendedIds, dislikedIds, likedIds, viewedIds, skippedIds))
+                .collect(Collectors.toList());
+
+        applyAuthorDiversityPenaltyWithDetails(scoredList);
+
+        Random jitterRandom = new Random();
+        double explorationRange = dw.explorationFactor;
+        for (ScoredContentWithDetails sc : scoredList) {
+            double factor = (1.0 - explorationRange) + (jitterRandom.nextDouble() * explorationRange * 2);
+            double jitteredScore = sc.getFinalScore() * factor;
+            sc.getBreakdown().setFinalScore(Math.round(jitteredScore * 100.0) / 100.0);
+        }
+
+        scoredList.sort(Comparator.comparingDouble(ScoredContentWithDetails::getFinalScore).reversed());
+
+        List<ContentWithScore> result = new ArrayList<>();
+        int rank = 1;
+        for (ScoredContentWithDetails sc : scoredList) {
+            result.add(new ContentWithScore(sc.getContent(), sc.getBreakdown(), rank++));
+        }
+        return result;
+    }
+
+    // ==================== 核心打分函数（简洁版） ====================
+    // 用于 recommend() 方法，只计算最终得分，不记录各因子详情
+
+    /**
+     * 多因子综合打分
+     *
+     * 最终分数 = (基础互动分 × 互动率修正 × 社交加成) / 时间衰减
+     *           + 话题亲和度 + 作者亲密度 + 标签匹配
+     *           + TF-IDF相似度 + 热门话题 + 深度匹配
+     *           + 新鲜度匹配 + 协同过滤加成 + 探索抖动
+     */
+    private double calculateScore(Content content, List<String> userInterests,
+                                   Map<String, Double> userTfIdf, Map<String, Double> idf,
+                                   BehaviorProfile profile, DynamicWeights dw,
+                                   Set<Long> cfRecommendedIds, Set<Long> dislikedIds) {
+        int likeCount = val(content.getLikeCount());
+        int commentCount = val(content.getCommentCount());
+        int viewCount = val(content.getViewCount());
+        int repostCount = val(content.getRepostCount());
+
+        double engagement = likeCount * dw.wLike + commentCount * dw.wReply
+                + viewCount * WEIGHT_VIEW + repostCount * dw.wRepost;
+
+        double engagementRate = viewCount > 0
+                ? (double)(likeCount + commentCount + repostCount) / viewCount : 0;
+        engagement *= (1.0 + engagementRate * ENGAGEMENT_RATE_WEIGHT);
+
+        if ("IN_NETWORK".equals(content.getNetworkSource())) {
+            engagement *= WEIGHT_IN_NETWORK_BOOST;
+        }
+
+        double topicAffinity = computeTopicAffinity(content, profile) * dw.wTopicAffinity;
+        double authorAffinity = computeAuthorAffinity(content, profile) * dw.wAuthorAffinity;
+
+        double personalization = 0;
+        if (userInterests != null && !userInterests.isEmpty() && content.getTags() != null) {
+            for (var tag : content.getTags()) {
+                if (userInterests.contains(tag.getName())) personalization += dw.wTopicAffinity * 0.5;
+            }
+        }
+
+        double similarity = 0;
+        if (userTfIdf != null && !userTfIdf.isEmpty() && idf != null && !idf.isEmpty()) {
+            try { similarity = tfIdfService.getContentSimilarityScore(content, userTfIdf, idf) * dw.wSimilarity; }
+            catch (Exception ignored) {}
+        }
+
+        double trending = 0;
+        try { trending = trendingService.countTrendingTagsInContent(content) * dw.wTrending; }
+        catch (Exception ignored) {}
+
+        double depthMatch = computeDepthMatch(content, profile) * dw.wDepthMatch;
+        double freshness = computeFreshnessMatch(content, profile) * dw.wFreshness;
+        double timeDecay = calculateTimeDecay(content);
+
+        double cfBoost = (cfRecommendedIds.contains(content.getId())) ? dw.wCollaborative : 0;
+
+        double base = (engagement / timeDecay) + topicAffinity + authorAffinity
+                + personalization + similarity + trending + depthMatch + freshness + cfBoost;
+        double jitter = (Math.random() - 0.3) * base * dw.explorationFactor;
+        return base + jitter;
+    }
+
+    // ========== 核心打分（详细版，用于 recommendWithScore()） ==========
+
+    private ScoredContentWithDetails calculateScoreWithDetails(Content content,
+            List<String> userInterests, Map<String, Double> userTfIdf, Map<String, Double> idf,
+            BehaviorProfile profile, DynamicWeights dw, Map<String, Double> weightsMap,
+            Set<Long> cfRecommendedIds, Set<Long> dislikedIds,
+            Set<Long> likedIds, Set<Long> viewedIds, Set<Long> skippedIds) {
+
+        ScoreBreakdown bd = new ScoreBreakdown();
+        List<String> reasons = new ArrayList<>();
+
+        int likeCount = val(content.getLikeCount());
+        int commentCount = val(content.getCommentCount());
+        int viewCount = val(content.getViewCount());
+        int repostCount = val(content.getRepostCount());
+        bd.setLikeCount(likeCount);
+        bd.setCommentCount(commentCount);
+        bd.setViewCount(viewCount);
+        bd.setRepostCount(repostCount);
+
+        // 基础互动分
+        double engagement = likeCount * dw.wLike + commentCount * dw.wReply
+                + viewCount * WEIGHT_VIEW + repostCount * dw.wRepost;
+        bd.setBaseEngagement(round(engagement));
+
+        double engagementRate = viewCount > 0
+                ? (double)(likeCount + commentCount + repostCount) / viewCount : 0;
+        bd.setEngagementRate(round3(engagementRate));
+        engagement *= (1.0 + engagementRate * ENGAGEMENT_RATE_WEIGHT);
+
+        boolean inNetwork = "IN_NETWORK".equals(content.getNetworkSource());
+        bd.setInNetwork(inNetwork);
+        if (inNetwork) {
+            engagement *= WEIGHT_IN_NETWORK_BOOST;
+            reasons.add("来自你关注的人");
+        }
+
+        // 话题亲和度
+        double topicAffinity = computeTopicAffinity(content, profile) * dw.wTopicAffinity;
+        bd.setTopicAffinityBoost(round(topicAffinity));
+        if (topicAffinity > 10) {
+            List<String> matched = getMatchedTopics(content, profile);
+            if (!matched.isEmpty()) reasons.add("你常看: " + String.join("、", matched));
+        }
+
+        // 作者亲密度
+        double authorAffinity = computeAuthorAffinity(content, profile) * dw.wAuthorAffinity;
+        bd.setAuthorAffinityBoost(round(authorAffinity));
+        if (authorAffinity > 10 && content.getAuthor() != null) {
+            reasons.add("你常互动的作者: " + content.getAuthor().getUsername());
+        }
+
+        // 标签匹配
+        double personalization = 0;
+        StringBuilder matchedTags = new StringBuilder();
+        if (userInterests != null && !userInterests.isEmpty() && content.getTags() != null) {
+            for (var tag : content.getTags()) {
+                if (userInterests.contains(tag.getName())) {
+                    personalization += dw.wTopicAffinity * 0.5;
+                    if (matchedTags.length() > 0) matchedTags.append(", ");
+                    matchedTags.append(tag.getName());
+                }
+            }
+        }
+        bd.setPersonalizationBoost(round(personalization));
+        bd.setMatchedTags(matchedTags.toString());
+
+        // TF-IDF 内容相似度
+        double similarity = 0;
+        if (userTfIdf != null && !userTfIdf.isEmpty() && idf != null && !idf.isEmpty()) {
+            try { similarity = tfIdfService.getContentSimilarityScore(content, userTfIdf, idf) * dw.wSimilarity; }
+            catch (Exception ignored) {}
+        }
+        bd.setContentSimilarityBoost(round(similarity));
+        if (similarity > 15) reasons.add("内容与你的兴趣高度相似");
+
+        // 热门话题
+        double trending = 0;
+        try { trending = trendingService.countTrendingTagsInContent(content) * dw.wTrending; }
+        catch (Exception ignored) {}
+        bd.setTrendingBoost(round(trending));
+        if (trending > 0) reasons.add("热门话题");
+
+        // 内容深度匹配
+        double depthMatch = computeDepthMatch(content, profile) * dw.wDepthMatch;
+        bd.setDepthMatchBoost(round(depthMatch));
+        if (depthMatch > 15) reasons.add("符合你的阅读偏好");
+
+        // 新鲜度匹配
+        double freshnessVal = computeFreshnessMatch(content, profile) * dw.wFreshness;
+        bd.setFreshnessBoost(round(freshnessVal));
+
+        // 协同过滤加成
+        double cfBoost = cfRecommendedIds.contains(content.getId()) ? dw.wCollaborative : 0;
+        bd.setCollaborativeFilteringBoost(round(cfBoost));
+        if (cfBoost > 0) reasons.add("相似用户也喜欢");
+
+        // 时间衰减
+        long hoursDiff = 1;
+        if (content.getCreatedAt() != null) {
+            hoursDiff = Math.max(1, Duration.between(content.getCreatedAt(), LocalDateTime.now()).toHours());
+        }
+        double timeDecay = calculateTimeDecay(content);
+        bd.setTimeDecayFactor(round3(1.0 / timeDecay));
+        bd.setHoursAgo(hoursDiff);
+
+        // 探索因子
+        double jitter = Math.random() * 5.0;
+        bd.setJitter(round(jitter));
+
+        // 最终评分
+        double finalScore = (engagement / timeDecay) + topicAffinity + authorAffinity
+                + personalization + similarity + trending + depthMatch + freshnessVal + cfBoost + jitter;
+
+        Long cId = content.getId();
+        if (dislikedIds.contains(cId)) {
+            finalScore *= DISLIKE_PENALTY_FACTOR;
+            reasons.clear();
+            reasons.add("你已踩过此内容 (×0.02)");
+        } else if (likedIds.contains(cId)) {
+            finalScore *= LIKE_PENALTY_FACTOR;
+            reasons.add("已赞过，降低优先级 (×0.15)");
+        } else if (viewedIds.contains(cId)) {
+            finalScore *= VIEWED_PENALTY_FACTOR;
+            reasons.add("已浏览过 (×0.5)");
+        }
+
+        if (skippedIds.contains(cId)
+                && !dislikedIds.contains(cId)
+                && !likedIds.contains(cId)
+                && !viewedIds.contains(cId)) {
+            finalScore *= SKIP_PENALTY_FACTOR;
+            reasons.add("快速滑过，降低优先级 (×0.65)");
+        }
+
+        bd.setFinalScore(round(finalScore));
+
+        // 行为画像信息
+        if (reasons.isEmpty()) reasons.add("综合推荐");
+        bd.setRecommendReasons(reasons);
+        bd.setUserStage(profile.userStage);
+        bd.setProfileSummary(profile.profileSummary);
+        bd.setDynamicWeights(weightsMap);
+
+        return new ScoredContentWithDetails(content, bd);
+    }
+
+    // ==================== 个性化打分因子 ====================
+
+    /**
+     * 话题亲和度计算
+     * 遍历帖子的标签，查找用户画像中对应话题的偏好分数。
+     * 归一化到 [0, 1] 区间，再乘以动态权重 wTopicAffinity。
+     */
+    private double computeTopicAffinity(Content content, BehaviorProfile profile) {
+        if (profile.topicPreferences.isEmpty()) return 0;
+        double score = 0;
+        if (content.getTags() != null) {
+            for (var tag : content.getTags()) {
+                Double pref = profile.topicPreferences.get(tag.getName());
+                if (pref != null) score += pref;
+            }
+        }
+        if (content.getCategory() != null) {
+            Double catPref = profile.topicPreferences.get("_cat:" + content.getCategory());
+            if (catPref != null) score += catPref;
+        }
+        double maxPref = profile.topicPreferences.values().stream().mapToDouble(Double::doubleValue).max().orElse(1);
+        return Math.min(1.0, score / Math.max(maxPref, 1));
+    }
+
+    private List<String> getMatchedTopics(Content content, BehaviorProfile profile) {
+        List<String> matched = new ArrayList<>();
+        if (content.getTags() == null || profile.topicPreferences.isEmpty()) return matched;
+        for (var tag : content.getTags()) {
+            if (profile.topicPreferences.containsKey(tag.getName())) {
+                matched.add(tag.getName());
+            }
+        }
+        return matched.stream().limit(3).collect(Collectors.toList());
+    }
+
+    /**
+     * 作者亲密度计算
+     * 查找用户与该帖子作者的历史互动强度（点赞、评论、转发等加权累计）。
+     * 归一化后乘以动态权重 wAuthorAffinity。
+     */
+    private double computeAuthorAffinity(Content content, BehaviorProfile profile) {
+        if (content.getAuthor() == null || profile.authorPreferences.isEmpty()) return 0;
+        Double affinity = profile.authorPreferences.get(content.getAuthor().getId());
+        if (affinity == null) return 0;
+        double maxAffinity = profile.authorPreferences.values().stream()
+                .mapToDouble(Double::doubleValue).max().orElse(1);
+        return Math.min(1.0, affinity / Math.max(maxAffinity, 1));
+    }
+
+    /**
+     * 内容深度匹配度
+     * 根据用户偏好的阅读长度（short/medium/long），
+     * 对帖子内容字数进行匹配评分 [0, 1]。
+     * 偏好短内容的用户看到长文会被降权，反之亦然。
+     */
+    private double computeDepthMatch(Content content, BehaviorProfile profile) {
+        if (content.getContent() == null) return 0;
+        int len = content.getContent().length();
+        switch (profile.depthPreference) {
+            case "short":  return len < 60 ? 1.0 : (len < 120 ? 0.5 : 0.1);
+            case "long":   return len > 200 ? 1.0 : (len > 100 ? 0.5 : 0.1);
+            default:       return len >= 50 && len <= 250 ? 0.8 : 0.4;
+        }
+    }
+
+    /**
+     * 新鲜度匹配度
+     * 将帖子发布时间映射为新鲜度分值 (6h内=1.0, 24h=0.7, 72h=0.4, 更久=0.1)，
+     * 再与用户的新鲜度偏好做差值计算，差距越小分数越高。
+     * 追求时效性的用户更倾向看到新帖子。
+     */
+    private double computeFreshnessMatch(Content content, BehaviorProfile profile) {
+        if (content.getCreatedAt() == null) return 0;
+        long hours = Duration.between(content.getCreatedAt(), LocalDateTime.now()).toHours();
+        double contentFreshness;
+        if (hours <= 6) contentFreshness = 1.0;
+        else if (hours <= 24) contentFreshness = 0.7;
+        else if (hours <= 72) contentFreshness = 0.4;
+        else contentFreshness = 0.1;
+
+        double diff = 1.0 - Math.abs(contentFreshness - profile.freshnessPreference);
+        return Math.max(0, diff);
+    }
+
+    // ==================== 时间衰减 ====================
+
+    /**
+     * 分段时间衰减函数
+     * 返回值越大表示衰减越严重（用作分母）：
+     *   - 0~6h:   轻微衰减（1.0 ~ 1.12）
+     *   - 6~24h:  中等衰减（1.12 ~ 2.02）
+     *   - 24~72h: 明显衰减（2.02 ~ 5.86）
+     *   - 72h+:   对数衰减，避免老帖子完全消失
+     *
+     * 设计意图：近期内容优先展示，但不完全丢弃历史优质内容。
+     */
+    private double calculateTimeDecay(Content content) {
+        long hoursDiff = 1;
+        if (content.getCreatedAt() != null) {
+            hoursDiff = Math.max(1, Duration.between(content.getCreatedAt(), LocalDateTime.now()).toHours());
+        }
+        if (hoursDiff <= 6)  return 1.0 + hoursDiff * 0.02;
+        if (hoursDiff <= 24) return 1.12 + (hoursDiff - 6) * 0.05;
+        if (hoursDiff <= 72) return 2.02 + (hoursDiff - 24) * 0.08;
+        return 5.86 + Math.log(hoursDiff - 72 + 1) * 2.0;
+    }
+
+    // ==================== 多样性控制（作者去重） ====================
+
+    /**
+     * 作者多样性惩罚
+     * 防止同一作者的帖子连续霸占 Feed 前列。
+     * 同一作者第 2 次出现时分数 ×0.7，第 3 次 ×0.49，第 4 次 ×0.343...
+     * 这是 X/Twitter 推荐系统中 Author Diversity 策略的简化实现。
+     */
+    private void applyAuthorDiversityPenalty(List<ScoredContent> scoredList) {
+        scoredList.sort(Comparator.comparingDouble(ScoredContent::getScore).reversed());
+        Map<Long, Integer> authorCount = new HashMap<>();
+        for (ScoredContent sc : scoredList) {
+            Long authorId = sc.getContent().getAuthor() != null ? sc.getContent().getAuthor().getId() : 0L;
+            int count = authorCount.getOrDefault(authorId, 0);
+            if (count > 0) sc.setScore(sc.getScore() * Math.pow(AUTHOR_DIVERSITY_DECAY, count));
+            authorCount.put(authorId, count + 1);
+        }
+    }
+
+    private void applyAuthorDiversityPenaltyWithDetails(List<ScoredContentWithDetails> scoredList) {
+        scoredList.sort(Comparator.comparingDouble(ScoredContentWithDetails::getFinalScore).reversed());
+        Map<Long, Integer> authorCount = new HashMap<>();
+        for (ScoredContentWithDetails sc : scoredList) {
+            Long authorId = sc.getContent().getAuthor() != null ? sc.getContent().getAuthor().getId() : 0L;
+            int count = authorCount.getOrDefault(authorId, 0);
+            if (count > 0) {
+                double penalty = Math.pow(AUTHOR_DIVERSITY_DECAY, count);
+                sc.getBreakdown().setFinalScore(round(sc.getFinalScore() * penalty));
+            }
+            authorCount.put(authorId, count + 1);
+        }
+    }
+
+    /**
+     * 加权随机采样（Exploration-Exploitation 平衡）
+     *
+     * 不是简单地按分数排序输出，而是按分数作为权重进行随机抽样。
+     * 分数高的帖子被选中概率大，但低分帖子也有机会出现。
+     * explorationFactor 越大，随机性越强（新用户探索更多，活跃用户更精准）。
+     *
+     * 这避免了推荐系统的"信息茧房"问题，保证用户能发现新内容。
+     */
+    private List<Content> weightedShuffle(List<ScoredContent> sortedList, double explorationFactor) {
+        if (sortedList.size() <= 5) {
+            Collections.shuffle(sortedList);
+            return sortedList.stream().map(ScoredContent::getContent).collect(Collectors.toList());
+        }
+
+        List<ScoredContent> pool = new ArrayList<>(sortedList);
+        List<Content> result = new ArrayList<>();
+        Random random = new Random();
+
+        int topPick = random.nextInt(Math.min(5, pool.size()));
+        result.add(pool.remove(topPick).getContent());
+
+        while (!pool.isEmpty() && result.size() < 50) {
+            double totalWeight = pool.stream().mapToDouble(s -> Math.max(s.getScore(), 1.0)).sum();
+            double r = random.nextDouble() * totalWeight;
+            double cumulative = 0;
+            int selected = 0;
+            for (int i = 0; i < pool.size(); i++) {
+                cumulative += Math.max(pool.get(i).getScore(), 1.0);
+                if (cumulative >= r) { selected = i; break; }
+            }
+            result.add(pool.remove(selected).getContent());
+        }
+        return result;
+    }
+
+    // ========== 手动权重覆盖（CompareView 调参用） ==========
+
+    private void applyManualOverrides(DynamicWeights dw, Map<String, Double> manual) {
+        if (manual.containsKey("wLike")) dw.wLike = manual.get("wLike");
+        if (manual.containsKey("wReply")) dw.wReply = manual.get("wReply");
+        if (manual.containsKey("wRepost")) dw.wRepost = manual.get("wRepost");
+        if (manual.containsKey("wPersonal")) dw.wTopicAffinity = manual.get("wPersonal");
+        if (manual.containsKey("wTrending")) dw.wTrending = manual.get("wTrending");
+        if (manual.containsKey("wSimilarity")) dw.wSimilarity = manual.get("wSimilarity");
+    }
+
+    // ========== 辅助工具 ==========
+
+    private List<String> getUserInterests(Long userId) {
+        if (userId == null) return Collections.emptyList();
+        try {
+            Map<String, Object> persona = personaService.getUserPersona(userId);
+            if (persona.containsKey("interestTags")) {
+                return (List<String>) persona.get("interestTags");
+            }
+        } catch (Exception ignored) {}
+        return Collections.emptyList();
+    }
+
+    /**
+     * 交互惩罚：对用户已经互动过的内容进行降权
+     * - 已踩：保留 2% 分数（几乎不再出现）
+     * - 已赞：保留 15% 分数（用户已消费，优先展示新内容）
+     * - 已深度浏览（>5秒）：保留 50% 分数
+     * 优先级：踩 > 赞 > 浏览 > 跳过（互斥判断）
+     */
+    private double applyInteractionPenalty(Long contentId, double score,
+                                             Set<Long> dislikedIds, Set<Long> likedIds,
+                                             Set<Long> viewedIds, Set<Long> skippedIds) {
+        if (dislikedIds.contains(contentId)) return score * DISLIKE_PENALTY_FACTOR;
+        if (likedIds.contains(contentId)) return score * LIKE_PENALTY_FACTOR;
+        if (viewedIds.contains(contentId)) return score * VIEWED_PENALTY_FACTOR;
+        if (skippedIds.contains(contentId)) return score * SKIP_PENALTY_FACTOR;
+        return score;
+    }
+
+    private Set<Long> getLikedContentIds(Long userId) {
+        if (userId == null) return Collections.emptySet();
+        try {
+            return behaviorRepository.findByUserIdAndType(userId, "LIKE").stream()
+                    .map(Behavior::getContentId)
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            return Collections.emptySet();
+        }
+    }
+
+    private Set<Long> getViewedContentIds(Long userId) {
+        if (userId == null) return Collections.emptySet();
+        try {
+            return behaviorRepository.findByUserIdAndType(userId, "VIEW").stream()
+                    .filter(b -> b.getDuration() != null && b.getDuration() >= VIEW_THRESHOLD_SECONDS)
+                    .map(Behavior::getContentId)
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            return Collections.emptySet();
+        }
+    }
+
+    private Set<Long> getDislikedContentIds(Long userId) {
+        if (userId == null) return Collections.emptySet();
+        try {
+            return behaviorRepository.findByUserIdAndType(userId, "DISLIKE").stream()
+                    .map(Behavior::getContentId)
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            return Collections.emptySet();
+        }
+    }
+
+    private Set<Long> getSkippedContentIds(Long userId) {
+        if (userId == null) return Collections.emptySet();
+        try {
+            return behaviorRepository.findByUserIdAndType(userId, "SKIP").stream()
+                    .map(Behavior::getContentId)
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            return Collections.emptySet();
+        }
+    }
+
+    /**
+     * 获取协同过滤推荐的内容 ID 集合
+     * 通过 CollaborativeFilteringService 找到相似用户喜欢但当前用户未看过的内容
+     */
+    private Set<Long> getCfRecommendedIds(Long userId) {
+        if (userId == null) return Collections.emptySet();
+        try {
+            List<Content> cfRecs = collaborativeFilteringService.getCollaborativeRecommendations(userId, CF_CANDIDATE_LIMIT);
+            return cfRecs.stream().map(Content::getId).collect(Collectors.toSet());
+        } catch (Exception e) {
+            return Collections.emptySet();
+        }
+    }
+
+    private Map<String, Double> dynamicWeightsToMap(DynamicWeights dw) {
+        Map<String, Double> m = new LinkedHashMap<>();
+        m.put("wLike", round(dw.wLike));
+        m.put("wReply", round(dw.wReply));
+        m.put("wRepost", round(dw.wRepost));
+        m.put("wTopicAffinity", round(dw.wTopicAffinity));
+        m.put("wAuthorAffinity", round(dw.wAuthorAffinity));
+        m.put("wTrending", round(dw.wTrending));
+        m.put("wSimilarity", round(dw.wSimilarity));
+        m.put("wFreshness", round(dw.wFreshness));
+        m.put("wDepthMatch", round(dw.wDepthMatch));
+        m.put("wCollaborative", round(dw.wCollaborative));
+        m.put("explorationFactor", round(dw.explorationFactor));
+        return m;
+    }
+
+    private static int val(Integer v) { return v != null ? v : 0; }
+    private static double round(double v) { return Math.round(v * 100.0) / 100.0; }
+    private static double round3(double v) { return Math.round(v * 1000.0) / 1000.0; }
+
+    // ========== 内部类 ==========
+
+    private static class ScoredContent {
+        private final Content content;
+        private double score;
+        public ScoredContent(Content content, double score) { this.content = content; this.score = score; }
+        public Content getContent() { return content; }
+        public double getScore() { return score; }
+        public void setScore(double score) { this.score = score; }
+    }
+
+    private static class ScoredContentWithDetails {
+        private final Content content;
+        private final ScoreBreakdown breakdown;
+        public ScoredContentWithDetails(Content content, ScoreBreakdown breakdown) { this.content = content; this.breakdown = breakdown; }
+        public Content getContent() { return content; }
+        public ScoreBreakdown getBreakdown() { return breakdown; }
+        public double getFinalScore() { return breakdown.getFinalScore(); }
+    }
+}

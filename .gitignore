@@ -1,0 +1,51 @@
+# Node
+node_modules/
+dist/
+.vite/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*~
+.project
+.classpath
+.settings/
+
+# Uploads
+backend/uploads/
+
+# Cursor
+.cursor/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Data files
+*.db
+*.jsonl
+
+# Frontend build
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary working files
+.tmp/

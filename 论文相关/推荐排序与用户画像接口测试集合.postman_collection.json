@@ -1,0 +1,191 @@
+{
+  "info": {
+    "_postman_id": "8a34842a-7a89-4d90-9f34-4b9f8e3a4004",
+    "name": "推荐排序与用户画像接口测试",
+    "description": "用于论文第 5 章“推荐排序与用户画像的测试过程及结果”接口联调截图。导入 Postman 或 Apifox 后，可依次执行推荐流、推荐对比和用户画像接口。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "T17 个性化推荐流接口",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const data = pm.response.json();",
+              "pm.test('Recommendation debug mode is enabled', function () {",
+              "  pm.expect(data.debug).to.eql(true);",
+              "});",
+              "",
+              "pm.test('Recommendation content list exists', function () {",
+              "  pm.expect(data.content).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/content/feed?page=0&size=10&personalized=true&userId={{userId}}&debug=true",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "content",
+            "feed"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "10"
+            },
+            {
+              "key": "personalized",
+              "value": "true"
+            },
+            {
+              "key": "userId",
+              "value": "{{userId}}"
+            },
+            {
+              "key": "debug",
+              "value": "true"
+            }
+          ]
+        },
+        "description": "验证系统能够根据用户行为返回个性化推荐流，并在 debug 模式下返回带评分拆分的推荐结果。"
+      },
+      "response": []
+    },
+    {
+      "name": "T23 推荐流与时间流对比接口",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const data = pm.response.json();",
+              "pm.test('Personalized and chronological lists exist', function () {",
+              "  pm.expect(data.personalized).to.be.an('array');",
+              "  pm.expect(data.chronological).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Compare stats exist', function () {",
+              "  pm.expect(data.stats).to.be.an('object');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/compare/feed?userId={{userId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "compare",
+            "feed"
+          ],
+          "query": [
+            {
+              "key": "userId",
+              "value": "{{userId}}"
+            }
+          ]
+        },
+        "description": "验证推荐流与时间倒序流的排序差异，返回 personalized、chronological、stats 和 pipelineStats 等对比数据。"
+      },
+      "response": []
+    },
+    {
+      "name": "T25 用户画像接口",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const data = pm.response.json();",
+              "pm.test('Persona fields exist', function () {",
+              "  pm.expect(data.behaviorStats).to.be.an('object');",
+              "  pm.expect(data.wordCloudData).to.be.an('array');",
+              "  pm.expect(data).to.have.property('recommendationMatchRate');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/user/{{userId}}/persona",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user",
+            "{{userId}}",
+            "persona"
+          ]
+        },
+        "description": "验证用户画像接口能够返回行为统计、词云数据、兴趣标签、内容偏好和推荐匹配度等画像信息。"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8888",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}

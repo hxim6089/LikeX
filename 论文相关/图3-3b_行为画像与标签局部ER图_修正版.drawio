@@ -1,0 +1,147 @@
+<mxfile host="app.diagrams.net" modified="2026-06-06T15:30:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="behavior-tag-er" name="图3-3b 行为画像与标签局部ER图">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- 用户 User -->
+        <mxCell id="user" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#263440;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="50" y="100" width="240" height="255" as="geometry"/>
+        </mxCell>
+        <mxCell id="userHeader" value="用户 User" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#263440;strokeWidth=2;fontSize=19;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="100" width="240" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="userFields" value="PK  id&#xa;username&#xa;handle&#xa;role&#xa;banned&#xa;custom_weights&#xa;created_at" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=15;spacingLeft=14;spacingTop=10;lineSpacing=8;" vertex="1" parent="1">
+          <mxGeometry x="50" y="148" width="240" height="207" as="geometry"/>
+        </mxCell>
+
+        <!-- 行为 Behavior -->
+        <mxCell id="behavior" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#263440;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="390" y="60" width="270" height="295" as="geometry"/>
+        </mxCell>
+        <mxCell id="behaviorHeader" value="行为 Behavior" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#263440;strokeWidth=2;fontSize=19;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="390" y="60" width="270" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="behaviorFields" value="PK  id&#xa;FK  user_id&#xa;FK  content_id&#xa;type&#xa;duration&#xa;created_at" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=15;spacingLeft=14;spacingTop=10;lineSpacing=11;" vertex="1" parent="1">
+          <mxGeometry x="390" y="108" width="270" height="247" as="geometry"/>
+        </mxCell>
+
+        <!-- 内容 Content -->
+        <mxCell id="content" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#263440;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="780" y="75" width="270" height="280" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentHeader" value="内容 Content" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#263440;strokeWidth=2;fontSize=19;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="780" y="75" width="270" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentFields" value="PK  id&#xa;FK  author_id&#xa;content&#xa;category&#xa;created_at" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=15;spacingLeft=14;spacingTop=10;lineSpacing=13;" vertex="1" parent="1">
+          <mxGeometry x="780" y="123" width="270" height="232" as="geometry"/>
+        </mxCell>
+
+        <!-- 标签 Tag -->
+        <mxCell id="tag" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#263440;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="115" width="200" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="tagHeader" value="标签 Tag" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#263440;strokeWidth=2;fontSize=19;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="115" width="200" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="tagFields" value="PK  id&#xa;name" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=15;spacingLeft=14;spacingTop=12;lineSpacing=15;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="163" width="200" height="132" as="geometry"/>
+        </mxCell>
+
+        <!-- 负反馈 NegativeSignal -->
+        <mxCell id="negative" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#263440;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="385" y="465" width="290" height="270" as="geometry"/>
+        </mxCell>
+        <mxCell id="negativeHeader" value="负反馈 NegativeSignal" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#263440;strokeWidth=2;fontSize=19;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="385" y="465" width="290" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="negativeFields" value="PK  id&#xa;FK  user_id&#xa;target_type&#xa;target_id&#xa;signal_type&#xa;created_at" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=15;spacingLeft=14;spacingTop=10;lineSpacing=11;" vertex="1" parent="1">
+          <mxGeometry x="385" y="513" width="290" height="222" as="geometry"/>
+        </mxCell>
+
+        <!-- 内容标签关联表 -->
+        <mxCell id="contentTags" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7C92A8;strokeWidth=2;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="795" y="485" width="270" height="205" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentTagsHeader" value="内容标签关联 content_tags" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9EEF4;strokeColor=#7C92A8;strokeWidth=2;dashed=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="795" y="485" width="270" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentTagsFields" value="PK/FK  content_id&#xa;PK/FK  tag_id&#xa;联合主键" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=15;spacingLeft=14;spacingTop=12;lineSpacing=14;" vertex="1" parent="1">
+          <mxGeometry x="795" y="533" width="270" height="157" as="geometry"/>
+        </mxCell>
+
+        <!-- 用户产生行为：User 1 - N Behavior -->
+        <mxCell id="userBehaviorEdge" value="产生行为" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=15;fontStyle=1;" edge="1" parent="1" source="user" target="behavior">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="userBehaviorOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="190" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="userBehaviorMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="355" y="190" width="25" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- 内容对应行为：Content 1 - N Behavior -->
+        <mxCell id="contentBehaviorEdge" value="作用于内容" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=15;fontStyle=1;" edge="1" parent="1" source="content" target="behavior">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentBehaviorOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="740" y="195" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentBehaviorMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="675" y="195" width="25" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- 用户发起负反馈：User 1 - N NegativeSignal -->
+        <mxCell id="userNegativeEdge" value="发起负反馈" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=15;fontStyle=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="user" target="negative">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="170" y="600"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="userNegativeOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="157" y="365" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="userNegativeMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="585" width="25" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- 负反馈逻辑目标：内容或作者 -->
+        <mxCell id="negativeContentEdge" value="目标为内容&#xa;(target_type=CONTENT)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#7C92A8;strokeWidth=2;dashed=1;endArrow=block;endFill=1;fontSize=13;fontStyle=1;exitX=1;exitY=0.35;entryX=0;entryY=0.75;" edge="1" parent="1" source="negative" target="content">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="negativeAuthorEdge" value="目标为作者&#xa;(target_type=AUTHOR)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#7C92A8;strokeWidth=2;dashed=1;endArrow=block;endFill=1;fontSize=13;fontStyle=1;exitX=0;exitY=0.75;entryX=0.5;entryY=1;" edge="1" parent="1" source="negative" target="user">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Content 1 - N content_tags -->
+        <mxCell id="contentTagRelationEdge" value="绑定" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=15;fontStyle=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="content" target="contentTags">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentTagsContentOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="900" y="370" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="contentTagsContentMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="900" y="450" width="25" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Tag 1 - N content_tags -->
+        <mxCell id="tagContentTagsEdge" value="关联标签" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;html=1;strokeColor=#263440;strokeWidth=2;endArrow=block;endFill=1;fontSize=15;fontStyle=1;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="tag" target="contentTags">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1280" y="585"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tagContentTagsOne" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1267" y="310" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="tagContentTagsMany" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1075" y="570" width="25" height="25" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

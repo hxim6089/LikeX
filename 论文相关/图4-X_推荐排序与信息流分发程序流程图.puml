@@ -1,0 +1,91 @@
+@startuml
+title 推荐排序与信息流分发程序流程图
+
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Microsoft YaHei
+skinparam activity {
+  FontName Microsoft YaHei
+  FontSize 14
+  BorderColor #1F2937
+  BackgroundColor #F8FAFC
+  DiamondBackgroundColor #FFFFFF
+  DiamondBorderColor #1F2937
+  StartColor #1F2937
+  EndColor #1F2937
+  ArrowColor #1F2937
+}
+skinparam note {
+  FontName Microsoft YaHei
+  FontSize 12
+  BackgroundColor #FFF7ED
+  BorderColor #FDBA74
+}
+
+start
+:前端请求首页 For You 信息流;
+:携带 userId、分页参数、推荐策略标记;
+
+:后端 Controller 接收请求;
+:RecommendationService 读取用户、内容、行为数据;
+
+if (用户是否已登录?) then (是)
+  :读取 Behavior 表中的浏览、点赞、评论、转发、搜索、点踩等行为;
+  :按行为类型和发生时间计算兴趣权重;
+  :聚合用户画像\n(topicPreferences、authorAffinity、depthPreference 等);
+else (否)
+  :使用全站热度、时间倒序和默认画像作为冷启动信号;
+endif
+
+:构建候选内容池;
+:过滤已删除内容、负反馈内容和屏蔽作者;
+:补充关注作者内容、热门内容和外部导入内容;
+
+if (后台推荐策略为 AI?) then (AI)
+  :调用 AI 推荐服务\n生成候选排序或推荐理由;
+  if (AI 服务是否可用?) then (可用)
+    :使用 AI 排序结果或 AI 加权结果;
+  else (不可用/超时)
+    :触发降级逻辑;
+    :回退到传统混合推荐排序;
+  endif
+else (traditional)
+  :执行传统混合推荐排序;
+endif
+
+:计算推荐分项;
+note right
+主要分项包括：
+互动热度、标签匹配、
+TF-IDF 文本相似度、
+协同过滤、时间衰减、
+热门话题、新鲜度、
+内容深度与负反馈过滤
+end note
+
+:进行排序重排;
+:加入作者多样性控制、标签覆盖率控制和随机扰动;
+
+if (广告配置是否启用?) then (是)
+  :根据用户画像标签匹配广告;
+  :按配置间隔插入原生广告卡片;
+  :记录广告展示统计;
+else (否)
+  :跳过广告插入;
+endif
+
+:封装 FeedDTO、评分明细和策略徽标;
+:返回前端信息流列表;
+:前端 FeedList/TweetCard 渲染内容、广告和推荐解释;
+
+if (用户产生新互动?) then (是)
+  :调用 BehaviorController 写入行为记录;
+  :更新点赞、评论、转发、广告点击等统计字段;
+  :触发通知或私信未读状态更新;
+  :后续刷新时重新影响用户画像和推荐排序;
+else (否)
+  :等待下一次浏览或刷新请求;
+endif
+
+stop
+@enduml

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1050" viewBox="0 0 1800 1050">
+  <defs>
+    <style>
+      .box { fill: #ffffff; stroke: #263440; stroke-width: 3; }
+      .header { fill: #e9eef4; stroke: #263440; stroke-width: 3; }
+      .title { font-family: "Microsoft YaHei", "SimHei", sans-serif; font-size: 30px; font-weight: 700; fill: #111111; }
+      .field { font-family: Arial, "Microsoft YaHei", sans-serif; font-size: 22px; fill: #263440; }
+      .relation { font-family: "Microsoft YaHei", "SimHei", sans-serif; font-size: 23px; font-weight: 600; fill: #263440; }
+      .cardinality { font-family: Arial, sans-serif; font-size: 24px; font-weight: 600; fill: #263440; }
+      .line { fill: none; stroke: #263440; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#263440"/>
+    </marker>
+  </defs>
+
+  <rect width="1800" height="1050" fill="#ffffff"/>
+
+  <!-- User entity -->
+  <rect class="box" x="80" y="100" width="390" height="520"/>
+  <rect class="header" x="80" y="100" width="390" height="72"/>
+  <text class="title" x="275" y="146" text-anchor="middle">用户 User</text>
+  <text class="field" x="112" y="218">PK  id</text>
+  <text class="field" x="112" y="262">username</text>
+  <text class="field" x="112" y="306">handle</text>
+  <text class="field" x="112" y="350">password</text>
+  <text class="field" x="112" y="394">role</text>
+  <text class="field" x="112" y="438">banned</text>
+  <text class="field" x="112" y="482">custom_weights</text>
+  <text class="field" x="112" y="526">created_at</text>
+
+  <!-- Content entity -->
+  <rect class="box" x="760" y="55" width="610" height="715"/>
+  <rect class="header" x="760" y="55" width="610" height="72"/>
+  <text class="title" x="1065" y="102" text-anchor="middle">内容 Content</text>
+  <text class="field" x="798" y="170">PK  id</text>
+  <text class="field" x="798" y="210">FK  author_id</text>
+  <text class="field" x="798" y="250">FK  parent_id</text>
+  <text class="field" x="798" y="290">FK  repost_of_id</text>
+  <text class="field" x="798" y="330">FK  quote_of_id</text>
+  <text class="field" x="798" y="370">title</text>
+  <text class="field" x="798" y="410">content</text>
+  <text class="field" x="798" y="450">image_url</text>
+  <text class="field" x="798" y="490">category</text>
+  <text class="field" x="798" y="530">view_count</text>
+  <text class="field" x="798" y="570">like_count</text>
+  <text class="field" x="798" y="610">comment_count</text>
+  <text class="field" x="798" y="650">dislike_count</text>
+  <text class="field" x="798" y="690">repost_count</text>
+  <text class="field" x="798" y="730">created_at</text>
+
+  <!-- User publishes content -->
+  <path class="line" d="M 470 270 L 760 270"/>
+  <text class="relation" x="615" y="248" text-anchor="middle">发布</text>
+  <text class="cardinality" x="492" y="255">1</text>
+  <text class="cardinality" x="724" y="255">N</text>
+
+  <!-- Content self-references -->
+  <path class="line" d="M 790 770 L 790 930 L 930 930 L 930 770"/>
+  <text class="cardinality" x="772" y="810">1</text>
+  <text class="cardinality" x="940" y="810">N</text>
+  <text class="relation" x="860" y="975" text-anchor="middle">评论/回复</text>
+
+  <path class="line" d="M 995 770 L 995 930 L 1135 930 L 1135 770"/>
+  <text class="cardinality" x="977" y="810">1</text>
+  <text class="cardinality" x="1145" y="810">N</text>
+  <text class="relation" x="1065" y="975" text-anchor="middle">转发来源</text>
+
+  <path class="line" d="M 1200 770 L 1200 930 L 1340 930 L 1340 770"/>
+  <text class="cardinality" x="1182" y="810">1</text>
+  <text class="cardinality" x="1350" y="810">N</text>
+  <text class="relation" x="1270" y="975" text-anchor="middle">引用来源</text>
+</svg>
